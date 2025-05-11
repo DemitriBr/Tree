@@ -1,60 +1,4 @@
 /**
- * Job Application Tracker
- * A single-page application to track job applications using local storage
- */
-
-// DOM Elements
-const addApplicationView = document.getElementById('add-application-view');
-const listApplicationsView = document.getElementById('list-applications-view');
-const viewAddBtn = document.getElementById('view-add-btn');
-const viewListBtn = document.getElementById('view-list-btn');
-const applicationForm = document.getElementById('application-form');
-const applicationsList = document.getElementById('applications-list');
-const noApplicationsMessage = document.getElementById('no-applications-message');
-
-// Application Data
-let applications = [];
-
-// Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
-    // Load applications from local storage
-    loadApplications();
-    
-    // Set up event listeners
-    setupEventListeners();
-    
-    // Show the list of applications if there are any
-    renderApplicationsList();
-});
-
-/**
- * Set up all event listeners for the application
- */
-function setupEventListeners() {
-    // Navigation buttons
-    viewAddBtn.addEventListener('click', showAddApplicationView);
-    viewListBtn.addEventListener('click', showListApplicationsView);
-    
-    // Form submission
-    applicationForm.addEventListener('submit', handleFormSubmit);
-    
-    // Pre-fill today's date in the date input
-    document.getElementById('application-date').valueAsDate = new Date();
-}
-
-/**
- * Show the Add Application view and hide the List Applications view
- */
-function showAddApplicationView() {
-    addApplicationView.classList.remove('hidden');
-    listApplicationsView.classList.add('hidden');
-    
-    // Update active button state
-    viewAddBtn.classList.add('active');
-    viewListBtn.classList.remove('active');
-}
-
-/**
  * Show the List Applications view and hide the Add Application view
  */
 function showListApplicationsView() {
@@ -132,10 +76,24 @@ function loadApplications() {
  */
 function saveApplications() {
     try {
-        localStorage.setItem('jobApplications', JSON.stringify(applications));
+        // Check available space before saving
+        const data = JSON.stringify(applications);
+        const size = new Blob([data]).size;
+        
+        // LocalStorage has ~5MB limit in most browsers
+        if (size > 4 * 1024 * 1024) { // If approaching 4MB
+            alert('Warning: You are approaching storage limits. Consider exporting your data soon.');
+        }
+        
+        localStorage.setItem('jobApplications', data);
     } catch (error) {
         console.error('Error saving applications to local storage:', error);
-        alert('Failed to save your application. Please try again.');
+        
+        if (error.name === 'QuotaExceededError') {
+            alert('Storage is full. Please delete some applications or clear browser data to make space.');
+        } else {
+            alert('Failed to save your application. Please try again.');
+        }
     }
 }
 
@@ -150,11 +108,15 @@ function renderApplicationsList() {
     if (applications.length === 0) {
         noApplicationsMessage.classList.remove('hidden');
         document.getElementById('applications-table').classList.add('hidden');
+        dashboardView.classList.add('hidden');
         return;
     } else {
         noApplicationsMessage.classList.add('hidden');
         document.getElementById('applications-table').classList.remove('hidden');
     }
+    
+    // Update dashboard
+    updateDashboard();
     
     // Sort applications by date (newest first)
     const sortedApplications = [...applications].sort((a, b) => {
@@ -211,4 +173,178 @@ function handleDeleteApplication(event) {
         // Re-render the list
         renderApplicationsList();
     }
+}
+
+/**
+ * Export applications data to a downloadable JSON file
+ */
+function exportApplications() {
+    if (applications.length === 0) {
+        alert('No applications to export');
+        return;
+    }
+    
+    // Create data object with metadata
+    const exportData = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        applications: applications
+    };
+    
+    // Create a blob with the data
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    
+    // Create download link
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `job-applications-${new Date().toISOString().split('T')[0]}.json`;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * Import applications from a JSON file
+ * @param {Event} event - The file input change event
+ */
+function importApplications(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importData = JSON.parse(e.target.result);
+            
+            // Basic validation
+            if (Array.isArray(importData.applications)) {
+                if (confirm(`Import ${importData.applications.length} job applications?`)) {
+                    // Merge with existing applications, avoiding duplicates
+                    const existingIds = new Set(applications.map(app => app.id));
+                    const newApps = importData.applications.filter(app => !existingIds.has(app.id));
+                    
+                    applications = [...applications, ...newApps];
+                    saveApplications();
+                    renderApplicationsList();
+                    
+                    alert(`Successfully imported ${newApps.length} applications.`);
+                }
+            } else {
+                throw new Error('Invalid file format');
+            }
+        } catch (error) {
+            console.error('Error importing applications:', error);
+            alert('Failed to import. Please make sure the file is valid JSON exported from this application.');
+        }
+        
+        // Reset the file input
+        event.target.value = '';
+    };
+    
+    reader.readAsText(file);
+}
+
+/**
+ * Show the table view and hide the stats view
+ */
+function showTableView() {
+    document.getElementById('applications-table').classList.remove('hidden');
+    dashboardView.classList.add('hidden');
+    tableViewBtn.classList.add('active');
+    statsViewBtn.classList.remove('active');
+}
+
+/**
+ * Show the stats view and hide the table view
+ */
+function showStatsView() {
+    document.getElementById('applications-table').classList.add('hidden');
+    dashboardView.classList.remove('hidden');
+    tableViewBtn.classList.remove('active');
+    statsViewBtn.classList.add('active');
+}
+
+/**
+ * Update the dashboard with current application statistics and chart
+ */
+function updateDashboard() {
+    // Count applications by status
+    const statusCounts = {
+        'Applied': 0,
+        'Interviewing': 0,
+        'Offer': 0,
+        'Rejected': 0
+    };
+    
+    applications.forEach(app => {
+        if (statusCounts.hasOwnProperty(app.status)) {
+            statusCounts[app.status]++;
+        }
+    });
+    
+    // Update stat cards
+    document.getElementById('total-applications').textContent = applications.length;
+    document.getElementById('interviews-count').textContent = statusCounts['Interviewing'];
+    document.getElementById('offers-count').textContent = statusCounts['Offer'];
+    
+    // Create or update chart
+    createStatusChart(statusCounts);
+}
+
+/**
+ * Create or update the status distribution chart
+ * @param {Object} statusCounts - The count of applications by status
+ */
+function createStatusChart(statusCounts) {
+    const ctx = document.getElementById('status-chart').getContext('2d');
+    
+    // Destroy previous chart if it exists
+    if (statusChart) {
+        statusChart.destroy();
+    }
+    
+    // Define chart colors
+    const colors = {
+        'Applied': '#3498db',
+        'Interviewing': '#f39c12',
+        'Offer': '#2ecc71',
+        'Rejected': '#e74c3c'
+    };
+    
+    // Create new chart
+    statusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(statusCounts),
+            datasets: [{
+                data: Object.values(statusCounts),
+                backgroundColor: Object.keys(statusCounts).map(key => colors[key]),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
