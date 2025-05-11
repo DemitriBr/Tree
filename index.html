@@ -1,1 +1,87 @@
-<h1>?Hello!</h1>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Job Application Tracker</h1>
+            <nav>
+                <button id="view-add-btn" class="nav-btn active">Add Application</button>
+                <button id="view-list-btn" class="nav-btn">View Applications</button>
+            </nav>
+        </header>
+
+        <!-- Add Application View -->
+        <section id="add-application-view" class="view">
+            <h2>Add New Job Application</h2>
+            <form id="application-form">
+                <div class="form-group">
+                    <label for="job-title">Job Title:</label>
+                    <input type="text" id="job-title" name="job-title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="company-name">Company Name:</label>
+                    <input type="text" id="company-name" name="company-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="application-date">Application Date:</label>
+                    <input type="date" id="application-date" name="application-date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="status">Status:</label>
+                    <select id="status" name="status" required>
+                        <option value="Applied">Applied</option>
+                        <option value="Interviewing">Interviewing</option>
+                        <option value="Offer">Offer</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes:</label>
+                    <textarea id="notes" name="notes" rows="4"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" id="submit-btn">Save Application</button>
+                    <button type="reset" id="reset-btn">Clear Form</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- List Applications View -->
+        <section id="list-applications-view" class="view hidden">
+            <h2>Your Job Applications</h2>
+            <div id="applications-container">
+                <table id="applications-table">
+                    <thead>
+                        <tr>
+                            <th>Job Title</th>
+                            <th>Company</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applications-list">
+                        <!-- Job applications will be dynamically inserted here -->
+                    </tbody>
+                </table>
+                <div id="no-applications-message" class="hidden">
+                    <p>You haven't added any job applications yet.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
