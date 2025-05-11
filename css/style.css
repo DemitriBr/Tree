@@ -3,6 +3,8 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -212,4 +214,96 @@ tr:hover {
     padding: 30px;
     color: #7f8c8d;
     font-style: italic;
+}
+
+/* Data import/export buttons */
+.data-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+}
+
+/* Dashboard styles */
+.dashboard-container {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stats-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chart-container {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.stats-summary {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+.stat-card {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    min-width: 120px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 28px;
+    font-weight: bold;
+    color: #3498db;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.view-toggle-btn {
+    background-color: #f1f1f1;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.view-toggle-btn.active {
+    background-color: #3498db;
+    color: white;
+}
+
+.utility-btn {
+    background-color: #7f8c8d;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.utility-btn:hover {
+    background-color: #6c7a7d;
 }
