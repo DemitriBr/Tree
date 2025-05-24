@@ -390,17 +390,17 @@
          * Save applications to storage
          * For real implementation, replace with: localStorage.setItem('jobApplications', JSON.stringify(applications))
          */
-        function saveApplications(applications) {
-            jobApplications = [...applications];
-        }
+        function saveApplications(apps) { 
+    localStorage.setItem('jobApplications', JSON.stringify(apps)); 
+}
         
         /**
          * Load applications from storage
          * For real implementation, replace with: JSON.parse(localStorage.getItem('jobApplications') || '[]')
          */
-        function loadApplications() {
-            return [...jobApplications];
-        }
+        function loadApplications() { 
+    return JSON.parse(localStorage.getItem('jobApplications') || '[]'); 
+}
 
         // ============================================
         // VIEW MANAGEMENT
