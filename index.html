@@ -3,639 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Tracker</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            padding: 30px;
-            text-align: center;
-            color: white;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .nav-buttons {
-            padding: 20px 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-
-        .nav-btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-        }
-
-        .nav-btn:hover {
-            background: #667eea;
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .nav-btn.active {
-            background: #667eea;
-            color: white;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .view {
-            display: none;
-        }
-
-        .view.active {
-            display: block;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 1rem;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-            background: white;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .jobs-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .jobs-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .jobs-count {
-            background: #667eea;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-
-        .job-card {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-        }
-
-        .job-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .job-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-        }
-
-        .job-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .job-company {
-            font-size: 1.1rem;
-            color: #667eea;
-            font-weight: 600;
-        }
-
-        .job-status {
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-applied { background: #e3f2fd; color: #1976d2; }
-        .status-interviewing { background: #fff3e0; color: #f57c00; }
-        .status-offer { background: #e8f5e8; color: #388e3c; }
-        .status-rejected { background: #ffebee; color: #d32f2f; }
-
-        .job-details {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 10px 20px;
-            margin-bottom: 15px;
-        }
-
-        .job-label {
-            font-weight: 600;
-            color: #666;
-        }
-
-        .job-value {
-            color: #333;
-        }
-
-        .job-notes {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            font-style: italic;
-            color: #555;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .empty-state p {
-            font-size: 1.1rem;
-            max-width: 400px;
-            margin: 0 auto;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 10px;
-            }
-
-            .header {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .nav-buttons {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .job-header {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .job-details {
-                grid-template-columns: 1fr;
-                gap: 5px;
-            }
-        }
-    </style>
+    <title>Job Application Tracker Pro</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Job Application Tracker</h1>
-            <p>Keep track of your job applications and stay organized</p>
+            <!-- Dark Mode Toggle (CSS handles appearance, JS handles logic) -->
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                🌙 Dark Mode
+            </button>
+            <h1>Job Application Tracker Pro</h1>
+            <p>Advanced job application management with analytics and insights</p>
         </div>
 
-        <div class="nav-buttons">
-            <button class="nav-btn active" id="homeBtn">Add Application</button>
-            <button class="nav-btn" id="listBtn">Jobs Applied</button>
+        <!-- Navigation Buttons -->
+        <div class="nav-buttons" role="navigation" aria-label="Main navigation">
+            <button class="nav-btn active" id="homeBtn" aria-pressed="true">
+                <span aria-hidden="true">📝</span> Add Application
+            </button>
+            <button class="nav-btn" id="listBtn" aria-pressed="false">
+                <span aria-hidden="true">📋</span> Applications
+            </button>
+            <button class="nav-btn" id="dashboardBtn" aria-pressed="false">
+                <span aria-hidden="true">📊</span> Dashboard
+            </button>
+            <button class="nav-btn" id="kanbanBtn" aria-pressed="false">
+                <span aria-hidden="true">📌</span> Kanban Board
+            </button>
+             <!-- Add Export/Import or Settings buttons later if needed -->
         </div>
 
         <div class="content">
-            <!-- Home View - Add Application -->
+            <!-- ============================================ -->
+            <!-- Home View - Add/Edit Application Form -->
+            <!-- ============================================ -->
             <div id="homeView" class="view active">
                 <div class="form-container">
-                    <h2 style="text-align: center; margin-bottom: 30px; color: #333; font-size: 1.8rem;">Add New Application</h2>
-                    <form id="applicationForm">
-                        <div class="form-group">
-                            <label for="jobTitle">Job Title *</label>
-                            <input type="text" id="jobTitle" name="jobTitle" required placeholder="e.g. Software Developer">
+                    <h2 id="formTitle">Add New Application</h2>
+                    <form id="applicationForm" novalidate>
+                        <!-- Hidden input for storing application ID during editing -->
+                        <input type="hidden" id="applicationId" name="applicationId" value="">
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="jobTitle" class="required">Job Title</label>
+                                <input type="text" id="jobTitle" name="jobTitle" required placeholder="e.g. Software Developer">
+                                <!-- Add error message area for validation later -->
+                                <div id="jobTitle-error" class="error-message" role="alert"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="companyName" class="required">Company Name</label>
+                                <input type="text" id="companyName" name="companyName" required placeholder="e.g. Google">
+                                <div id="companyName-error" class="error-message" role="alert"></div>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="companyName">Company Name *</label>
-                            <input type="text" id="companyName" name="companyName" required placeholder="e.g. Google">
+                         <div class="form-grid">
+                            <div class="form-group">
+                                <label for="applicationDate" class="required">Application Date</label>
+                                <input type="date" id="applicationDate" name="applicationDate" required>
+                                 <div id="applicationDate-error" class="error-message" role="alert"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="deadline">Application Deadline</label>
+                                <input type="date" id="deadline" name="deadline">
+                                <!-- Add deadline help/warning text area -->
+                                 <div id="deadline-help" class="deadline-warning" role="alert"></div>
+                            </div>
+                         </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="status" class="required">Current Status</label>
+                                <select id="status" name="status" required>
+                                    <option value="">Select Status</option>
+                                    <option value="applied">Applied</option>
+                                    <option value="screening">Screening</option>
+                                    <option value="interviewing">Interviewing</option>
+                                    <option value="offer">Offer</option>
+                                    <option value="rejected">Rejected</option>
+                                     <!-- Add more status options if needed, e.g. 'accepted', 'closed' -->
+                                </select>
+                                 <div id="status-error" class="error-message" role="alert"></div>
+                            </div>
+
+                             <div class="form-group">
+                                 <label for="progressStage">Progress Stage</label>
+                                  <select id="progressStage" name="progressStage">
+                                      <option value="">Select Stage (Optional)</option>
+                                      <!-- Options populated by JS or keep simple like status -->
+                                      <!-- Example: -->
+                                      <option value="Application Sent">Application Sent</option>
+                                      <option value="Under Review">Under Review</option>
+                                      <option value="Interview 1">Interview 1</option>
+                                       <option value="Interview 2">Interview 2</option>
+                                       <option value="Final Interview">Final Interview</option>
+                                       <option value="Assessment">Assessment</option>
+                                       <option value="References Check">References Check</option>
+                                       <option value="Offer Received">Offer Received</option>
+                                       <option value="Offer Accepted">Offer Accepted</option>
+                                       <option value="Rejected">Rejected</option>
+                                  </select>
+                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="applicationDate">Application Date *</label>
-                            <input type="date" id="applicationDate" name="applicationDate" required>
+
+                        <div class="form-grid">
+                             <div class="form-group">
+                                 <label for="jobPostingUrl">Job Posting URL</label>
+                                 <input type="url" id="jobPostingUrl" name="jobPostingUrl" placeholder="e.g. https://example.com/job/123">
+                             </div>
+
+                              <div class="form-group">
+                                 <label for="salary">Salary / Compensation</label>
+                                 <input type="text" id="salary" name="salary" placeholder="e.g. $120,000 USD or Negotiable">
+                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="status">Status *</label>
-                            <select id="status" name="status" required>
-                                <option value="">Select Status</option>
-                                <option value="applied">Applied</option>
-                                <option value="interviewing">Interviewing</option>
-                                <option value="offer">Offer</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
+                         <div class="form-group">
+                             <label for="location">Location</label>
+                             <input type="text" id="location" name="location" placeholder="e.g. New York, NY (Remote)">
+                         </div>
+
+                         <div class="form-group">
+                             <label for="notes">Notes</label>
+                             <textarea id="notes" name="notes" placeholder="Additional notes about this application, keywords, contacts..."></textarea>
+                         </div>
+
+                        <!-- ============================================ -->
+                        <!-- Placeholders for New Features UI (collapsed initially) -->
+                        <!-- Implement Accordions/Modals/Dedicated sections for these later -->
+                        <!-- ============================================ -->
+
+                        <div class="new-features-sections" style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                             <h3 style="margin-bottom: 15px;">Additional Details</h3>
+
+                             <div class="form-group">
+                                 <label>Interviews</label>
+                                  <div id="interviewList" class="data-list-preview"></div>
+                                  <button type="button" id="addInterviewBtn" class="action-btn">Add Interview</button> {/* Modal/sub-form trigger */}
+                             </div>
+
+                              <div class="form-group">
+                                 <label>Contacts</label>
+                                  <div id="contactList" class="data-list-preview"></div>
+                                  <button type="button" id="addContactBtn" class="action-btn">Add Contact</button> {/* Modal/sub-form trigger */}
+                             </div>
+
+                               <div class="form-group">
+                                 <label>Documents</label>
+                                  <div id="documentList" class="data-list-preview"></div>
+                                  <button type="button" id="addDocumentBtn" class="action-btn">Add Document (Metadata)</button> {/* Modal/sub-form trigger */}
+                                  {/* Could add file input here but storing content is complex */}
+                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="notes">Notes</label>
-                            <textarea id="notes" name="notes" placeholder="Additional notes about this application..."></textarea>
-                        </div>
 
+                        <!-- Submit Button -->
                         <button type="submit" class="submit-btn">Add Application</button>
                     </form>
                 </div>
             </div>
 
-            <!-- List View - Jobs Applied -->
+            <!-- ============================================ -->
+            <!-- List View - All Applications -->
+            <!-- ============================================ -->
             <div id="listView" class="view">
                 <div class="jobs-container">
                     <div class="jobs-header">
-                        <h2 style="color: #333; font-size: 1.8rem;">Your Applications</h2>
+                        <h2 >Your Applications</h2>
                         <div class="jobs-count" id="jobsCount">0 Applications</div>
                     </div>
-                    <div id="jobsList"></div>
+
+                    <!-- Search, Filter, Sort Controls Placeholder -->
+                     <div class="controls-section">
+                         <div class="search-filter-controls">
+                             <input type="text" id="searchInput" class="search-input" placeholder="Search Company, Title, Notes...">
+                             <select id="statusFilter" class="filter-select" aria-label="Filter by status">
+                                 <option value="">All Statuses</option>
+                                  <!-- Options will match status field from form, maybe dynamically populated -->
+                                  <option value="applied">Applied</option>
+                                   <option value="screening">Screening</option>
+                                  <option value="interviewing">Interviewing</option>
+                                  <option value="offer">Offer</option>
+                                  <option value="rejected">Rejected</option>
+                                   <!-- Add more status options if needed -->
+                             </select>
+                             <select id="dateFilter" class="filter-select" aria-label="Filter by date range">
+                                 <option value="">Any Date</option>
+                                  <option value="last-7-days">Last 7 Days</option>
+                                  <option value="last-30-days">Last 30 Days</option>
+                                   <option value="this-month">This Month</option>
+                                   <option value="this-year">This Year</option>
+                             </select>
+                              <button id="resetFiltersBtn" class="action-btn">Reset Filters</button>
+                         </div>
+                         <div class="sort-controls">
+                             <span>Sort by:</span>
+                              <button id="sortDateBtn" class="sort-btn" data-sort="applicationDate" data-order="desc" aria-label="Sort by application date descending">Date <span class="sort-arrow">↓</span></button>
+                              <button id="sortCompanyBtn" class="sort-btn" data-sort="companyName" data-order="asc" aria-label="Sort by company name ascending">Company <span class="sort-arrow"></span></button>
+                              <button id="sortStatusBtn" class="sort-btn" data-sort="status" data-order="asc" aria-label="Sort by status ascending">Status <span class="sort-arrow"></span></button>
+                         </div>
+                     </div>
+
+
+                    <div id="jobsList" class="jobs-list">
+                         <!-- Job application cards will be dynamically inserted here -->
+                         <!-- Empty state will also be inserted here when needed -->
+
+                        <!-- Example Job Card (HTML Structure - JS will generate this) -->
+                        <!--
+                        <div class="job-card" data-id="some-unique-id" draggable="true">
+                             <div class="job-header"> ... title, company, status ... </div>
+                             <div class="job-details">
+                                  <div class="job-detail-item">... Date ...</div>
+                                   <div class="job-detail-item">... Deadline ...</div>
+                                   <div class="job-detail-item">... Location ...</div>
+                                   <div class="job-detail-item">... Salary ...</div>
+                                   <div class="job-detail-item">... Stage ...</div>
+                                   <div class="job-detail-item">... Link ...</div>
+                             </div>
+                            <div class="progress-bar">... fill ...</div>
+                             <div class="job-notes">... notes ...</div>
+                            <div class="job-interview-list">... interviews ...</div>
+                             <div class="job-contact-list">... contacts ...</div>
+                             <div class="job-actions">
+                                 <button class="action-btn edit" data-id="...">✏️ Edit</button>
+                                 <button class="action-btn delete" data-id="...">🗑️ Delete</button>
+                                 // Add more action buttons here
+                             </div>
+                         </div>
+                         -->
+
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <script>
-        // ============================================
-        // DATA STORAGE FUNCTIONS
-        // ============================================
-        
-        // In-memory storage for Claude.ai compatibility
-        // Replace these functions with localStorage versions for real implementation
-        let jobApplications = [];
-        
-        /**
-         * Save applications to storage
-         * For real implementation, replace with: localStorage.setItem('jobApplications', JSON.stringify(applications))
-         */
-        function saveApplications(apps) { 
-    localStorage.setItem('jobApplications', JSON.stringify(apps)); 
-}
-        
-        /**
-         * Load applications from storage
-         * For real implementation, replace with: JSON.parse(localStorage.getItem('jobApplications') || '[]')
-         */
-        function loadApplications() { 
-    return JSON.parse(localStorage.getItem('jobApplications') || '[]'); 
-}
+            <!-- ============================================ -->
+            <!-- Dashboard View - Stats and Charts -->
+            <!-- ============================================ -->
+            <div id="dashboardView" class="view">
+                 <h2 style="text-align: center; margin-bottom: 30px;">Dashboard & Analytics</h2>
+                 <div class="stats-grid">
+                     <!-- Stat cards will be dynamically populated -->
+                     <div class="stat-card">
+                         <div class="stat-number" id="totalAppsStat">-</div>
+                         <div class="stat-label">Total Applications</div>
+                     </div>
+                      <div class="stat-card">
+                         <div class="stat-number" id="appliedStat">-</div>
+                         <div class="stat-label">Applied</div>
+                     </div>
+                      <div class="stat-card">
+                         <div class="stat-number" id="interviewingStat">-</div>
+                         <div class="stat-label">Interviewing</div>
+                     </div>
+                       <div class="stat-card">
+                         <div class="stat-number" id="offerStat">-</div>
+                         <div class="stat-label">Offers Received</div>
+                     </div>
+                      <div class="stat-card">
+                         <div class="stat-number" id="rejectedStat">-</div>
+                         <div class="stat-label">Rejected</div>
+                     </div>
+                     <!-- Add more stats as needed: Success Rate, Avg Response Time, etc. -->
+                 </div>
 
-        // ============================================
-        // VIEW MANAGEMENT
-        // ============================================
-        
-        /**
-         * Switch between different views (Home/List)
-         */
-        function switchView(viewName) {
-            // Hide all views
-            const views = document.querySelectorAll('.view');
-            views.forEach(view => {
-                view.classList.remove('active');
-            });
-            
-            // Show selected view
-            const targetView = document.getElementById(viewName + 'View');
-            if (targetView) {
-                targetView.classList.add('active');
-            }
-            
-            // Update navigation buttons
-            const navButtons = document.querySelectorAll('.nav-btn');
-            navButtons.forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Set active button
-            const activeBtn = viewName === 'home' ? 'homeBtn' : 'listBtn';
-            document.getElementById(activeBtn).classList.add('active');
-            
-            // If switching to list view, refresh the display
-            if (viewName === 'list') {
-                displayApplications();
-            }
-        }
+                 <div class="charts-section" style="margin-top: 40px;">
+                     {/* Chart placeholders - will use <canvas> or SVG generated by JS */}
+                     {/* <canvas id="statusDistributionChart"></canvas> */}
+                     {/* <canvas id="applicationsOverTimeChart"></canvas> */}
+                      <h3>Application Status Distribution</h3>
+                       <div id="statusChart" class="chart-placeholder" style="height: 300px; background: var(--bg-secondary); border-radius: 10px;"> {/* Placeholder div */}
+                          {/* Chart rendered here */}
+                      </div>
 
-        // ============================================
-        // FORM HANDLING
-        // ============================================
-        
-        /**
-         * Handle form submission for new job applications
-         */
-        function handleFormSubmit(event) {
-            event.preventDefault();
-            
-            // Get form data
-            const formData = new FormData(event.target);
-            const application = {
-                id: Date.now(), // Simple ID generation
-                jobTitle: formData.get('jobTitle').trim(),
-                companyName: formData.get('companyName').trim(),
-                applicationDate: formData.get('applicationDate'),
-                status: formData.get('status'),
-                notes: formData.get('notes').trim(),
-                dateAdded: new Date().toISOString()
-            };
-            
-            // Validate required fields
-            if (!application.jobTitle || !application.companyName || !application.applicationDate || !application.status) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-            
-            // Load existing applications
-            const applications = loadApplications();
-            
-            // Add new application
-            applications.push(application);
-            
-            // Save to storage
-            saveApplications(applications);
-            
-            // Reset form
-            event.target.reset();
-            
-            // Show success message
-            alert('Application added successfully!');
-            
-            // Optionally switch to list view to show the new application
-            // switchView('list');
-        }
+                      <h3 style="margin-top: 30px;">Applications Over Time</h3>
+                        <div id="overTimeChart" class="chart-placeholder" style="height: 300px; background: var(--bg-secondary); border-radius: 10px;"> {/* Placeholder div */}
+                          {/* Chart rendered here */}
+                      </div>
+                      {/* Add Application Timeline placeholder */}
+                 </div>
 
-        // ============================================
-        // DATA DISPLAY
-        // ============================================
-        
-        /**
-         * Display all job applications in the list view
-         */
-        function displayApplications() {
-            const applications = loadApplications();
-            const jobsList = document.getElementById('jobsList');
-            const jobsCount = document.getElementById('jobsCount');
-            
-            // Update count
-            const count = applications.length;
-            jobsCount.textContent = `${count} Application${count !== 1 ? 's' : ''}`;
-            
-            // Clear existing content
-            jobsList.innerHTML = '';
-            
-            // Check if no applications exist
-            if (applications.length === 0) {
-                jobsList.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📋</div>
-                        <h3>No Applications Yet</h3>
-                        <p>Start tracking your job applications by adding your first one using the "Add Application" button above.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Sort applications by date (newest first)
-            const sortedApplications = applications.sort((a, b) => 
-                new Date(b.applicationDate) - new Date(a.applicationDate)
-            );
-            
-            // Create HTML for each application
-            sortedApplications.forEach(app => {
-                const applicationCard = createApplicationCard(app);
-                jobsList.appendChild(applicationCard);
-            });
-        }
-        
-        /**
-         * Create HTML element for a single job application
-         */
-        function createApplicationCard(application) {
-            const card = document.createElement('div');
-            card.className = 'job-card';
-            
-            // Format date for display
-            const formattedDate = new Date(application.applicationDate).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            // Create status class
-            const statusClass = `status-${application.status}`;
-            const statusText = application.status.charAt(0).toUpperCase() + application.status.slice(1);
-            
-            card.innerHTML = `
-                <div class="job-header">
-                    <div>
-                        <div class="job-title">${escapeHtml(application.jobTitle)}</div>
-                        <div class="job-company">${escapeHtml(application.companyName)}</div>
-                    </div>
-                    <div class="job-status ${statusClass}">${statusText}</div>
-                </div>
-                
-                <div class="job-details">
-                    <span class="job-label">Application Date:</span>
-                    <span class="job-value">${formattedDate}</span>
-                </div>
-                
-                ${application.notes ? `
-                    <div class="job-notes">
-                        <strong>Notes:</strong> ${escapeHtml(application.notes)}
-                    </div>
-                ` : ''}
-            `;
-            
-            return card;
-        }
-        
-        /**
-         * Escape HTML to prevent XSS attacks
-         */
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+             </div>
 
-        // ============================================
-        // EVENT LISTENERS AND INITIALIZATION
-        // ============================================
-        
-        /**
-         * Initialize the application when DOM is loaded
-         */
-        document.addEventListener('DOMContentLoaded', function() {
-            
-            // Set up navigation button event listeners
-            document.getElementById('homeBtn').addEventListener('click', () => switchView('home'));
-            document.getElementById('listBtn').addEventListener('click', () => switchView('list'));
-            
-            // Set up form submission
-            document.getElementById('applicationForm').addEventListener('submit', handleFormSubmit);
-            
-            // Set default date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('applicationDate').value = today;
-            
-            // Load and display existing applications
-            displayApplications();
-            
-            console.log('Job Application Tracker initialized successfully!');
-        });
+            <!-- ============================================ -->
+            <!-- Kanban Board View -->
+            <!-- ============================================ -->
+            <div id="kanbanView" class="view">
+                 <h2 style="text-align: center; margin-bottom: 30px;">Kanban Board</h2>
+                 <div class="kanban-board">
+                     {/* Kanban columns will be dynamically generated or pre-defined here */}
+                      {/* Example Column Structure - JS will manage content */}
+                     <!--
+                      <div class="kanban-column" id="column-applied" data-status="applied" data-stage="applied">
+                         <div class="kanban-header">Applied <span class="kanban-count">0</span></div>
+                         <div class="kanban-cards" data-status="applied" data-stage="applied">
+                             // Job cards will be dragged/dropped here
+                         </div>
+                     </div>
+                      <div class="kanban-column" id="column-interviewing" data-status="interviewing" data-stage="interviewing">
+                         <div class="kanban-header">Interviewing <span class="kanban-count">0</span></div>
+                         <div class="kanban-cards" data-status="interviewing" data-stage="interviewing"></div>
+                     </div>
+                     -->
+                 </div>
+            </div>
+            <!-- Add more view divs here as needed -->
 
-        // ============================================
-        // ADDITIONAL UTILITY FUNCTIONS
-        // ============================================
-        
-        /**
-         * Export applications data (for future enhancement)
-         */
-        function exportApplications() {
-            const applications = loadApplications();
-            const dataStr = JSON.stringify(applications, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'job-applications.json';
-            link.click();
-            
-            URL.revokeObjectURL(url);
-        }
-        
-        /**
-         * Clear all applications (for future enhancement)
-         */
-        function clearAllApplications() {
-            if (confirm('Are you sure you want to delete all applications? This action cannot be undone.')) {
-                saveApplications([]);
-                displayApplications();
-                alert('All applications have been cleared.');
-            }
-        }
-    </script>
+        </div> {/* End .content */}
+
+         <!-- ============================================ -->
+         <!-- Modals (Hidden initially) -->
+         <!-- ============================================ -->
+         <div id="editModal" class="modal" aria-hidden="true"> {/* Or use one generic modal and change content */}
+             <div class="modal-content">
+                 <button class="modal-close" aria-label="Close modal">×</button>
+                 <h3>Edit Application Details</h3>
+                 {/* Re-use the form or include a simplified edit form here */}
+                  <p>Modal content goes here.</p> {/* Placeholder */}
+                  {/* For interview/contact/document add/edit modals */}
+             </div>
+         </div>
+
+         <div id="confirmModal" class="modal" aria-hidden="true">
+             <div class="modal-content">
+                 <button class="modal-close" aria-label="Close modal">×</button>
+                 <h3>Confirm Action</h3>
+                 <p id="confirmMessage">Are you sure you want to proceed?</p>
+                  <button id="confirmYesBtn" class="action-btn">Yes</button>
+                 <button id="confirmNoBtn" class="action-btn">No</button>
+             </div>
+         </div>
+
+
+        <!-- ============================================ -->
+        <!-- Notifications (Hidden initially, appears via JS) -->
+        <!-- ============================================ -->
+         <div id="notificationContainer" style="position: fixed; top: 20px; right: 20px; z-index: 1050;">
+             {/* Notifications will be injected here by JS */}
+             <!-- Example: <div class="notification success">Application added successfully!</div> -->
+         </div>
+
+
+    </div> {/* End .container */}
+
+    <!-- Link to your JavaScript file -->
+    <script src="script.js"></script>
 </body>
 </html>
