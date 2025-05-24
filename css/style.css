@@ -1,87 +1,130 @@
-/* style.css */
+/* style.css - Modernized */
 
 /* Basic Reset and Global Styles */
-* {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* CSS Variables for Theming */
+/* CSS Variables for Theming - Adjusted for a more modern feel */
 :root {
-    --primary-color: #667eea; /* Primary interactive color */
-    --secondary-color: #764ba2; /* Secondary color for gradients etc. */
-    --accent-color: #4facfe; /* Accent color, often for highlights */
-    --success-color: #388e3c; /* Green for success */
-    --warning-color: #f57c00; /* Orange for warnings */
-    --error-color: #d32f2f; /* Red for errors */
-    --info-color: #1976d2; /* Blue for info */
-    --bg-primary: #ffffff; /* Main background */
-    --bg-secondary: #f8f9fa; /* Secondary background (cards, views, etc.) */
-    --text-primary: #333333; /* Main text color */
-    --text-secondary: #666666; /* Secondary text color */
-    --border-color: #e9ecef; /* Border color */
-    --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow */
-    --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.1); /* Medium shadow */
-    --shadow-heavy: 0 20px 40px rgba(0, 0, 0, 0.1); /* Heavy shadow */
+    --primary-color: #5e69f4; /* Vibrant Blue */
+    --secondary-color: #a56dfa; /* Soft Purple */
+    --accent-color: #4fe3c1; /* Teal/Mint accent */
+    --success-color: #34c759; /* System Green */
+    --warning-color: #ff9500; /* System Orange */
+    --error-color: #ff3b30; /* System Red */
+    --info-color: #007aff; /* System Blue */
+
+    --bg-primary: #ffffff; /* Light background */
+    --bg-secondary: #f0f2f5; /* Subtle secondary background */
+    --bg-tertiary: #e9ecef; /* Used sparingly for separators/hover */
+
+    --text-primary: #1f2937; /* Dark gray for main text */
+    --text-secondary: #4b5563; /* Lighter gray for secondary text */
+    --text-placeholder: #9ca3af; /* Placeholder text color */
+
+    --border-color: #d1d5db; /* Subtle border color */
+    --divider-color: #e5e7eb; /* Lighter divider color */
+
+    --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.08); /* Very subtle shadow */
+    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.08); /* Soft shadow */
+    --shadow-heavy: 0 10px 30px rgba(0, 0, 0, 0.1); /* Deeper shadow */
+
+    --radius-small: 4px;
+    --radius-medium: 8px;
+    --radius-large: 12px;
 }
 
-/* Dark Mode Theme Variables */
+/* Dark Mode Theme Variables - Corresponding Modern Palette */
 [data-theme="dark"] {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2d2d2d;
-    --text-primary: #ffffff;
-    --text-secondary: #cccccc;
-    --border-color: #404040;
-    --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.3);
-    --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.4);
-    --shadow-heavy: 0 20px 40px rgba(0, 0, 0, 0.5);
-    /* Adjust other colors for dark mode if needed */
-     --success-color: #66bb6a;
-     --warning-color: #ffa726;
-     --error-color: #ef5350;
-     --info-color: #42a5f5;
+    --primary-color: #8b94f7; /* Lighter vibrant blue for dark text */
+    --secondary-color: #bba0ff; /* Lighter soft purple */
+    --accent-color: #66ffdc; /* Lighter teal */
+    --success-color: #4cd964; /* Dark mode green */
+    --warning-color: #ffcc00; /* Dark mode orange */
+    --error-color: #ff453a; /* Dark mode red */
+    --info-color: #30b0c7; /* Dark mode blue/cyan */
+
+    --bg-primary: #181818; /* Dark background */
+    --bg-secondary: #2a2a2a; /* Slightly lighter dark background */
+    --bg-tertiary: #3a3a3a;
+
+    --text-primary: #f3f4f6; /* Light gray for main text */
+    --text-secondary: #d1d5db; /* Darker gray for secondary text */
+    --text-placeholder: #6b7280;
+
+    --border-color: #4b5563;
+    --divider-color: #374151;
+
+    --shadow-light: 0 1px 3px rgba(255, 255, 255, 0.08);
+    --shadow-medium: 0 4px 12px rgba(255, 255, 255, 0.08);
+    --shadow-heavy: 0 10px 30px rgba(255, 255, 255, 0.1);
 }
 
 /* Body Styling */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* Modern system font stack */
+    background: var(--bg-secondary); /* Use subtle secondary background */
     min-height: 100vh;
     padding: 20px;
-    transition: all 0.3s ease; /* Smooth transition for theme changes */
-    color: var(--text-primary); /* Default text color from variable */
+    transition: background-color 0.3s ease; /* Smooth transition for theme changes */
+    color: var(--text-primary);
+    line-height: 1.6; /* Improved readability */
 }
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--secondary-color);
+    text-decoration: underline;
+}
+
 
 /* Container */
 .container {
-    max-width: 1200px; /* Increased max width for more complex views */
+    max-width: 1300px; /* Slightly wider container */
     margin: 0 auto;
     background: var(--bg-primary);
-    border-radius: 15px;
-    box-shadow: var(--shadow-heavy);
-    overflow: hidden; /* Ensures internal rounded corners */
-    transition: all 0.3s ease;
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-medium); /* Softer main shadow */
+    overflow: hidden;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color); /* Subtle border */
 }
 
 /* Header */
 .header {
-    background: linear-gradient(135deg, var(--accent-color) 0%, #00f2fe 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); /* Retain gradient but with new colors */
     padding: 30px;
     text-align: center;
-    color: white; /* Text color is white regardless of dark mode */
+    color: white;
     position: relative;
 }
 
 .header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
+    font-size: 2.8rem; /* Slightly larger title */
+    margin-bottom: 8px;
     font-weight: 700;
+     color: white; /* Ensure white text in header regardless of theme */
 }
 
 .header p {
     font-size: 1.1rem;
     opacity: 0.9;
+     color: rgba(255, 255, 255, 0.9); /* Ensure white text */
 }
 
 /* Theme Toggle Button */
@@ -89,419 +132,402 @@ body {
     position: absolute;
     top: 20px;
     right: 20px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.15); /* More subtle transparency */
     border: none;
     border-radius: 20px;
     padding: 8px 16px;
     color: white;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     font-size: 0.9rem;
-    z-index: 10; /* Ensure it's above other content if needed */
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* Space between icon/text */
 }
 
 .theme-toggle:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.25);
     transform: scale(1.05);
 }
 
 /* Navigation Buttons Container */
 .nav-buttons {
-    padding: 20px 30px;
-    background: var(--bg-secondary); /* Uses secondary background color */
-    border-bottom: 1px solid var(--border-color);
+    padding: 15px 30px; /* Slightly less padding */
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--divider-color); /* Lighter divider */
     display: flex;
-    gap: 15px;
+    gap: 10px; /* Reduced gap */
     justify-content: center;
-    flex-wrap: wrap; /* Allow wrapping on small screens */
+    flex-wrap: wrap;
 }
 
 /* Individual Navigation Button */
 .nav-btn {
-    padding: 12px 30px;
+    padding: 10px 20px; /* Reduced padding */
     border: none;
-    border-radius: 25px;
+    border-radius: var(--radius-medium); /* Slightly less rounded */
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 500; /* Lighter font weight */
     cursor: pointer;
-    transition: all 0.3s ease;
-    background: var(--bg-primary);
-    color: var(--primary-color);
-    border: 2px solid var(--primary-color);
-    position: relative; /* Needed for ::before effect */
-    overflow: hidden; /* Hide ::before initially */
-    text-decoration: none; /* Remove default link underline if using <a> */
+    transition: all 0.2s ease;
+    background: transparent; /* Transparent background initially */
+    color: var(--text-secondary); /* Secondary text color */
+    border: 1px solid transparent; /* Match border for hover effect */
+     display: inline-flex;
+     align-items: center;
+     gap: 8px;
 }
 
 .nav-btn:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    background: var(--bg-tertiary); /* Use a background hover state */
+    color: var(--text-primary); /* Primary text color on hover */
+    transform: none; /* No vertical transform on hover */
+     box-shadow: none; /* No shadow on hover */
+     border-color: var(--border-color); /* Subtle border on hover */
 }
 
 .nav-btn.active {
-    background: var(--primary-color);
+    background: var(--primary-color); /* Primary color background when active */
     color: white;
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--shadow-light); /* Subtle shadow when active */
+    border-color: var(--primary-color);
+    font-weight: 600; /* Bolder when active */
 }
 
-/* Nav Button Hover Effect */
-.nav-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%; /* Start off-screen */
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.5s;
-}
-
-.nav-btn:hover::before {
-    left: 100%; /* Slide across */
-}
+/* No specific ::before glow effect for nav buttons in this style */
+.nav-btn::before { content: none; }
 
 /* Content Area for Views */
 .content {
-    padding: 40px;
+    padding: 30px; /* Reduced padding */
     background: var(--bg-primary);
     color: var(--text-primary);
 }
 
 /* Individual View Containers */
-.view {
-    display: none; /* Hidden by default */
-}
+.view { display: none; }
+.view.active { display: block; animation: fadeInUp 0.4s ease-out; /* Slightly faster animation */ }
 
-.view.active {
-    display: block; /* Shown when active */
-    animation: fadeInUp 0.5s ease-out; /* Entrance animation */
-}
-
-/* View Entrance Animation */
+/* View Entrance Animation (same as before) */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px) scale(0.98); /* Slightly move and scale up */
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(20px) scale(0.99); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 
 /* Form Styling */
 .form-container {
-    max-width: 700px; /* Max width for the form itself */
-    margin: 0 auto; /* Center the form */
+    max-width: 800px; /* Slightly wider form container */
+    margin: 0 auto;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-medium);
+     border: 1px solid var(--border-color);
+     box-shadow: var(--shadow-light);
+}
+
+.form-container h2 {
+     text-align: center;
+     margin-bottom: 25px; /* Less margin below title */
+     font-size: 1.8rem;
+     color: var(--text-primary);
 }
 
 /* Form Grid Layout */
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns */
-    gap: 20px; /* Spacing between grid items */
-    margin-bottom: 25px; /* Spacing after the grid group */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Adjusted min-width */
+    gap: 20px;
+    margin-bottom: 15px; /* Reduced margin */
 }
 
 /* Individual Form Group */
 .form-group {
-    margin-bottom: 15px; /* Spacing below each form group */
-    display: block; /* Ensure label/input block structure */
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column; /* Stack label and input */
 }
 
 .form-group label {
-    display: block; /* Label on its own line */
-    margin-bottom: 8px;
+    margin-bottom: 6px; /* Reduced margin */
     font-weight: 600;
-    color: var(--text-primary);
-    font-size: 1rem;
+    color: var(--text-secondary); /* Label color */
+    font-size: 0.95rem;
 }
 
 /* Styling for Input, Select, Textarea */
 .form-group input,
 .form-group select,
 .form-group textarea {
-    width: 100%; /* Full width within parent */
-    padding: 12px 15px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+    width: 100%;
+    padding: 10px 12px; /* Reduced padding */
+    border: 1px solid var(--border-color); /* Subtle border */
+    border-radius: var(--radius-small); /* Small radius */
     font-size: 1rem;
-    transition: all 0.3s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-family: inherit; /* Use inherited font */
+    font-family: inherit;
+     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05); /* Subtle inset shadow */
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: var(--text-placeholder);
+    opacity: 1; /* Ensure placeholder is visible */
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    outline: none; /* Remove default outline */
-    border-color: var(--primary-color); /* Highlight border on focus */
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); /* Subtle focus glow */
-    transform: translateY(-1px); /* Slight lift effect */
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 94, 105, 244), 0.2); /* More subtle focus glow */
+    transform: none; /* No translate effect */
 }
 
-.form-group textarea {
-    resize: vertical; /* Only allow vertical resize */
-    min-height: 100px;
+/* Dynamically calculate RGB for focus glow if possible, or use static RGBA */
+:root {
+  --primary-color-rgb: 94, 105, 244; /* Example RGB for #5e69f4 */
 }
 
-/* Required Field Indicator */
-.required::after {
-    content: ' *';
-    color: var(--error-color);
-}
 
-/* Validation Error Messages */
-.error-message {
-    color: var(--error-color);
-    font-size: 0.9rem;
-    margin-top: 5px;
-    display: none; /* Hidden by default, shown by JS for validation */
-}
+.form-group textarea { resize: vertical; min-height: 90px; /* Slightly smaller */ }
+.required::after { content: ' *'; color: var(--error-color); margin-left: 4px; }
+.error-message { color: var(--error-color); font-size: 0.85rem; margin-top: 4px; }
+.deadline-warning { background: #fffbe5; color: var(--warning-color); padding: 6px 10px; border-radius: var(--radius-small); font-size: 0.85rem; margin-top: 4px; }
 
-/* Deadline Warning Message */
-.deadline-warning {
-    background: #fff3e0; /* Light orange background */
-    color: var(--warning-color);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    margin-top: 5px;
-    /* Display style (block/inline-block) depends on how it's used */
-    display: none; /* Assume hidden by default */
-}
-
-/* Data List Preview in Form (for Interviews, Contacts etc.) */
+/* Data List Preview in Form */
 .data-list-preview {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px;
-    margin-top: 10px;
-    background: var(--bg-secondary);
-    font-size: 0.95rem;
+    border: 1px dashed var(--border-color); /* Dashed border */
+    border-radius: var(--radius-small);
+    padding: 8px; /* Reduced padding */
+    margin-top: 8px; /* Reduced margin */
+    background: var(--bg-tertiary); /* Tertiary background */
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    min-height: 40px; /* Ensure some height even if empty */
-     /* Add more styles for the list items inside */
+    min-height: 30px;
 }
 
-.data-list-preview ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
+.data-list-preview ul { list-style: none; padding: 0; margin: 0; }
 .data-list-preview li {
-    padding: 5px 0;
-    border-bottom: 1px dashed var(--border-color);
+    padding: 4px 0; /* Reduced padding */
+    border-bottom: 1px dotted var(--divider-color); /* Dotted divider */
 }
-.data-list-preview li:last-child {
-    border-bottom: none;
-}
+.data-list-preview li:last-child { border-bottom: none; }
 
 
 /* Submit Button */
 .submit-btn {
     width: 100%;
-    padding: 15px;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    padding: 12px 20px; /* Reduced padding */
+    background: linear-gradient(90deg, var(--primary-color) 0%, #7a63e4 100%); /* Adjusted gradient/colors */
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-medium);
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-light);
 }
 
 .submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    box-shadow: var(--shadow-medium); /* Deeper shadow on hover */
+    background: linear-gradient(90deg, #6a75e9 0%, #8b63e4 100%); /* Slightly different gradient on hover */
 }
 
 .submit-btn:active {
-    transform: translateY(0); /* Reset transform when clicked */
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+    transform: translateY(0);
+    box-shadow: var(--shadow-light);
+     opacity: 0.95;
 }
 
 
 /* List View - Container and Controls */
-.jobs-container {
-    max-width: 100%; /* Takes full width of content area */
-    margin: 0 auto;
-}
+.jobs-container { max-width: 100%; margin: 0 auto; }
 
 .jobs-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
-    flex-wrap: wrap; /* Allow wrapping */
-    gap: 15px; /* Spacing between elements */
+    margin-bottom: 25px; /* Reduced margin */
+    flex-wrap: wrap;
+    gap: 15px;
 }
+.jobs-header h2 { font-size: 1.8rem; }
+
 
 .jobs-count {
     background: var(--primary-color);
     color: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 6px 12px; /* Reduced padding */
+    border-radius: 15px;
     font-weight: 600;
-    animation: pulse 2s infinite; /* Subtle pulse animation */
+    font-size: 0.95rem;
+     min-width: 100px;
+     text-align: center;
+    /* Removed pulse animation */
 }
-
-/* Pulse Animation */
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.03); } /* Scale up slightly */
-}
-
-/* View Mode Toggles (if added later, e.g. list vs table view) */
-.view-mode-toggles {
-     display: flex;
-     gap: 10px;
-}
-
-.view-toggle {
-     padding: 8px 12px;
-     border: 1px solid var(--border-color);
-     border-radius: 6px;
-     background: var(--bg-primary);
-     color: var(--text-secondary);
-     cursor: pointer;
-     transition: all 0.3s ease;
-     font-size: 0.9rem;
-}
-
-.view-toggle.active {
-     background: var(--primary-color);
-     color: white;
-     border-color: var(--primary-color);
-}
-
 
 /* Controls Section (Search, Filter, Sort, Export) */
 .controls-section {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     align-items: center;
     justify-content: space-between;
     padding: 15px;
     background: var(--bg-secondary);
-    border-radius: 8px;
+    border-radius: var(--radius-medium);
     border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-light);
 }
 
 .search-filter-controls,
 .sort-controls,
 .export-controls {
     display: flex;
-    flex-wrap: wrap; /* Ensure controls wrap if container is too small */
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px; /* Reduced gap */
     align-items: center;
 }
 
 .search-input {
-    padding: 10px 15px;
-    border: 2px solid var(--border-color);
-    border-radius: 20px; /* Pill shape */
-    font-size: 0.9rem;
+    padding: 8px 12px; /* Reduced padding */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-medium); /* Slightly less rounded pill */
+    font-size: 0.95rem;
     background: var(--bg-primary);
     color: var(--text-primary);
-    min-width: 200px; /* Ensure it's not too small */
+    min-width: 200px;
+     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
+.search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 94, 105, 244), 0.2);
+}
+.search-input::placeholder { color: var(--text-placeholder); }
+
+
 .filter-select {
-    padding: 8px 12px;
-    border: 2px solid var(--border-color);
-    border-radius: 6px;
+    padding: 7px 10px; /* Reduced padding */
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-medium);
     background: var(--bg-primary);
     color: var(--text-primary);
-     font-family: inherit;
-     font-size: 0.9rem;
-     cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.filter-select:focus {
+     border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 94, 105, 244), 0.2);
+     outline: none;
+}
+
 
 .sort-controls span {
     font-weight: 600;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
 .sort-btn {
-    padding: 8px 16px;
+    padding: 7px 12px; /* Reduced padding */
     border: 1px solid var(--border-color);
-    border-radius: 20px;
+    border-radius: var(--radius-medium); /* Matches select */
     background: var(--bg-primary);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-     display: inline-flex; /* Align text and arrow */
-     align-items: center;
-     gap: 5px;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+     box-shadow: var(--shadow-light);
 }
 
-.sort-btn:hover,
+.sort-btn:hover {
+    background: var(--bg-tertiary); /* Hover background */
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-light);
+}
+
 .sort-btn.active {
     background: var(--primary-color);
     color: white;
     border-color: var(--primary-color);
+     box-shadow: var(--shadow-medium); /* Stronger shadow when active */
+     font-weight: 600;
 }
-.sort-arrow { /* For sort direction indicator */ }
+.sort-btn.active:hover {
+     background: var(--primary-color); /* Keep primary background on hover */
+     color: white;
+}
+.sort-arrow { /* For sort direction indicator */ font-weight: 600; }
 
 
 .export-btn {
-    padding: 8px 16px;
+    padding: 7px 12px;
     border: 1px solid var(--primary-color);
-    border-radius: 6px;
+    border-radius: var(--radius-medium);
     background: transparent;
     color: var(--primary-color);
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+     box-shadow: var(--shadow-light);
 }
 
 .export-btn:hover {
     background: var(--primary-color);
     color: white;
+     box-shadow: var(--shadow-medium);
 }
+.export-btn:active { opacity: 0.9; }
 
 
-/* Job Card Styling (Detailed Complex Card) */
+/* Job Card Styling (Modernized) */
 .job-card {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow-light);
-    transition: all 0.3s ease;
+    border-radius: var(--radius-medium);
+    padding: 20px; /* Reduced padding */
+    margin-bottom: 15px; /* Reduced margin */
+    box-shadow: var(--shadow-light); /* Subtle shadow */
+    transition: all 0.2s ease;
     position: relative;
-    overflow: hidden; /* For the animated border effect */
-    cursor: grab; /* Indicate it's draggable */
+    overflow: hidden;
+    cursor: grab;
+     display: flex; /* Use flex for overall card layout */
+     flex-direction: column;
 }
 
 .job-card:hover {
-    transform: translateY(-2px) scale(1.005); /* Subtle lift and slight scale */
-    box-shadow: var(--shadow-medium);
+    transform: translateY(-2px) scale(1.005);
+    box-shadow: var(--shadow-medium); /* Deeper shadow on hover */
 }
 
 /* Dragging State for Kanban */
 .job-card.dragging {
-    opacity: 0.6;
-    transform: scale(1.05) rotate(2deg); /* Visual cue when dragging */
+    opacity: 0.7; /* Slightly less opaque */
+    transform: scale(1.05) rotate(1deg); /* More subtle rotation */
     box-shadow: var(--shadow-heavy);
-     cursor: grabbing;
+    cursor: grabbing;
 }
 
-/* Optional: Border color based on deadline or status */
+/* Conditional border color based on deadline or status */
 .job-card::before {
     content: '';
     position: absolute;
@@ -510,325 +536,255 @@ body {
     width: 4px;
     height: 100%;
     background: var(--primary-color); /* Default border color */
-    transform: scaleY(0); /* Start hidden */
-    transition: transform 0.3s ease;
+    transform: scaleY(1); /* Always show border in this style */
+     /* Remove transition: transform 0.3s ease; */
     transform-origin: top;
+     opacity: 0.8; /* Make border slightly less opaque */
 }
+/* Specific left border colors */
+.job-card.status-applied::before { background: var(--info-color); opacity: 1; }
+.job-card.status-screening::before { background: #00bcd4; opacity: 1; } /* Cyan example */
+.job-card.status-interviewing::before { background: var(--warning-color); opacity: 1; }
+.job-card.status-offer::before { background: var(--success-color); opacity: 1; }
+.job-card.status-rejected::before { background: var(--error-color); opacity: 1; }
+.job-card.status-accepted::before { background: var(--success-color); opacity: 1; } /* Darker Green Example */
 
-.job-card:hover::before {
-    transform: scaleY(1); /* Expand border on hover */
-}
 
-/* Conditional border colors based on urgency */
-.job-card.deadline-urgent { border-left-color: var(--error-color); }
-.job-card.deadline-soon { border-left-color: var(--warning-color); }
-/* Maybe color based on status or stage too? */
-.job-card.status-interviewing { border-left-color: var(--warning-color); }
-.job-card.status-offer { border-left-color: var(--success-color); }
-.job-card.status-rejected { border-left-color: var(--error-color); opacity: 0.7;} /* Dim rejected cards */
-.job-card.status-rejected:hover { transform: none; box-shadow: var(--shadow-light); } /* Less emphasis on hover */
+/* Dim rejected cards */
+.job-card.status-rejected { opacity: 0.8; }
+.job-card.status-rejected:hover { transform: none; box-shadow: var(--shadow-light); }
 
 
 .job-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 15px;
+    margin-bottom: 12px; /* Reduced margin */
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px; /* Reduced gap */
 }
 
-.job-title {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 5px;
-}
+.job-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; color: var(--text-primary); }
+.job-company { font-size: 1rem; color: var(--text-secondary); font-weight: 500; }
 
-.job-company {
-    font-size: 1.1rem;
-    color: var(--primary-color); /* Accent color for company */
-    font-weight: 600;
-}
 
 .job-status {
-    padding: 6px 12px;
-    border-radius: 15px;
-    font-size: 0.9rem;
+    padding: 4px 10px; /* Reduced padding */
+    border-radius: 12px; /* Slightly less rounded pill */
+    font-size: 0.85rem;
     font-weight: 600;
     text-transform: uppercase;
-    display: flex;
+    display: inline-flex; /* Use inline-flex */
     align-items: center;
-    gap: 5px; /* Gap for potential icon */
-    flex-shrink: 0; /* Prevent status tag from shrinking */
+    gap: 4px; /* Reduced gap */
+    flex-shrink: 0;
+     border: 1px solid transparent; /* Add subtle border for clarity */
 }
 
-/* Specific status tag colors (must match option values and JS mapping) */
-.status-applied { background: #e3f2fd; color: var(--info-color); } /* Light Blue */
-.status-screening { background: #e0f7fa; color: #00bcd4; } /* Cyan example */
-.status-interviewing { background: #fff3e0; color: var(--warning-color); } /* Light Orange */
-.status-offer { background: #e8f5e8; color: var(--success-color); } /* Light Green */
-.status-rejected { background: #ffebee; color: var(--error-color); } /* Light Red */
-.status-accepted { background: #c8e6c9; color: var(--success-color); } /* Darker Green Example */
+/* Specific status tag colors (match option values and JS mapping) */
+.status-applied { background: var(--info-color); color: white; border-color: rgba(0, 122, 255, 0.2); }
+.status-screening { background: #00bcd4; color: white; border-color: rgba(0, 188, 212, 0.2); }
+.status-interviewing { background: var(--warning-color); color: white; border-color: rgba(255, 149, 0, 0.2); }
+.status-offer { background: var(--success-color); color: white; border-color: rgba(52, 199, 89, 0.2); }
+.status-rejected { background: var(--error-color); color: white; border-color: rgba(255, 59, 48, 0.2); }
+.status-accepted { background: var(--success-color); color: white; border-color: rgba(52, 199, 89, 0.3); }
 
 
 .job-details {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive detail items */
-    gap: 15px;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px dashed var(--border-color); /* Separator */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Adjusted min-width for details */
+    gap: 10px 15px; /* Reduced gap */
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--divider-color); /* Solid, lighter divider */
 }
 
-.job-detail-item {
-    display: flex;
-    flex-direction: column; /* Label above value */
-    gap: 5px;
-}
-
+.job-detail-item { display: flex; flex-direction: column; gap: 3px; }
 .job-label {
-    font-weight: 600;
+    font-weight: 500; /* Slightly lighter weight */
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.8rem; /* Smaller label */
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em; /* Tighter letter spacing */
 }
-
-.job-value {
-    color: var(--text-primary);
-    font-weight: 500;
-     word-break: break-word; /* Prevent long URLs etc. from overflowing */
-}
-.job-value a {
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-.job-value a:hover {
-    text-decoration: underline;
-     color: var(--secondary-color);
-}
+.job-value { color: var(--text-primary); font-weight: 400; /* Normal weight */ word-break: break-word;}
 
 
-/* Deadline Indicator Styling (used within .job-detail-item) */
+/* Deadline Indicator Styling */
 .deadline-indicator {
-    display: inline-flex; /* Allows icon and text side-by-side */
+    display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.9rem;
-    padding: 4px 8px;
+    gap: 4px; /* Reduced gap */
+    font-size: 0.85rem;
+    padding: 3px 8px; /* Reduced padding */
     border-radius: 12px;
     font-weight: 600;
+     /* Specific colors defined directly below, not just rgba backgrounds */
 }
 
-.deadline-urgent { background: rgba(211, 47, 47, 0.1); color: var(--error-color); } /* Red */
-.deadline-soon { background: rgba(245, 124, 0, 0.1); color: var(--warning-color); } /* Orange */
-.deadline-normal { background: rgba(56, 142, 60, 0.1); color: var(--success-color); } /* Green */
+.deadline-urgent { background: var(--error-color); color: white; }
+.deadline-soon { background: var(--warning-color); color: white; }
+.deadline-normal { background: var(--success-color); color: white; }
 
 
 /* Progress Bar Styling */
 .progress-bar {
     width: 100%;
-    height: 8px; /* Taller bar */
-    background: var(--bg-secondary);
-    border-radius: 4px;
+    height: 6px; /* Slightly thinner */
+    background: var(--bg-tertiary);
+    border-radius: 3px;
     overflow: hidden;
-    margin-top: 10px;
-    margin-bottom: 15px;
+    margin-top: 8px;
+    margin-bottom: 12px;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    transition: width 0.5s ease; /* Smooth animation on update */
-    border-radius: 4px;
+    background: var(--primary-color); /* Solid primary color for simplicity */
+    transition: width 0.4s ease; /* Slightly faster animation */
+    border-radius: 3px;
 }
-/* Optional: Progress bar color variations based on stage or overall status */
-/* .progress-bar.progress-complete .progress-fill { background: var(--success-color); } */
-/* .progress-bar.progress-rejected .progress-fill { background: var(--error-color); } */
+/* Optional: Progress bar color variations */
+.progress-bar.progress-complete .progress-fill { background: var(--success-color); }
+.progress-bar.progress-rejected .progress-fill { background: var(--error-color); }
+.progress-bar.progress-offer .progress-fill { background: var(--secondary-color); } /* Example for Offer stage */
 
 
 /* Notes Styling */
 .job-notes {
     background: var(--bg-secondary);
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid var(--primary-color); /* Accent border */
-    font-style: italic;
+    padding: 12px; /* Reduced padding */
+    border-radius: var(--radius-medium);
+    border-left: 4px solid var(--primary-color);
+    font-style: normal; /* Remove italic */
     color: var(--text-secondary);
     margin-top: 10px;
-     word-break: break-word; /* Handle long notes */
+     font-size: 0.95rem;
+     word-break: break-word;
 }
+.job-notes strong { color: var(--text-primary); font-weight: 600;} /* Style strong tag within notes */
+
 
 /* Lists within Job Card (Interviews, Contacts, Documents) */
 .job-interview-list,
 .job-contact-list,
 .job-document-list {
-     margin-top: 15px;
+     margin-top: 12px;
      padding: 10px;
      background: var(--bg-secondary);
-     border: 1px dashed var(--border-color);
-     border-radius: 8px;
+     border: 1px solid var(--border-color);
+     border-radius: var(--radius-medium);
 }
 
 .job-interview-list strong,
 .job-contact-list strong,
 .job-document-list strong {
      color: var(--text-primary);
-     display: block; /* Title on own line */
-     margin-bottom: 5px;
-}
-
-.job-interview-list ul,
-.job-contact-list ul,
-.job-document-list ul {
-     list-style: none;
-     padding: 0;
-     margin: 0;
+     display: block;
+     margin-bottom: 6px;
      font-size: 0.95rem;
+     font-weight: 600;
 }
 
-.job-interview-list li,
-.job-contact-list li,
-.job-document-list li {
-     padding: 4px 0;
-     border-bottom: 1px dotted var(--border-color);
+.job-interview-list ul, .job-contact-list ul, .job-document-list ul {
+     list-style: disc; /* Use default disc list style */
+     padding-left: 20px; /* Indent list items */
+     margin: 0;
+     font-size: 0.9rem;
+}
+
+.job-interview-list li, .job-contact-list li, .job-document-list li {
+     padding: 3px 0;
+     border-bottom: none; /* Remove borders between list items */
      color: var(--text-secondary);
 }
-.job-interview-list li:last-child,
-.job-contact-list li:last-child,
-.job-document-list li:last-child {
-     border-bottom: none;
-}
-.job-interview-list a,
-.job-contact-list a,
-.job-document-list a { /* Style links within these lists */
-     color: var(--primary-color);
-     text-decoration: none;
-}
-.job-interview-list a:hover,
-.job-contact-list a:hover,
-.job-document-list a:hover {
-     text-decoration: underline;
-}
+.job-interview-list a, .job-contact-list a, .job-document-list a { font-weight: 500; }
 
 
 /* Action Buttons Container */
 .job-actions {
     display: flex;
-    gap: 10px; /* Spacing between buttons */
+    gap: 8px; /* Reduced gap */
     margin-top: 15px;
-    flex-wrap: wrap; /* Allow buttons to wrap */
-     justify-content: flex-end; /* Align buttons to the right */
+    flex-wrap: wrap;
+    justify-content: flex-end;
+     padding-top: 12px;
+     border-top: 1px solid var(--divider-color); /* Separator above actions */
 }
 
 /* Individual Action Buttons */
 .action-btn {
-    padding: 6px 12px;
+    padding: 5px 10px; /* Reduced padding */
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--radius-medium);
     background: var(--bg-primary);
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.85rem;
-    display: inline-flex; /* Align icon and text */
+    transition: all 0.2s ease;
+    font-size: 0.8rem; /* Smaller font */
+    display: inline-flex;
     align-items: center;
-    gap: 5px; /* Spacing between icon and text */
-    text-decoration: none; /* Remove default link underline if using <a> */
+    gap: 4px; /* Reduced gap */
+    text-decoration: none;
+     box-shadow: var(--shadow-light);
 }
 
 .action-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: none; /* No vertical transform */
+    box-shadow: var(--shadow-medium); /* Stronger shadow on hover */
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+     border-color: var(--border-color);
 }
-
-/* Specific colors for Edit/Delete */
-.action-btn.edit {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-.action-btn.edit:hover {
-    background: var(--primary-color);
-    color: white;
-}
-
-.action-btn.delete {
-    border-color: var(--error-color);
-    color: var(--error-color);
-}
-
-.action-btn.delete:hover {
-    background: var(--error-color);
-    color: white;
-}
-
-/* Placeholder styling for new action buttons */
-.action-btn.add { /* e.g. 'Add Interview' button in form */
-     border-color: var(--success-color);
-     color: var(--success-color);
-}
-.action-btn.add:hover {
-     background: var(--success-color);
-     color: white;
-}
+.action-btn:active { opacity: 0.9; box-shadow: var(--shadow-light); }
 
 
-/* Empty State Styling (when list is empty) */
+/* Specific colors for Edit/Delete/Add actions */
+.action-btn.edit { border-color: var(--primary-color); color: var(--primary-color); }
+.action-btn.edit:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+
+.action-btn.delete { border-color: var(--error-color); color: var(--error-color); }
+.action-btn.delete:hover { background: var(--error-color); color: white; border-color: var(--error-color); }
+
+.action-btn.add { border-color: var(--success-color); color: var(--success-color); } /* e.g. Add Interview */
+.action-btn.add:hover { background: var(--success-color); color: white; border-color: var(--success-color); }
+
+
+/* Empty State Styling */
 .empty-state {
     text-align: center;
-    padding: 60px 20px;
+    padding: 50px 20px; /* Reduced padding */
     color: var(--text-secondary);
     background: var(--bg-secondary);
-    border: 2px dashed var(--border-color);
-    border-radius: 12px;
+    border: 1px dashed var(--border-color); /* Dashed subtle border */
+    border-radius: var(--radius-medium);
      margin-top: 20px;
+     box-shadow: var(--shadow-light);
 }
 
-.empty-state-icon {
-    font-size: 4rem;
-    margin-bottom: 20px;
-    opacity: 0.3;
-    animation: float 3s ease-in-out infinite; /* Subtle floating icon */
-}
+.empty-state-icon { font-size: 3.5rem; margin-bottom: 15px; opacity: 0.2; animation: float 3s ease-in-out infinite; } /* Smaller icon */
+@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } } /* Less float */
 
-/* Floating Animation */
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-}
-
-.empty-state h3 {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-    color: var(--text-primary);
-}
-
-.empty-state p {
-    font-size: 1.1rem;
-    max-width: 500px; /* Limit paragraph width */
-    margin: 0 auto;
-}
+.empty-state h3 { font-size: 1.4rem; margin-bottom: 8px; color: var(--text-primary); }
+.empty-state p { font-size: 1rem; max-width: 500px; margin: 0 auto; }
 
 
 /* Dashboard View - Stat Grid */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive stat cards */
-    gap: 20px;
-    margin-bottom: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Adjusted min-width */
+    gap: 15px; /* Reduced gap */
+    margin-bottom: 25px;
 }
 
 .stat-card {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 20px;
+    border-radius: var(--radius-medium);
+    padding: 15px; /* Reduced padding */
     text-align: center;
     box-shadow: var(--shadow-light);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
 }
@@ -841,261 +797,213 @@ body {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    background: var(--primary-color); /* Solid color for simplicity */
+     opacity: 0.8;
 }
+.stat-card:hover::before { height: 6px; /* Slightly thicker on hover */ } /* Subtle interaction */
 
-.stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-medium);
-}
 
-.stat-number {
-    font-size: 2.2rem; /* Larger number */
-    font-weight: 700;
-    color: var(--primary-color); /* Use primary color */
-    margin-bottom: 8px;
-}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-medium); }
 
-.stat-label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+.stat-number { font-size: 2rem; /* Slightly smaller */ font-weight: 700; color: var(--primary-color); margin-bottom: 4px; }
+.stat-label { color: var(--text-secondary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; } /* Adjusted label */
 
 /* Dashboard Chart Area */
-.charts-section {
-    margin-top: 40px;
-     /* Basic styling for chart containers if you use div placeholders */
-     .chart-placeholder {
-         width: 100%;
-         /* Height is defined inline in HTML or adjust here */
-         border: 1px solid var(--border-color);
-         border-radius: 10px;
-         padding: 15px;
-         display: flex; /* Center content vertically/horizontally */
-         align-items: center;
-         justify-content: center;
-         color: var(--text-secondary);
-     }
+.charts-section { margin-top: 30px; } /* Reduced margin */
 
-     .charts-section h3 {
-         color: var(--text-primary);
-         margin-bottom: 15px;
-          font-size: 1.5rem;
-     }
+.charts-section h3 { font-size: 1.6rem; margin-bottom: 15px; color: var(--text-primary); border-bottom: 1px solid var(--divider-color); padding-bottom: 8px; } /* Separator under title */
+
+.chart-placeholder {
+    width: 100%;
+    min-height: 250px; /* Adjusted min-height */
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-medium);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+     margin-top: 15px; /* Add margin above chart */
 }
 
 
 /* Kanban Board Layout */
 .kanban-board {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive columns */
-    gap: 20px; /* Spacing between columns */
-    margin-top: 20px;
-    overflow-x: auto; /* Allow horizontal scrolling if columns overflow */
-    padding-bottom: 10px; /* Add padding if horizontal scrollbar is at bottom */
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* Adjusted min-width */
+    gap: 15px; /* Reduced gap */
+    margin-top: 15px;
+    overflow-x: auto;
+    padding-bottom: 10px;
 }
 
 /* Kanban Column */
 .kanban-column {
-    background: var(--bg-secondary); /* Secondary background for columns */
-    border-radius: 12px;
-    padding: 15px;
-    min-height: 500px; /* Minimum height */
-     display: flex;
-     flex-direction: column; /* Header, then cards vertically */
-     gap: 10px; /* Spacing between header and cards, and between cards implicitly */
+    background: var(--bg-secondary);
+    border-radius: var(--radius-medium);
+    padding: 12px; /* Reduced padding */
+    min-height: 450px; /* Reduced min-height */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+     border: 1px solid var(--border-color);
+     box-shadow: var(--shadow-light);
 }
 
 .kanban-header {
     font-weight: 600;
     text-align: center;
-    padding: 10px;
+    padding: 8px 10px; /* Reduced padding */
     background: var(--primary-color);
     color: white;
-    border-radius: 8px;
-    margin-bottom: 5px; /* Smaller margin below header */
+    border-radius: var(--radius-small);
+    margin-bottom: 5px;
     position: relative;
-    flex-shrink: 0; /* Prevent header from shrinking */
+    flex-shrink: 0;
+     font-size: 1rem;
 }
 
 /* Kanban Count Badge */
 .kanban-count {
     position: absolute;
-    top: -5px;
-    right: -5px;
+    top: -8px; /* Adjusted position */
+    right: -8px; /* Adjusted position */
     background: var(--accent-color);
     color: white;
-    border-radius: 50%; /* Circular badge */
-    width: 24px; /* Size */
-    height: 24px;
+    border-radius: 50%;
+    width: 22px; /* Slightly smaller badge */
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     box-shadow: var(--shadow-light);
 }
 
 /* Kanban Cards Container (draggable target) */
 .kanban-cards {
-     flex-grow: 1; /* Allow container to take available space */
-     min-height: 100px; /* Ensure drop target area if empty */
-     padding: 10px; /* Padding for drop target area */
-     border-radius: 8px;
-      /* Optional: Visual cue for dragover */
+     flex-grow: 1;
+     min-height: 80px; /* Reduced min-height */
+     padding: 5px; /* Reduced padding */
+     border-radius: var(--radius-small);
      transition: background-color 0.2s ease;
 }
 
 .kanban-cards.dragover {
-    background-color: rgba(102, 126, 234, 0.1); /* Light primary color overlay */
-     border: 2px dashed var(--primary-color);
+    background-color: rgba(var(--primary-color-rgb, 94, 105, 244), 0.1);
+     border: 1px dashed var(--primary-color); /* Subtle dashed border */
 }
 
-/* Kanban Card Styling (Minimal vs Full Card) */
-/* You might use a simplified card design for Kanban compared to the list view */
-/* Or reuse .job-card but hide/show certain elements */
 
-/* Example of a simplified Kanban card - adjust as needed */
+/* Kanban Card Styling */
 .kanban-card {
     background: var(--bg-primary);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
+    border-radius: var(--radius-small);
+    padding: 10px; /* Reduced padding */
+    margin-bottom: 8px; /* Reduced margin */
     cursor: grab;
-    transition: all 0.2s ease; /* Faster transition for dragging */
-    border-left: 4px solid var(--primary-color); /* Use status color border like job card? */
-    box-shadow: var(--shadow-light); /* Subtle shadow */
+    transition: all 0.2s ease;
+    border-left: 4px solid var(--border-color); /* Default border */
+    box-shadow: var(--shadow-light);
      font-size: 0.9rem;
      color: var(--text-primary);
 }
 
-.kanban-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-medium);
-}
+.kanban-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-medium); }
+.kanban-card.dragging { opacity: 0.7; transform: scale(1.05) rotate(1deg); box-shadow: var(--shadow-heavy); cursor: grabbing; }
 
-.kanban-card.dragging {
-    opacity: 0.6;
-    transform: scale(1.05) rotate(2deg);
-    box-shadow: var(--shadow-heavy);
-    cursor: grabbing;
-}
 
-.kanban-card .kanban-title {
-     font-weight: 600;
-     margin-bottom: 5px;
-     color: var(--text-primary);
-}
+.kanban-card .kanban-title { font-weight: 600; margin-bottom: 4px; color: var(--text-primary); font-size: 1rem;}
+.kanban-card .kanban-company { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;}
+.kanban-card .kanban-date { font-size: 0.8rem; color: var(--text-secondary); opacity: 0.8;}
 
-.kanban-card .kanban-company {
-    font-size: 0.85rem;
-    color: var(--primary-color);
-    margin-bottom: 5px;
-}
-.kanban-card .kanban-date {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
-
-/* Conditional Kanban Card Borders */
+/* Conditional Kanban Card Borders (use same colors as list status tags) */
 .kanban-card.status-applied { border-left-color: var(--info-color); }
 .kanban-card.status-screening { border-left-color: #00bcd4; }
 .kanban-card.status-interviewing { border-left-color: var(--warning-color); }
 .kanban-card.status-offer { border-left-color: var(--success-color); }
-.kanban-card.status-rejected { border-left-color: var(--error-color); opacity: 0.8; }
+.kanban-card.status-rejected { border-left-color: var(--error-color); opacity: 0.8; } /* Dim rejected cards */
+.kanban-card.status-accepted { border-left-color: var(--success-color); }
 
 
 /* Modal Styling */
-.modal {
-    display: none; /* Hidden by default */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7); /* Dark overlay */
-    z-index: 1000; /* Ensure it's on top */
-    backdrop-filter: blur(5px); /* Blurred background */
-    align-items: center; /* Center content */
-    justify-content: center; /* Center content */
-    opacity: 0; /* Start hidden for animation */
-    transition: opacity 0.3s ease;
-}
-
-.modal.active {
-    display: flex; /* Show when active */
-    opacity: 1; /* Fade in */
-}
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); /* Lighter overlay */ z-index: 1000; backdrop-filter: blur(4px); /* Subtle blur */ align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
+.modal.active { display: flex; opacity: 1; }
 
 .modal-content {
     background: var(--bg-primary);
-    padding: 30px;
-    border-radius: 15px;
-    max-width: 500px; /* Max width for modal content */
-    width: 90%; /* Responsive width */
-    max-height: 90vh; /* Limit height */
-    overflow-y: auto; /* Enable scrolling if content overflows */
+    padding: 25px; /* Reduced padding */
+    border-radius: var(--radius-large); /* Larger radius for modal */
+    max-width: 550px; /* Adjusted max width */
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
-    animation: scaleIn 0.3s ease; /* Entrance animation */
+    animation: scaleIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Smoother animation timing */
     color: var(--text-primary);
+     box-shadow: var(--shadow-heavy); /* More prominent shadow */
 }
 
-/* Modal Entrance Animation */
+/* Modal Entrance Animation (Smoother timing) */
 @keyframes scaleIn {
-    from { transform: scale(0.8); opacity: 0; }
+    from { transform: scale(0.95); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
 
 /* Modal Close Button */
 .modal-close {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px; /* Adjusted position */
+    right: 10px; /* Adjusted position */
     background: none;
     border: none;
-    font-size: 1.8rem; /* Larger close button */
+    font-size: 1.5rem;
     cursor: pointer;
     color: var(--text-secondary);
     padding: 5px;
-    transition: color 0.3s ease;
+    transition: color 0.2s ease, transform 0.2s ease; /* Faster transition */
 }
 
-.modal-close:hover {
-    color: var(--text-primary);
-     transform: rotate(90deg); /* Subtle spin */
-}
+.modal-close:hover { color: var(--text-primary); transform: rotate(90deg); }
 
-/* Style buttons/forms within modals if needed */
-.modal-content h3 {
-     color: var(--text-primary);
-     margin-bottom: 20px;
-}
-.modal-content .action-btn {
-     /* Adjust button spacing within modal if needed */
-}
+.modal-content h3 { color: var(--text-primary); margin-bottom: 20px; font-size: 1.6rem; }
 
 
 /* Notification Styling */
+#notificationContainer { /* This container should have fixed positioning in HTML */
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    /* Added styles for the container itself */
+     display: flex;
+     flex-direction: column;
+     align-items: flex-end; /* Stack notifications from the right */
+     gap: 10px; /* Space between notifications */
+     pointer-events: none; /* Allow clicks *through* the container itself */
+     max-width: 95%; /* Prevent overflow on small screens */
+     width: 350px; /* Preferred width */
+}
+
+
 .notification {
-    position: relative; /* Relative to its container (#notificationContainer) */
-    /* Properties applied by JS when creating notification:
-    position: fixed; top, right handled by container style=".."
-    */
+    /* Transition properties handled by JS removing/adding 'show' class */
+    position: relative; /* Needed for internal positioning if any */
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 15px 20px;
+    border-radius: var(--radius-medium);
+    padding: 12px 15px; /* Reduced padding */
     box-shadow: var(--shadow-medium);
-    z-index: 1001; /* Above modals */
+    z-index: 1051; /* Above the container z-index */
     opacity: 0; /* Start hidden */
-    transform: translateX(100%); /* Start off-screen to the right */
-    transition: all 0.3s ease-out; /* Slide and fade in */
-    max-width: 300px; /* Max width for notification */
-    margin-bottom: 10px; /* Space between multiple notifications */
+    transform: translateX(120%); /* Start further off-screen */
+    transition: all 0.3s ease-out; /* Transition for show/hide */
     color: var(--text-primary);
-     min-width: 200px; /* Ensure basic size */
+    min-width: 250px; /* Minimum size */
+    word-break: break-word; /* Handle long messages */
+     pointer-events: auto; /* Allow clicks *on* the notification */
 }
 
 .notification.show {
@@ -1103,136 +1011,112 @@ body {
     transform: translateX(0); /* Slide into view */
 }
 
-/* Notification color coding */
-.notification.success { border-left: 4px solid var(--success-color); }
-.notification.error { border-left: 4px solid var(--error-color); }
-.notification.warning { border-left: 4px solid var(--warning-color); }
-.notification.info { border-left: 4px solid var(--info-color); }
+/* Notification color coding borders */
+.notification.success { border-left: 5px solid var(--success-color); }
+.notification.error { border-left: 5px solid var(--error-color); }
+.notification.warning { border-left: 5px solid var(--warning-color); }
+.notification.info { border-left: 5px solid var(--info-color); }
 
 
 /* Responsive Design Adjustments */
 @media (max-width: 992px) {
     /* Adjust layout for medium screens */
     .form-grid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Allow smaller columns */
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
 
     .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     }
 
     .kanban-board {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Smaller kanban columns */
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
+
+     .job-card { padding: 18px; } /* Slightly less padding */
+     .job-details { gap: 10px 12px; padding-bottom: 10px; margin-bottom: 10px; }
+
 }
 
 @media (max-width: 768px) {
-    .container {
-        margin: 10px;
-        border-radius: 10px;
-    }
+    body { padding: 15px; }
+    .container { margin: 10px; border-radius: var(--radius-large); } /* Keep large radius */
+    .header { padding: 20px; }
+    .header h1 { font-size: 2.2rem; }
+    .header p { font-size: 1rem; }
+    .content { padding: 20px; }
 
-    .header {
-        padding: 20px;
-    }
-
-    .header h1 {
-        font-size: 2rem;
-    }
-
-    .header p {
-        font-size: 1rem;
-    }
-
-    .content {
-        padding: 20px;
-    }
-
-    /* Stack nav buttons vertically */
-    .nav-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    /* Stack controls sections vertically */
-    .controls-section {
-        flex-direction: column;
-        align-items: stretch; /* Stretch to fill width */
-    }
-
-    /* Center control groups within stacked section */
-    .search-filter-controls,
-    .sort-controls,
-    .export-controls {
-        justify-content: center;
-        gap: 10px; /* Tighten gap slightly */
-    }
-     .search-input {
-         min-width: auto; /* Allow shrinking on small screens */
-         width: 100%; /* Take full width if stacked */
-     }
-     .filter-select, .sort-btn {
-         flex-grow: 1; /* Allow filters/sort buttons to grow if needed */
-         text-align: center;
-          justify-content: center;
-     }
+    .nav-buttons { flex-direction: column; gap: 8px; padding: 12px 20px;}
+    .nav-btn { padding: 8px 15px; }
 
 
-    .jobs-header {
-        flex-direction: column;
-        align-items: center; /* Center items when stacked */
-        gap: 10px;
-    }
+    /* Controls section stacked */
+    .controls-section { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+     .search-filter-controls, .sort-controls, .export-controls { justify-content: center; gap: 8px;}
+     .search-input, .filter-select, .sort-btn, .export-btn { width: 100%; text-align: center; justify-content: center; min-width: unset; }
+
+
+    .jobs-header { flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
+     .jobs-header h2 { font-size: 1.6rem; }
+     .jobs-count { padding: 5px 10px; font-size: 0.9rem; min-width: 90px; }
 
     /* Job Card adjustments */
-    .job-card {
-        padding: 20px;
-    }
+    .job-card { padding: 15px; margin-bottom: 12px; }
+     .job-header { flex-direction: column; gap: 8px; margin-bottom: 10px; }
+     .job-title { font-size: 1.1rem; }
+     .job-company { font-size: 0.95rem; }
 
-     .job-details {
-         grid-template-columns: 1fr; /* Stack details vertically */
-         gap: 10px;
-     }
+     .job-details { grid-template-columns: 1fr; gap: 8px; padding-bottom: 8px; margin-bottom: 8px; }
+     .job-label { font-size: 0.75rem; } /* Even smaller labels on mobile */
+     .job-value { font-size: 0.95rem;}
 
-     .job-label { /* Maybe slightly reduce font size or weight on mobile */ }
-
-
-    .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Smaller stat cards */
-        gap: 15px;
-    }
-
-     .stat-number {
-         font-size: 1.8rem; /* Smaller stat numbers */
-     }
+    .progress-bar { height: 5px; margin-top: 6px; margin-bottom: 10px;}
+     .job-notes { padding: 10px; font-size: 0.9rem; margin-top: 8px; }
+     .job-interview-list, .job-contact-list, .job-document-list { margin-top: 10px; padding: 8px; }
+     .job-interview-list strong, .job-contact-list strong, .job-document-list strong { font-size: 0.9rem; margin-bottom: 4px;}
+     .job-interview-list ul, .job-contact-list ul, .job-document-list ul { font-size: 0.85rem; padding-left: 15px;}
+     .job-interview-list li, .job-contact-list li, .job-document-list li { padding: 3px 0;}
 
 
-    /* Stack kanban columns */
-    .kanban-board {
-        grid-template-columns: 1fr;
-    }
+    .job-actions { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 10px; padding-top: 10px; }
+    .action-btn { font-size: 0.8rem; justify-content: center; padding: 6px 12px; }
 
-    /* Adjust modal size */
-    .modal-content {
-        padding: 20px;
-    }
+
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; } /* 2 columns on mobile */
+    .stat-card { padding: 15px; }
+     .stat-number { font-size: 1.6rem; }
+     .stat-label { font-size: 0.8rem; letter-spacing: unset;}
+
+
+     .charts-section h3 { font-size: 1.4rem; }
+     .chart-placeholder { min-height: 200px; padding: 10px; }
+
+    .kanban-board { grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+    .kanban-column { padding: 10px; min-height: 400px; gap: 8px; }
+     .kanban-header { font-size: 1rem; padding: 6px 8px; }
+     .kanban-count { width: 20px; height: 20px; font-size: 0.7rem; top: -6px; right: -6px;}
+     .kanban-cards { padding: 3px;}
+     .kanban-card { padding: 8px; margin-bottom: 6px; }
+     .kanban-card .kanban-title { font-size: 0.9rem; margin-bottom: 3px; }
+     .kanban-card .kanban-company { font-size: 0.8rem; margin-bottom: 3px; }
+     .kanban-card .kanban-date { font-size: 0.75rem;}
+
+
+    .modal-content { padding: 20px; border-radius: var(--radius-large); }
+     .modal-content h3 { font-size: 1.4rem; margin-bottom: 15px;}
+
+    #notificationContainer { width: 90%; /* Adjust width on small screens */ }
+
 }
 
 /* ============================================ */
 /* Accessibility & User Preference Enhancements */
 /* ============================================ */
 
-/* Visually hidden element for screen readers */
+/* Visually hidden element for screen readers (same) */
 .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
 /* Focus states for keyboard navigation */
@@ -1241,99 +1125,122 @@ input:focus,
 select:focus,
 textarea:focus {
     outline: 2px solid var(--primary-color);
-    outline-offset: 2px; /* Offset the outline */
-    /* Add a subtle ring or glow effect for non-blue outlines */
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2); /* Example: glow matching primary-color */
+    outline-offset: 2px;
+    /* Use RGBA color that works in both modes */
+    box-shadow: 0 0 0 3px rgba(94, 105, 244, 0.25); /* Primary color with opacity */
+    border-color: var(--primary-color); /* Ensure border is colored */
 }
-/* Customize focus styles if needed, e.g., for dark mode */
+/* Adjust focus glow slightly for dark mode accent if preferred */
 [data-theme="dark"] button:focus,
 [data-theme="dark"] input:focus,
 [data-theme="dark"] select:focus,
 [data-theme="dark"] textarea:focus {
-    outline-color: var(--accent-color); /* Different focus color in dark mode */
-     box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.3); /* Match accent glow */
+     box-shadow: 0 0 0 3px rgba(139, 148, 247, 0.3); /* Lighter primary for dark mode */
 }
 
 
 /* High contrast mode support */
+/* Use system colors and ensure high contrast for key elements */
 @media (prefers-contrast: high) {
     :root {
-        --border-color: #000000;
-        --text-secondary: #000000;
-         /* Adjust backgrounds or other colors to ensure contrast */
-         --bg-primary: #fff !important; /* Ensure stark contrast backgrounds */
-         --bg-secondary: #eee !important;
+         --border-color: windowtext; /* System border color */
+         --divider-color: windowtext;
+         --text-secondary: windowtext;
     }
 
-    /* Ensure borders are visible */
-    .job-card, .form-group input, .form-group select, .form-group textarea,
-    .filter-select, .search-input, .sort-btn, .export-btn,
-    .stat-card, .kanban-column, .kanban-card, .modal-content {
+     body {
+         background: window !important;
+         color: windowtext !important;
+     }
+
+     /* Ensure backgrounds are contrasting */
+    .container, .content, .stat-card, .modal-content, .job-card {
+         background: canvas !important;
          border: 1px solid !important;
-         border-color: ButtonBorder !important; /* Use system color for max contrast */
+         border-color: windowtext !important;
+         box-shadow: none !important;
+     }
+    .form-container, .bg-secondary, .controls-section, .kanban-column,
+    .job-notes, .job-interview-list, .job-contact-list, .job-document-list,
+    .chart-placeholder {
+         background: canvastext !important; /* Example: inverted background */
+         color: canvas !important;
+         border-color: windowtext !important;
     }
-    .empty-state {
-        border: 2px dashed !important;
-        border-color: ButtonBorder !important;
+     .bg-tertiary { background: buttonface !important; } /* Example */
+
+
+    /* Ensure text is contrasting */
+     h1, h2, h3, strong { color: windowtext !important; }
+     p, span, div, label { color: windowtext !important; }
+     a { color: linktext !important; text-decoration: underline !important; }
+
+     /* Ensure buttons are contrasting and look like buttons */
+    button, .action-btn, .nav-btn {
+         background: buttonface !important;
+         color: buttontext !important;
+         border: 1px solid buttonborder !important;
+         box-shadow: none !important;
+         text-decoration: none !important;
+    }
+     button:hover, .action-btn:hover, .nav-btn:hover {
+         background: highlight !important;
+         color: highlighttext !important;
+         border-color: highlight !important;
+     }
+     button:active, .action-btn:active, .nav-btn:active {
+         background: buttonshadow !important;
+         color: buttontext !important;
+         border-color: buttonborder !important;
+     }
+    .nav-btn.active {
+         background: highlight !important;
+         color: highlighttext !important;
+         border-color: highlight !important;
     }
 
-     /* Ensure text and interactive elements have sufficient contrast */
-    body, .text-primary, .text-secondary, .job-label, .job-value {
-         color: WindowText !important; /* Use system color */
-    }
-    a, button, .nav-btn, .action-btn {
-        color: LinkText !important; /* Use system color for links/buttons */
-         text-decoration: underline !important; /* Ensure links are obvious */
+
+    /* Ensure inputs/selects are clear */
+    input, select, textarea {
+         background: window !important;
+         color: windowtext !important;
+         border: 1px solid windowtext !important;
+         box-shadow: none !important;
+         -webkit-appearance: none !important; /* Remove custom appearance */
+         -moz-appearance: none !important;
+         appearance: none !important;
+         padding: 5px !important;
     }
 
-     /* Make focus more prominent */
+    /* Ensure statuses/badges have high contrast */
+    .job-status, .kanban-header, .kanban-count, .deadline-indicator {
+        background: highlight !important;
+        color: highlighttext !important;
+        border: 1px solid !important;
+        border-color: windowtext !important;
+        box-shadow: none !important;
+    }
+
+
+     /* Remove gradients that might hinder contrast */
+    .header { background: buttonface !important; color: windowtext !important; }
+     .submit-btn { background: highlight !important; color: highlighttext !important; }
+
+     /* More prominent focus ring */
      *:focus {
-         outline: 3px solid Highlight !important;
+         outline: 3px solid windowtext !important;
          outline-offset: 2px !important;
-         box-shadow: none !important; /* Remove custom shadow in favor of system highlight */
+         box-shadow: none !important;
      }
 
-     /* Ensure status/badge colors have high contrast text */
-    .job-status, .kanban-header, .kanban-count, .deadline-indicator,
-    .status-applied, .status-interviewing, .status-offer, .status-rejected,
-    .status-screening, .status-accepted {
-         color: CanvasText !important; /* System text color for guaranteed contrast */
-         border: 1px solid !important;
-         border-color: CanvasText !important;
-         background: none !important; /* Remove low-contrast backgrounds */
-         font-weight: bold !important;
-    }
-    /* Re-add a simple background if needed, but ensure contrast */
-    .status-offer { background: #388e3c !important; color: #fff !important; border-color: #000 !important;} /* Example: Use a solid background but with black border */
-    .status-rejected { background: #d32f2f !important; color: #fff !important; border-color: #000 !important;}
-
-    /* Adjust linear gradients that might lose contrast */
-    .header, .submit-btn, .nav-btn.active, .nav-btn:hover {
-        background: ButtonFace !important; /* Use system button face color */
-        color: ButtonText !important; /* Use system button text color */
-        border: 1px solid ButtonBorder !important;
-        text-shadow: none !important;
-    }
-
-    /* Explicitly set button text */
-    button {
-        color: ButtonText !important;
-    }
-     .theme-toggle {
-         background: ButtonFace !important;
-         color: ButtonText !important;
-     }
 }
 
-
-/* Reduced motion support */
+/* Reduced motion support (same) */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important; /* Greatly reduce or remove animations */
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important; /* Disable smooth scroll */
+        scroll-behavior: auto !important;
     }
 }
