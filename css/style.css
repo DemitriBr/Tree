@@ -1,3 +1,24 @@
+/* Override GitHub's default styles */
+body {
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%) !important;
+    min-height: 100vh !important;
+    color: #2d3561 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#app {
+    background: transparent !important;
+}
+
+/* Force remove any GitHub containers */
+.container-lg,
+.repository-content,
+.Box {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
 /* CSS Variables for Theme */
 :root {
     --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
