@@ -1158,3 +1158,26 @@ body::before {
     from { transform: scale(0); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+/* Performance Mode - Add to the end of your CSS */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    body::before,
+    .particle,
+    .progress-fill::after,
+    .notification::before,
+    #header::before {
+        animation: none !important;
+    }
+}
+
+/* Optional: Reduce blur for better performance */
+.performance-mode .glass-card,
+.performance-mode #applicationForm,
+.performance-mode .modal {
+    backdrop-filter: blur(5px); /* Reduced from 10-20px */
+}
