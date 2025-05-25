@@ -467,3 +467,161 @@ function switchView(viewName) {
         }
     }
 }
+// Delete application from IndexedDB
+function deleteApplicationFromDB(id) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.delete(id);
+        
+        request.onsuccess = () => {
+            console.log('Application deleted successfully');
+            resolve();
+        };
+        
+        request.onerror = () => {
+            reject('Error deleting application from database');
+        };
+    });
+}
+
+// Setup action buttons event listeners using event delegation
+function setupActionButtonsListeners() {
+    const listContainer = document.getElementById('listContainer');
+    
+    if (!listContainer) {
+        console.error('List container not found for action buttons');
+        return;
+    }
+    
+    // Remove any existing listeners to avoid duplicates
+    listContainer.removeEventListener('click', handleActionButtonClick);
+    
+    // Add event delegation listener
+    listContainer.addEventListener('click', handleActionButtonClick);
+}
+
+// Handle action button clicks
+async function handleActionButtonClick(e) {
+    // Check if clicked element or its parent is an action button
+    const deleteBtn = e.target.closest('.delete-btn');
+    const editBtn = e.target.closest('.edit-btn');
+    
+    if (deleteBtn) {
+        e.stopPropagation(); // Prevent card click
+        const applicationId = deleteBtn.dataset.id;
+        
+        // Show confirmation dialog
+        const applicationCard = deleteBtn.closest('.application-card');
+        const jobTitle = applicationCard.querySelector('.job-title').textContent;
+        const companyName = applicationCard.querySelector('.company-info strong').textContent;
+        
+        const confirmDelete = confirm(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`);
+        
+        if (confirmDelete) {
+            try {
+                // Add loading state
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = '⏳';
+                
+                // Delete from database
+                await deleteApplicationFromDB(applicationId);
+                
+                // Animate card removal
+                applicationCard.style.opacity = '0';
+                applicationCard.style.transform = 'translateX(-100%)';
+                
+                setTimeout(() => {
+                    // Re-render the list
+                    renderApplicationsList();
+                }, 300);
+                
+                // Future: Show success notification
+                console.log('Application deleted successfully');
+                
+            } catch (error) {
+                console.error('Error deleting application:', error);
+                // Reset button state
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '🗑️';
+                
+                // Future: Show error notification
+                alert('Failed to delete application. Please try again.');
+            }
+        }
+    } else if (editBtn) {
+        e.stopPropagation(); // Prevent card click
+        const applicationId = editBtn.dataset.id;
+        console.log('Edit button clicked for ID:', applicationId);
+        // Edit functionality will be implemented in Step 8
+    }
+}
+
+// Update the renderApplicationsList function to setup listeners after rendering
+async function renderApplicationsList(applications = null) {
+    const listContainer = document.getElementById('listContainer');
+    
+    if (!listContainer) {
+        console.error('List container not found');
+        return;
+    }
+    
+    // If no applications provided, fetch them
+    if (applications === null) {
+        try {
+            applications = await getAllApplicationsFromDB();
+        } catch (error) {
+            console.error('Error fetching applications:', error);
+            applications = [];
+        }
+    }
+    
+    // Clear existing content
+    listContainer.innerHTML = '';
+    
+    // Show empty state or render applications
+    if (applications.length === 0) {
+        listContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>No applications yet</h3>
+                <p>Start tracking your job applications by clicking "Add Application"</p>
+            </div>
+        `;
+    } else {
+        // Sort by application date (newest first)
+        applications.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
+        
+        // Create and append cards
+        applications.forEach(app => {
+            const card = createApplicationCard(app);
+            listContainer.appendChild(card);
+        });
+        
+        // Setup action button listeners after cards are rendered
+        setupActionButtonsListeners();
+    }
+}
+
+// Update the init function to include action buttons setup
+async function init() {
+    try {
+        await initDB();
+        console.log('Database initialized');
+        
+        // Set up form handling
+        setupApplicationForm();
+        
+        // Set up navigation
+        setupNavButtons();
+        
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize application:', error);
+    }
+}
