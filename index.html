@@ -17,7 +17,7 @@
 
         <!-- Navigation -->
         <nav id="navigation">
-            <button class="nav-btn" data-view="home">Add Application</button>
+            <button class="nav-btn active" data-view="home">Add Application</button>
             <button class="nav-btn" data-view="list">Applications List</button>
             <button class="nav-btn" data-view="dashboard">Dashboard</button>
             <button class="nav-btn" data-view="kanban">Kanban Board</button>
@@ -27,8 +27,93 @@
         <main id="viewContainer">
             <!-- Home View (Add/Edit Application) -->
             <div id="homeView" class="view active">
-                <h2>Add New Application</h2>
-                <!-- Form will be added in Step 4 -->
+                <h2 id="formTitle">Add New Application</h2>
+                <form id="applicationForm">
+                    <!-- Hidden ID field for edit mode -->
+                    <input type="hidden" id="applicationId" name="id">
+                    
+                    <!-- Basic Fields -->
+                    <div class="form-group">
+                        <label for="jobTitle">Job Title *</label>
+                        <input type="text" id="jobTitle" name="jobTitle" required>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="companyName">Company Name *</label>
+                        <input type="text" id="companyName" name="companyName" required>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="applicationDate">Application Date *</label>
+                        <input type="date" id="applicationDate" name="applicationDate" required>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Status *</label>
+                        <select id="status" name="status" required>
+                            <option value="">Select Status</option>
+                            <option value="applied">Applied</option>
+                            <option value="screening">Screening</option>
+                            <option value="interview">Interview</option>
+                            <option value="offer">Offer</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="withdrawn">Withdrawn</option>
+                        </select>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <!-- Additional Fields -->
+                    <div class="form-group">
+                        <label for="deadline">Deadline</label>
+                        <input type="date" id="deadline" name="deadline">
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="url">Job Posting URL</label>
+                        <input type="url" id="url" name="url" placeholder="https://...">
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="salary">Salary Range</label>
+                        <input type="text" id="salary" name="salary" placeholder="e.g., $60,000 - $80,000">
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Location</label>
+                        <input type="text" id="location" name="location" placeholder="e.g., Remote, New York, NY">
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="progressStage">Progress Stage</label>
+                        <select id="progressStage" name="progressStage">
+                            <option value="to-apply">To Apply</option>
+                            <option value="applied">Applied</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="final-stage">Final Stage</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" rows="4" placeholder="Additional notes about this application..."></textarea>
+                        <span class="error-message"></span>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save Application</button>
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    </div>
+                </form>
             </div>
 
             <!-- List View -->
