@@ -1348,3 +1348,97 @@ body[data-theme] * {
 [data-theme="dark"] .form-group select {
     background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23a8c0ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
 }
+/* Dark Mode Text Contrast - STRONG FIX */
+[data-theme="dark"] {
+    /* Force white/light text colors */
+    --text-primary: #ffffff !important;
+    --text-secondary: #e0e0e0 !important;
+    --text-light: #b0b0b0 !important;
+}
+
+/* Target specific elements instead of using * */
+[data-theme="dark"] body,
+[data-theme="dark"] .form-group label,
+[data-theme="dark"] .job-title,
+[data-theme="dark"] .company-info,
+[data-theme="dark"] .detail-value,
+[data-theme="dark"] .empty-state h3,
+[data-theme="dark"] .empty-state p,
+[data-theme="dark"] #formTitle,
+[data-theme="dark"] .nav-btn,
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    color: #ffffff;
+}
+
+/* Keep the important flag only where truly needed */
+[data-theme="dark"] .form-group label {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Specific overrides for better hierarchy */
+[data-theme="dark"] .form-group label {
+    color: #ffffff !important;
+    opacity: 0.95;
+}
+
+[data-theme="dark"] .view h2 {
+    background: linear-gradient(135deg, #a8e6ff 0%, #c3a6ff 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: brightness(1.3) !important;
+}
+
+[data-theme="dark"] #header h1 {
+    background: linear-gradient(135deg, #b8d0ff 0%, #e1a5f7 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    filter: brightness(1.4) !important;
+}
+
+/* Form inputs with light text */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+    color: #a0a0a0 !important;
+}
+
+/* Select dropdown text */
+[data-theme="dark"] select option {
+    background: #2a2a2a !important;
+    color: #ffffff !important;
+}
+
+/* Secondary text elements */
+[data-theme="dark"] .detail-label,
+[data-theme="dark"] .location,
+[data-theme="dark"] .progress-label,
+[data-theme="dark"] .notes-preview {
+    color: #c0c0c0 !important;
+}
+
+/* Navigation buttons */
+[data-theme="dark"] .nav-btn {
+    color: #ffffff !important;
+}
+
+/* Error messages should remain red but visible */
+[data-theme="dark"] .error-message {
+    color: #ff6b6b !important;
+}
