@@ -3,365 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Tracker Pro</title>
-    <!-- Link to your CSS file -->
+    <title>Job Application Tracker</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <!-- Dark Mode Toggle (CSS handles appearance, JS handles logic) -->
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-                🌙 Dark Mode
-            </button>
-            <h1>Job Application Tracker Pro</h1>
-            <p>Advanced job application management with analytics and insights</p>
+    <!-- Skip to Content Link for Accessibility -->
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Job Tracker Pro</div>
+            <nav class="nav-menu" role="navigation" aria-label="Main navigation">
+                <button class="nav-btn active" data-view="dashboard" aria-current="page">
+                    <span aria-hidden="true">📊</span> Dashboard
+                </button>
+                <button class="nav-btn" data-view="applications">
+                    <span aria-hidden="true">📋</span> Applications
+                </button>
+                <button class="nav-btn" data-view="kanban">
+                    <span aria-hidden="true">📌</span> Kanban Board
+                </button>
+                <button class="nav-btn" data-view="add-edit">
+                    <span aria-hidden="true">➕</span> Add New
+                </button>
+            </nav>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
         </div>
+    </header>
 
-        <!-- Navigation Buttons -->
-        <div class="nav-buttons" role="navigation" aria-label="Main navigation">
-            <button class="nav-btn active" id="homeBtn" aria-pressed="true">
-                <span aria-hidden="true">📝</span> Add Application
-            </button>
-            <button class="nav-btn" id="listBtn" aria-pressed="false">
-                <span aria-hidden="true">📋</span> Applications
-            </button>
-            <button class="nav-btn" id="dashboardBtn" aria-pressed="false">
-                <span aria-hidden="true">📊</span> Dashboard
-            </button>
-            <button class="nav-btn" id="kanbanBtn" aria-pressed="false">
-                <span aria-hidden="true">📌</span> Kanban Board
-            </button>
-             <!-- Add Export/Import or Settings buttons later if needed -->
-        </div>
-
-        <div class="content">
-            <!-- ============================================ -->
-            <!-- Home View - Add/Edit Application Form -->
-            <!-- ============================================ -->
-            <div id="homeView" class="view active">
-                <div class="form-container">
-                    <h2 id="formTitle">Add New Application</h2>
-                    <form id="applicationForm" novalidate>
-                        <!-- Hidden input for storing application ID during editing -->
-                        <input type="hidden" id="applicationId" name="applicationId" value="">
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="jobTitle" class="required">Job Title</label>
-                                <input type="text" id="jobTitle" name="jobTitle" required placeholder="e.g. Software Developer">
-                                <!-- Add error message area for validation later -->
-                                <div id="jobTitle-error" class="error-message" role="alert"></div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="companyName" class="required">Company Name</label>
-                                <input type="text" id="companyName" name="companyName" required placeholder="e.g. Google">
-                                <div id="companyName-error" class="error-message" role="alert"></div>
-                            </div>
-                        </div>
-
-                         <div class="form-grid">
-                            <div class="form-group">
-                                <label for="applicationDate" class="required">Application Date</label>
-                                <input type="date" id="applicationDate" name="applicationDate" required>
-                                 <div id="applicationDate-error" class="error-message" role="alert"></div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="deadline">Application Deadline</label>
-                                <input type="date" id="deadline" name="deadline">
-                                <!-- Add deadline help/warning text area -->
-                                 <div id="deadline-help" class="deadline-warning" role="alert"></div>
-                            </div>
-                         </div>
-
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="status" class="required">Current Status</label>
-                                <select id="status" name="status" required>
-                                    <option value="">Select Status</option>
-                                    <option value="applied">Applied</option>
-                                    <option value="screening">Screening</option>
-                                    <option value="interviewing">Interviewing</option>
-                                    <option value="offer">Offer</option>
-                                    <option value="rejected">Rejected</option>
-                                     <!-- Add more status options if needed, e.g. 'accepted', 'closed' -->
-                                </select>
-                                 <div id="status-error" class="error-message" role="alert"></div>
-                            </div>
-
-                             <div class="form-group">
-                                 <label for="progressStage">Progress Stage</label>
-                                  <select id="progressStage" name="progressStage">
-                                      <option value="">Select Stage (Optional)</option>
-                                      <!-- Options populated by JS or keep simple like status -->
-                                      <!-- Example: -->
-                                      <option value="Application Sent">Application Sent</option>
-                                      <option value="Under Review">Under Review</option>
-                                      <option value="Interview 1">Interview 1</option>
-                                       <option value="Interview 2">Interview 2</option>
-                                       <option value="Final Interview">Final Interview</option>
-                                       <option value="Assessment">Assessment</option>
-                                       <option value="References Check">References Check</option>
-                                       <option value="Offer Received">Offer Received</option>
-                                       <option value="Offer Accepted">Offer Accepted</option>
-                                       <option value="Rejected">Rejected</option>
-                                  </select>
-                             </div>
-                        </div>
-
-
-                        <div class="form-grid">
-                             <div class="form-group">
-                                 <label for="jobPostingUrl">Job Posting URL</label>
-                                 <input type="url" id="jobPostingUrl" name="jobPostingUrl" placeholder="e.g. https://example.com/job/123">
-                             </div>
-
-                              <div class="form-group">
-                                 <label for="salary">Salary / Compensation</label>
-                                 <input type="text" id="salary" name="salary" placeholder="e.g. $120,000 USD or Negotiable">
-                             </div>
-                        </div>
-
-                         <div class="form-group">
-                             <label for="location">Location</label>
-                             <input type="text" id="location" name="location" placeholder="e.g. New York, NY (Remote)">
-                         </div>
-
-                         <div class="form-group">
-                             <label for="notes">Notes</label>
-                             <textarea id="notes" name="notes" placeholder="Additional notes about this application..."></textarea>
-                         </div>
-
-                        <!-- ============================================ -->
-                        <!-- Placeholders for New Features UI (collapsed initially) -->
-                        <!-- Implement Accordions/Modals/Dedicated sections for these later -->
-                        <!-- ============================================ -->
-
-                        {/* Removed style attribute from this div */}
-                        <div class="new-features-sections">
-                             {/* Removed style attribute from this h3 */}
-                             <h3>Additional Details</h3>
-
-                             <div class="form-group">
-                                 <label>Interviews</label>
-                                  <div id="interviewList" class="data-list-preview"></div>
-                                  <button type="button" id="addInterviewBtn" class="action-btn">Add Interview</button> {/* Modal/sub-form trigger */}
-                             </div>
-
-                              <div class="form-group">
-                                 <label>Contacts</label>
-                                  <div id="contactList" class="data-list-preview"></div>
-                                  <button type="button" id="addContactBtn" class="action-btn">Add Contact</button> {/* Modal/sub-form trigger */}
-                             </div>
-
-                               <div class="form-group">
-                                 <label>Documents</label>
-                                  <div id="documentList" class="data-list-preview"></div>
-                                  <button type="button" id="addDocumentBtn" class="action-btn">Add Document (Metadata)</button> {/* Modal/sub-form trigger */}
-                                  {/* Could add file input here but storing content is complex */}
-                             </div>
-                        </div>
-
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="submit-btn">Add Application</button>
-                    </form>
+    <!-- Main Content -->
+    <main id="main-content" class="main-container">
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view active">
+            <h1>Dashboard</h1>
+            
+            <!-- Statistics Cards -->
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalApplications">0</div>
+                    <div class="stat-label">Total Applications</div>
                 </div>
-            </div> {/* End #homeView */}
+                <div class="stat-card">
+                    <div class="stat-value" id="interviewCount">0</div>
+                    <div class="stat-label">Interviews Scheduled</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="offerCount">0</div>
+                    <div class="stat-label">Offers Received</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="responseRate">0%</div>
+                    <div class="stat-label">Response Rate</div>
+                </div>
+            </div>
 
-            <!-- ============================================ -->
-            <!-- List View - All Applications -->
-            <!-- ============================================ -->
-            <div id="listView" class="view">
-                <div class="jobs-container">
-                    <div class="jobs-header">
-                        <h2 >Your Applications</h2>
-                        <div class="jobs-count" id="jobsCount">0 Applications</div>
+            <!-- Charts -->
+            <div class="chart-container">
+                <h3>Application Status Distribution</h3>
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>Application Timeline</h3>
+                <canvas id="timelineChart" width="800" height="300"></canvas>
+            </div>
+
+            <!-- Upcoming Interviews -->
+            <div class="card">
+                <h3>Upcoming Interviews</h3>
+                <div id="upcomingInterviews" class="interview-list">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <h3>Recent Activity</h3>
+                <div id="recentActivity">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications List View -->
+        <div id="applications-view" class="view">
+            <h1>My Applications</h1>
+            
+            <!-- Data Actions -->
+            <div class="data-actions">
+                <button class="btn btn-secondary" id="exportBtn">
+                    <span aria-hidden="true">📥</span> Export Data
+                </button>
+                <button class="btn btn-secondary" id="importBtn">
+                    <span aria-hidden="true">📤</span> Import Data
+                </button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="search-filter-bar">
+                <input type="text" class="form-control search-input" id="searchInput" 
+                       placeholder="Search applications..." aria-label="Search applications">
+                
+                <select class="form-control filter-select" id="statusFilter" aria-label="Filter by status">
+                    <option value="">All Status</option>
+                    <option value="applied">Applied</option>
+                    <option value="interview">Interview</option>
+                    <option value="offer">Offer</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="withdrawn">Withdrawn</option>
+                </select>
+                
+                <select class="form-control filter-select" id="sortBy" aria-label="Sort applications">
+                    <option value="dateDesc">Date (Newest)</option>
+                    <option value="dateAsc">Date (Oldest)</option>
+                    <option value="company">Company Name</option>
+                    <option value="deadline">Deadline</option>
+                </select>
+            </div>
+
+            <!-- Applications Grid -->
+            <div id="applicationsList" class="applications-grid">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Kanban Board View -->
+        <div id="kanban-view" class="view">
+            <h1>Application Pipeline</h1>
+            
+            <!-- Progress Tracker -->
+            <div class="progress-tracker" id="progressTracker">
+                <div class="progress-line"></div>
+                <div class="progress-line-filled" id="progressLineFilled"></div>
+                <!-- Progress steps dynamically generated -->
+            </div>
+
+            <!-- Kanban Board -->
+            <div class="kanban-board" id="kanbanBoard">
+                <!-- Kanban columns dynamically generated -->
+            </div>
+        </div>
+
+        <!-- Add/Edit Application View -->
+        <div id="add-edit-view" class="view">
+            <h1 id="formTitle">Add New Application</h1>
+            
+            <form id="applicationForm" novalidate>
+                <!-- Basic Information -->
+                <div class="form-section card">
+                    <h3>Basic Information</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="company">Company Name *</label>
+                            <input type="text" class="form-control" id="company" required 
+                                   aria-required="true" aria-describedby="companyError">
+                            <span id="companyError" class="error-message" role="alert"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="position">Position Title *</label>
+                            <input type="text" class="form-control" id="position" required
+                                   aria-required="true" aria-describedby="positionError">
+                            <span id="positionError" class="error-message" role="alert"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="location">Location</label>
+                            <input type="text" class="form-control" id="location" 
+                                   placeholder="City, State/Country">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="type">Job Type</label>
+                            <select class="form-control" id="type">
+                                <option value="full-time">Full-time</option>
+                                <option value="part-time">Part-time</option>
+                                <option value="contract">Contract</option>
+                                <option value="internship">Internship</option>
+                                <option value="freelance">Freelance</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="salary">Salary Range</label>
+                            <input type="text" class="form-control" id="salary" 
+                                   placeholder="e.g., $50,000 - $70,000">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="url">Job Posting URL</label>
+                            <input type="url" class="form-control" id="url" 
+                                   placeholder="https://example.com/job">
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Search, Filter, Sort Controls Placeholder -->
-                     <div class="controls-section">
-                         <div class="search-filter-controls">
-                             <input type="text" id="searchInput" class="search-input" placeholder="Search Company, Title, Notes...">
-                             <select id="statusFilter" class="filter-select" aria-label="Filter by status">
-                                 <option value="">All Statuses</option>
-                                  <!-- Options will match status field from form, maybe dynamically populated -->
-                                  <option value="applied">Applied</option>
-                                   <option value="screening">Screening</option>
-                                  <option value="interviewing">Interviewing</option>
-                                  <option value="offer">Offer</option>
-                                  <option value="rejected">Rejected</option>
-                                   <!-- Add more status options if needed -->
-                             </select>
-                             <select id="dateFilter" class="filter-select" aria-label="Filter by date range">
-                                 <option value="">Any Date</option>
-                                  <option value="last-7-days">Last 7 Days</option>
-                                  <option value="last-30-days">Last 30 Days</option>
-                                   <option value="this-month">This Month</option>
-                                   <option value="this-year">This Year</option>
-                             </select>
-                              <button id="resetFiltersBtn" class="action-btn">Reset Filters</button>
-                         </div>
-                         <div class="sort-controls">
-                             <span>Sort by:</span>
-                              <button id="sortDateBtn" class="sort-btn" data-sort="applicationDate" data-order="desc" aria-label="Sort by application date descending">Date <span class="sort-arrow">↓</span></button>
-                              <button id="sortCompanyBtn" class="sort-btn" data-sort="companyName" data-order="asc" aria-label="Sort by company name ascending">Company <span class="sort-arrow"></span></button>
-                              <button id="sortStatusBtn" class="sort-btn" data-sort="status" data-order="asc" aria-label="Sort by status ascending">Status <span class="sort-arrow"></span></button>
-                         </div>
-                     </div>
+                <!-- Application Details -->
+                <div class="form-section card">
+                    <h3>Application Details</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="dateApplied">Date Applied *</label>
+                            <input type="date" class="form-control" id="dateApplied" required
+                                   aria-required="true">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="deadline">Application Deadline</label>
+                            <input type="date" class="form-control" id="deadline">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="status">Status *</label>
+                            <select class="form-control" id="status" required aria-required="true">
+                                <option value="applied">Applied</option>
+                                <option value="interview">Interview</option>
+                                <option value="offer">Offer</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="withdrawn">Withdrawn</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stage">Progress Stage</label>
+                            <select class="form-control" id="stage">
+                                <option value="application-sent">Application Sent</option>
+                                <option value="under-review">Under Review</option>
+                                <option value="phone-screen">Phone Screen</option>
+                                <option value="interview-1">Interview Round 1</option>
+                                <option value="interview-2">Interview Round 2</option>
+                                <option value="interview-final">Final Interview</option>
+                                <option value="reference-check">Reference Check</option>
+                                <option value="offer-negotiation">Offer Negotiation</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group form-control-full">
+                            <label for="notes">Notes</label>
+                            <textarea class="form-control" id="notes" rows="4" 
+                                      placeholder="Add any notes about this application..."></textarea>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Interview Information -->
+                <div class="form-section card">
+                    <h3>Interview Information</h3>
+                    <div id="interviewsContainer">
+                        <!-- Dynamic interview fields -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-small" id="addInterviewBtn">
+                        <span aria-hidden="true">➕</span> Add Interview
+                    </button>
+                </div>
 
-                    <div id="jobsList" class="jobs-list">
-                         <!-- Job application cards will be dynamically inserted here -->
-                         <!-- Empty state will also be inserted here when needed -->
+                <!-- Contact Information -->
+                <div class="form-section card">
+                    <h3>Contact Information</h3>
+                    <div id="contactsContainer">
+                        <!-- Dynamic contact fields -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-small" id="addContactBtn">
+                        <span aria-hidden="true">➕</span> Add Contact
+                    </button>
+                </div>
 
-                        {/* Example Job Card (HTML Structure - JS will generate this) */}
-                        <!--
-                        <div class="job-card" data-id="some-unique-id" draggable="true">
-                             <div class="job-header"> ... title, company, status ... </div>
-                             <div class="job-details">
-                                  <div class="job-detail-item">... Date ...</div>
-                                   <div class="job-detail-item">... Deadline ...</div>
-                                   <div class="job-detail-item">... Location ...</div>
-                                   <div class="job-detail-item">... Salary ...</div>
-                                   <div class="job-detail-item">... Stage ...</div>
-                                   <div class="job-detail-item">... Link ...</div>
-                             </div>
-                            <div class="progress-bar">... fill ...</div>
-                             <div class="job-notes">... notes ...</div>
-                            <div class="job-interview-list">... interviews ...</div>
-                             <div class="job-contact-list">... contacts ...</div>
-                             <div class="job-actions">
-                                 <button class="action-btn edit" data-id="...">✏️ Edit</button>
-                                 <button class="action-btn delete" data-id="...">🗑️ Delete</button>
-                                 // Add more action buttons here
-                             </div>
-                         </div>
-                         -->
+                <!-- Document Attachments -->
+                <div class="form-section card">
+                    <h3>Document Attachments</h3>
+                    <div id="documentsContainer" class="document-list">
+                        <!-- Dynamic document list -->
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-small" id="addDocumentBtn">
+                        <span aria-hidden="true">📎</span> Add Document Reference
+                    </button>
+                </div>
 
-                    </div> {/* End #jobsList */}
-                </div> {/* End .jobs-container */}
-            </div> {/* End #listView */}
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <span aria-hidden="true">💾</span> Save Application
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
 
-            <!-- ============================================ -->
-            <!-- Dashboard View - Stats and Charts -->
-            <!-- ============================================ -->
-            <div id="dashboardView" class="view"> {/* Dashboard view container */}
-                 {/* Removed style attribute from this h2 */}
-                 <h2>Dashboard & Analytics</h2>
-                 <div class="stats-grid">
-                     <!-- Stat cards will be dynamically populated -->
-                     <div class="stat-card">
-                         <div class="stat-number" id="totalAppsStat">-</div>
-                         <div class="stat-label">Total Applications</div>
-                     </div>
-                      <div class="stat-card">
-                         <div class="stat-number" id="appliedStat">-</div>
-                         <div class="stat-label">Applied</div>
-                     </div>
-                      <div class="stat-card">
-                         <div class="stat-number" id="interviewingStat">-</div>
-                         <div class="stat-label">Interviewing</div>
-                     </div>
-                       <div class="stat-card">
-                         <div class="stat-number" id="offerStat">-</div>
-                         <div class="stat-label">Offers Received</div>
-                     </div>
-                      <div class="stat-card">
-                         <div class="stat-number" id="rejectedStat">-</div>
-                         <div class="stat-label">Rejected</div>
-                     </div>
-                     <!-- Add more stats as needed: Success Rate, Avg Response Time, etc. -->
-                 </div>
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal" role="dialog" aria-labelledby="deleteModalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="deleteModalTitle">Confirm Delete</h2>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <p>Are you sure you want to delete this application? This action cannot be undone.</p>
+            <div class="form-actions">
+                <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
 
-                 {/* Removed style attribute from this div */}
-                 <div class="charts-section">
-                     {/* Chart placeholders - will use <canvas> or SVG generated by JS */}
-                     {/* <canvas id="statusDistributionChart"></canvas> */}
-                     {/* <canvas id="applicationsOverTimeChart"></canvas> */}
-                      {/* Removed style attribute from this h3 */}
-                      <h3>Application Status Distribution</h3>
-                       {/* Removed style attribute from this div */}
-                       <div id="statusChart" class="chart-placeholder"> {/* Placeholder div */}
-                          {/* Chart rendered here */}
-                      </div>
-
-                      {/* Removed style attribute from this h3 */}
-                      <h3>Applications Over Time</h3>
-                        {/* Removed style attribute from this div */}
-                        <div id="overTimeChart" class="chart-placeholder"> {/* Placeholder div */}
-                          {/* Chart rendered here */}
-                      </div>
-                      {/* Add Application Timeline placeholder */}
-                 </div>
-             </div> {/* End #dashboardView */}
-
-            <!-- ============================================ -->
-            <!-- Kanban Board View -->
-            <!-- ============================================ -->
-            <div id="kanbanView" class="view"> {/* Kanban view container */}
-                 {/* Removed style attribute from this h2 */}
-                 <h2>Kanban Board</h2>
-                 <div class="kanban-board">
-                     {/* Kanban columns will be dynamically generated or pre-defined here */}
-                      {/* Example Column Structure - JS will manage content */}
-                     <!--
-                      <div class="kanban-column" id="column-applied" data-status="applied" data-stage="applied">
-                         <div class="kanban-header">Applied <span class="kanban-count">0</span></div>
-                         <div class="kanban-cards" data-status="applied" data-stage="applied">
-                             // Job cards will be dragged/dropped here
-                         </div>
-                     </div>
-                      <div class="kanban-column" id="column-interviewing" data-status="interviewing" data-stage="interviewing">
-                         <div class="kanban-header">Interviewing <span class="kanban-count">0</span></div>
-                         <div class="kanban-cards" data-status="interviewing" data-stage="interviewing"></div>
-                     </div>
-                     -->
-                 </div>
-            </div> {/* End #kanbanView */}
-            <!-- Add more view divs here as needed -->
-
-        </div> {/* End .content */}
-
-         <!-- ============================================ -->
-         <!-- Modals (Hidden initially) -->
-         <!-- ============================================ -->
-         <div id="editModal" class="modal" aria-hidden="true"> {/* Or use one generic modal and change content */}
-             <div class="modal-content">
-                 <button class="modal-close" aria-label="Close modal">×</button>
-                 <h3>Edit Application Details</h3>
-                 {/* Re-use the form or include a simplified edit form here */}
-                  <p>Modal content goes here.</p> {/* Placeholder */}
-                  {/* For interview/contact/document add/edit modals */}
-             </div>
-         </div>
-
-         <div id="confirmModal" class="modal" aria-hidden="true">
-             <div class="modal-content">
-                 <button class="modal-close" aria-label="Close modal">×</button>
-                 <h3>Confirm Action</h3>
-                 <p id="confirmMessage">Are you sure you want to proceed?</p>
-                  <button id="confirmYesBtn" class="action-btn">Yes</button>
-                 <button id="confirmNoBtn" class="action-btn">No</button>
-             </div>
-         </div>
-
-
-        <!-- ============================================ -->
-        <!-- Notifications (Hidden initially, appears via JS) -->
-        <!-- ============================================ -->
-        {/* Removed style attribute - now handled in CSS file for #notificationContainer */}
-         <div id="notificationContainer">
-             {/* Notifications will be injected here by JS */}
-             <!-- Example: <div class="notification success">Application added successfully!</div> -->
-         </div>
-
-
-    </div> {/* End .container */}
-
-    <!-- Link to your JavaScript file -->
     <script src="script.js"></script>
 </body>
 </html>
