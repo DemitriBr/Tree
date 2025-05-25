@@ -870,3 +870,64 @@ function resetForm() {
         formTitle.textContent = 'Add New Application';
     }
 }
+// Dark Mode Management
+function setupDarkModeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    
+    // Check for saved theme preference or default to light
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', currentTheme);
+    updateThemeToggleButton(currentTheme);
+    
+    // Add click listener to theme toggle
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            // Update theme
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleButton(newTheme);
+            
+            // Add transition class for smooth theme change
+            body.style.transition = 'background 0.3s ease';
+            setTimeout(() => {
+                body.style.transition = '';
+            }, 300);
+        });
+    }
+}
+
+// Update theme toggle button appearance
+function updateThemeToggleButton(theme) {
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+        themeToggle.setAttribute('aria-label', 
+            theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
+        );
+    }
+}
+
+// Update the init function to include dark mode setup
+async function init() {
+    try {
+        await initDB();
+        console.log('Database initialized');
+        
+        // Set up form handling
+        setupApplicationForm();
+        
+        // Set up navigation
+        setupNavButtons();
+        
+        // Set up dark mode toggle
+        setupDarkModeToggle();
+        
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize application:', error);
+    }
+}
