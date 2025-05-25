@@ -625,3 +625,248 @@ async function init() {
         console.error('Failed to initialize application:', error);
     }
 }
+// Get a single application from IndexedDB by ID
+function getApplicationFromDB(id) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.get(id);
+        
+        request.onsuccess = () => {
+            if (request.result) {
+                resolve(request.result);
+            } else {
+                reject('Application not found');
+            }
+        };
+        
+        request.onerror = () => {
+            reject('Error fetching application from database');
+        };
+    });
+}
+
+// Load application data into form for editing
+async function loadApplicationForEdit(applicationId) {
+    try {
+        // Fetch the application data
+        const application = await getApplicationFromDB(applicationId);
+        console.log('Loading application for edit:', application);
+        
+        // Update form title
+        const formTitle = document.getElementById('formTitle');
+        if (formTitle) {
+            formTitle.textContent = 'Edit Application';
+        }
+        
+        // Populate form fields
+        document.getElementById('applicationId').value = application.id;
+        document.getElementById('jobTitle').value = application.jobTitle || '';
+        document.getElementById('companyName').value = application.companyName || '';
+        document.getElementById('applicationDate').value = application.applicationDate || '';
+        document.getElementById('status').value = application.status || '';
+        document.getElementById('deadline').value = application.deadline || '';
+        document.getElementById('url').value = application.url || '';
+        document.getElementById('salary').value = application.salary || '';
+        document.getElementById('location').value = application.location || '';
+        document.getElementById('progressStage').value = application.progressStage || 'to-apply';
+        document.getElementById('notes').value = application.notes || '';
+        
+        // Switch to home view
+        switchView('home');
+        
+        // Update navigation active state
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.view === 'home') {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Focus on the job title field
+        document.getElementById('jobTitle').focus();
+        
+    } catch (error) {
+        console.error('Error loading application for edit:', error);
+        alert('Failed to load application for editing');
+    }
+}
+
+// Update application in IndexedDB
+function updateApplicationInDB(applicationData) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        
+        // Update the timestamp
+        applicationData.updatedAt = new Date().toISOString();
+        
+        const request = objectStore.put(applicationData);
+        
+        request.onsuccess = () => {
+            console.log('Application updated successfully');
+            resolve(applicationData);
+        };
+        
+        request.onerror = () => {
+            reject('Error updating application in database');
+        };
+    });
+}
+
+// Update the handleActionButtonClick function to handle edit button
+async function handleActionButtonClick(e) {
+    // Check if clicked element or its parent is an action button
+    const deleteBtn = e.target.closest('.delete-btn');
+    const editBtn = e.target.closest('.edit-btn');
+    
+    if (deleteBtn) {
+        e.stopPropagation();
+        const applicationId = deleteBtn.dataset.id;
+        
+        // Show confirmation dialog
+        const applicationCard = deleteBtn.closest('.application-card');
+        const jobTitle = applicationCard.querySelector('.job-title').textContent;
+        const companyName = applicationCard.querySelector('.company-info strong').textContent;
+        
+        const confirmDelete = confirm(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`);
+        
+        if (confirmDelete) {
+            try {
+                // Add loading state
+                deleteBtn.disabled = true;
+                deleteBtn.textContent = '⏳';
+                
+                // Delete from database
+                await deleteApplicationFromDB(applicationId);
+                
+                // Animate card removal
+                applicationCard.style.opacity = '0';
+                applicationCard.style.transform = 'translateX(-100%)';
+                
+                setTimeout(() => {
+                    // Re-render the list
+                    renderApplicationsList();
+                }, 300);
+                
+                console.log('Application deleted successfully');
+                
+            } catch (error) {
+                console.error('Error deleting application:', error);
+                // Reset button state
+                deleteBtn.disabled = false;
+                deleteBtn.textContent = '🗑️';
+                alert('Failed to delete application. Please try again.');
+            }
+        }
+    } else if (editBtn) {
+        e.stopPropagation();
+        const applicationId = editBtn.dataset.id;
+        console.log('Edit button clicked for ID:', applicationId);
+        
+        // Load the application for editing
+        await loadApplicationForEdit(applicationId);
+    }
+}
+
+// Update the handleFormSubmit function to handle both add and edit modes
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    console.log('Form submitted');
+    
+    const formData = new FormData(e.target);
+    const existingId = formData.get('id');
+    
+    try {
+        if (existingId) {
+            // Edit mode - get existing application to preserve arrays
+            const existingApplication = await getApplicationFromDB(existingId);
+            
+            const applicationData = {
+                ...existingApplication, // Preserve existing data (arrays, etc.)
+                id: existingId,
+                jobTitle: formData.get('jobTitle'),
+                companyName: formData.get('companyName'),
+                applicationDate: formData.get('applicationDate'),
+                status: formData.get('status'),
+                deadline: formData.get('deadline') || null,
+                url: formData.get('url') || '',
+                salary: formData.get('salary') || '',
+                location: formData.get('location') || '',
+                progressStage: formData.get('progressStage') || 'to-apply',
+                notes: formData.get('notes') || '',
+                updatedAt: new Date().toISOString()
+            };
+            
+            await updateApplicationInDB(applicationData);
+            console.log('Application updated successfully');
+            
+        } else {
+            // Add mode - create new application
+            const applicationData = {
+                id: generateId(),
+                jobTitle: formData.get('jobTitle'),
+                companyName: formData.get('companyName'),
+                applicationDate: formData.get('applicationDate'),
+                status: formData.get('status'),
+                deadline: formData.get('deadline') || null,
+                url: formData.get('url') || '',
+                salary: formData.get('salary') || '',
+                location: formData.get('location') || '',
+                progressStage: formData.get('progressStage') || 'to-apply',
+                notes: formData.get('notes') || '',
+                interviewDates: [],
+                contacts: [],
+                documents: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            await addApplicationToDB(applicationData);
+            console.log('Application saved successfully');
+        }
+        
+        // Reset form and switch to list view
+        resetForm();
+        switchView('list');
+        
+        // Update nav button active states
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.view === 'list') {
+                btn.classList.add('active');
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error saving application:', error);
+        alert('Failed to save application. Please try again.');
+    }
+}
+
+// Update resetForm to ensure it clears the ID field
+function resetForm() {
+    console.log('Resetting form');
+    const form = document.getElementById('applicationForm');
+    const formTitle = document.getElementById('formTitle');
+    
+    if (form) {
+        form.reset();
+        // Explicitly clear the hidden ID field
+        document.getElementById('applicationId').value = '';
+    }
+    
+    if (formTitle) {
+        formTitle.textContent = 'Add New Application';
+    }
+}
