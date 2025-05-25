@@ -1181,3 +1181,51 @@ body::before {
 .performance-mode .modal {
     backdrop-filter: blur(5px); /* Reduced from 10-20px */
 }
+/* Theme Transition - Add to the end of your CSS */
+body[data-theme] {
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+body[data-theme] * {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+/* Dark mode specific enhancements */
+[data-theme="dark"] .glass-card {
+    background: rgba(30, 30, 30, 0.8);
+}
+
+[data-theme="dark"] #applicationForm {
+    background: rgba(30, 30, 30, 0.9);
+}
+
+[data-theme="dark"] .application-card::after {
+    background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
+}
+
+[data-theme="dark"] .empty-state {
+    background: rgba(30, 30, 30, 0.6);
+}
+
+/* Theme toggle button enhancement */
+#themeToggle {
+    font-size: 1.5rem;
+    width: 50px;
+    height: 50px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+[data-theme="dark"] #themeToggle {
+    background: var(--warning-gradient);
+}
+
+#themeToggle:active {
+    transform: scale(0.9);
+}
