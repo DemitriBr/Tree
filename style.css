@@ -588,3 +588,218 @@ body::before {
     transform: translateY(-3px);
     box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.1);
 }
+/* Application Cards */
+.application-card {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.application-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px 0 var(--shadow-color);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.job-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.status-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-applied {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+.status-screening {
+    background: linear-gradient(135deg, #667eea 0%, #64b5f6 100%);
+    color: white;
+}
+
+.status-interview {
+    background: var(--success-gradient);
+    color: white;
+}
+
+.status-offer {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    color: white;
+}
+
+.status-rejected {
+    background: var(--secondary-gradient);
+    color: white;
+}
+
+.status-withdrawn {
+    background: linear-gradient(135deg, #bdbdbd 0%, #757575 100%);
+    color: white;
+}
+
+.company-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.location {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.card-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.deadline-indicator.deadline-passed {
+    color: #e74c3c;
+}
+
+.deadline-indicator.deadline-urgent {
+    color: #f39c12;
+}
+
+.deadline-indicator.deadline-soon {
+    color: #3498db;
+}
+
+.progress-container {
+    margin: 1rem 0;
+}
+
+.progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary-gradient);
+    transition: width 0.3s ease;
+}
+
+.progress-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.notes-preview {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1.2rem;
+    text-decoration: none;
+}
+
+.btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.edit-btn:hover {
+    background: var(--primary-gradient);
+    border-color: transparent;
+}
+
+.delete-btn:hover {
+    background: var(--secondary-gradient);
+    border-color: transparent;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+}
+
+/* List Container */
+#listContainer {
+    max-width: 800px;
+    margin: 0 auto;
+}
