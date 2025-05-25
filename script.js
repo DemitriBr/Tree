@@ -1,3 +1,5 @@
+console.log('Script.js is loading!');
+
 // IndexedDB Configuration
 const DB_NAME = 'JobApplicationTrackerDB';
 const DB_VERSION = 1;
