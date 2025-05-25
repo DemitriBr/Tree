@@ -268,3 +268,202 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, running init...');
     init();
 });
+// Fetch all applications from IndexedDB
+function getAllApplicationsFromDB() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.getAll();
+        
+        request.onsuccess = () => {
+            resolve(request.result || []);
+        };
+        
+        request.onerror = () => {
+            reject('Error fetching applications from database');
+        };
+    });
+}
+
+// Create HTML for a single application card
+function createApplicationCard(application) {
+    const card = document.createElement('div');
+    card.className = 'application-card glass-card';
+    card.dataset.id = application.id;
+    
+    // Calculate days until deadline
+    const daysUntilDeadline = application.deadline ? 
+        Math.ceil((new Date(application.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+    
+    // Determine deadline class
+    let deadlineClass = '';
+    if (daysUntilDeadline !== null) {
+        if (daysUntilDeadline < 0) deadlineClass = 'deadline-passed';
+        else if (daysUntilDeadline <= 3) deadlineClass = 'deadline-urgent';
+        else if (daysUntilDeadline <= 7) deadlineClass = 'deadline-soon';
+    }
+    
+    // Create progress percentage (simplified for now)
+    const progressPercentage = {
+        'to-apply': 0,
+        'applied': 25,
+        'in-progress': 50,
+        'final-stage': 75,
+        'completed': 100
+    }[application.progressStage] || 0;
+    
+    card.innerHTML = `
+        <div class="card-header">
+            <h3 class="job-title">${application.jobTitle}</h3>
+            <span class="status-badge status-${application.status}">${application.status}</span>
+        </div>
+        
+        <div class="card-body">
+            <div class="company-info">
+                <strong>${application.companyName}</strong>
+                ${application.location ? `<span class="location">📍 ${application.location}</span>` : ''}
+            </div>
+            
+            <div class="card-details">
+                <div class="detail-item">
+                    <span class="detail-label">Applied:</span>
+                    <span class="detail-value">${new Date(application.applicationDate).toLocaleDateString()}</span>
+                </div>
+                
+                ${application.salary ? `
+                    <div class="detail-item">
+                        <span class="detail-label">Salary:</span>
+                        <span class="detail-value">${application.salary}</span>
+                    </div>
+                ` : ''}
+                
+                ${application.deadline ? `
+                    <div class="detail-item deadline-indicator ${deadlineClass}">
+                        <span class="detail-label">Deadline:</span>
+                        <span class="detail-value">
+                            ${new Date(application.deadline).toLocaleDateString()}
+                            ${daysUntilDeadline !== null ? `(${daysUntilDeadline > 0 ? `${daysUntilDeadline} days` : 'Passed'})` : ''}
+                        </span>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progressPercentage}%"></div>
+                </div>
+                <span class="progress-label">${application.progressStage.replace('-', ' ')}</span>
+            </div>
+            
+            ${application.notes ? `
+                <div class="notes-preview">
+                    <p>${application.notes.substring(0, 100)}${application.notes.length > 100 ? '...' : ''}</p>
+                </div>
+            ` : ''}
+        </div>
+        
+        <div class="card-actions">
+            <button class="btn-icon edit-btn" data-id="${application.id}" title="Edit">
+                ✏️
+            </button>
+            <button class="btn-icon delete-btn" data-id="${application.id}" title="Delete">
+                🗑️
+            </button>
+            ${application.url ? `
+                <a href="${application.url}" target="_blank" class="btn-icon" title="View posting">
+                    🔗
+                </a>
+            ` : ''}
+        </div>
+    `;
+    
+    return card;
+}
+
+// Render the applications list
+async function renderApplicationsList(applications = null) {
+    const listContainer = document.getElementById('listContainer');
+    
+    if (!listContainer) {
+        console.error('List container not found');
+        return;
+    }
+    
+    // If no applications provided, fetch them
+    if (applications === null) {
+        try {
+            applications = await getAllApplicationsFromDB();
+        } catch (error) {
+            console.error('Error fetching applications:', error);
+            applications = [];
+        }
+    }
+    
+    // Clear existing content
+    listContainer.innerHTML = '';
+    
+    // Show empty state or render applications
+    if (applications.length === 0) {
+        listContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>No applications yet</h3>
+                <p>Start tracking your job applications by clicking "Add Application"</p>
+            </div>
+        `;
+    } else {
+        // Sort by application date (newest first)
+        applications.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
+        
+        // Create and append cards
+        applications.forEach(app => {
+            const card = createApplicationCard(app);
+            listContainer.appendChild(card);
+        });
+    }
+}
+
+// Update the switchView function to load applications when switching to list view
+function switchView(viewName) {
+    console.log('Switching to view:', viewName);
+    
+    // Hide all views
+    const allViews = document.querySelectorAll('.view');
+    allViews.forEach(view => {
+        view.classList.remove('active');
+    });
+    
+    // Show the selected view
+    const targetView = document.getElementById(`${viewName}View`);
+    if (targetView) {
+        targetView.classList.add('active');
+        
+        // Perform view-specific actions
+        switch(viewName) {
+            case 'home':
+                const firstInput = document.getElementById('jobTitle');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+                break;
+                
+            case 'list':
+                console.log('Loading applications list...');
+                renderApplicationsList();
+                break;
+                
+            case 'dashboard':
+                console.log('Switched to dashboard view');
+                break;
+                
+            case 'kanban':
+                console.log('Switched to kanban view');
+                break;
+        }
+    }
+}
