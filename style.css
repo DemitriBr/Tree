@@ -803,3 +803,26 @@ body::before {
     max-width: 800px;
     margin: 0 auto;
 }
+
+/* Card removal animation */
+.application-card {
+    transition: all 0.3s ease;
+}
+
+/* Disabled button state */
+.btn-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Delete button specific hover */
+.delete-btn:hover {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    border-color: transparent;
+    color: white;
+}
+
+/* Add to existing button styles for better click feedback */
+.btn-icon:active {
+    transform: scale(0.95);
+}
