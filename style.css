@@ -826,3 +826,23 @@ body::before {
 .btn-icon:active {
     transform: scale(0.95);
 }
+/* Edit button specific styles */
+.edit-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+    color: white;
+}
+
+/* Form in edit mode indicator */
+#formTitle {
+    position: relative;
+    display: inline-block;
+}
+
+/* Optional: Add an edit indicator */
+#applicationForm[data-mode="edit"] {
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-top: 1rem;
+}
