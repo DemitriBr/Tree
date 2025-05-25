@@ -1,119 +1,66 @@
-// Form Setup and Handling
-function setupApplicationForm() {
-    const form = document.getElementById('applicationForm');
-    const cancelBtn = document.getElementById('cancelBtn');
-    
-    if (form) {
-        form.addEventListener('submit', handleFormSubmit);
-    }
-    
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            resetForm();
-            // Future: switch to list view
-        });
-    }
-}
+// IndexedDB Configuration
+const DB_NAME = 'JobApplicationTrackerDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'applications';
 
-// Handle form submission
-async function handleFormSubmit(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const applicationData = {
-        id: formData.get('id') || generateId(),
-        jobTitle: formData.get('jobTitle'),
-        companyName: formData.get('companyName'),
-        applicationDate: formData.get('applicationDate'),
-        status: formData.get('status'),
-        deadline: formData.get('deadline') || null,
-        url: formData.get('url') || '',
-        salary: formData.get('salary') || '',
-        location: formData.get('location') || '',
-        progressStage: formData.get('progressStage') || 'to-apply',
-        notes: formData.get('notes') || '',
-        // Arrays for future features
-        interviewDates: [],
-        contacts: [],
-        documents: [],
-        // Timestamps
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    };
-    
-    try {
-        // Check if we're in edit mode (ID field has value)
-        const existingId = formData.get('id');
-        
-        if (existingId) {
-            // Edit mode - will be implemented in Step 8
-            console.log('Edit mode not yet implemented');
-        } else {
-            // Add mode
-            await addApplicationToDB(applicationData);
-            console.log('Application saved successfully');
-            resetForm();
-            // Future: show success notification
-            // Future: switch to list view
-        }
-    } catch (error) {
-        console.error('Error saving application:', error);
-        // Future: show error notification
-    }
-}
+let db = null;
 
-// Add application to IndexedDB
-function addApplicationToDB(applicationData) {
+// Initialize IndexedDB
+function initDB() {
     return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORE_NAME], 'readwrite');
-        const objectStore = transaction.objectStore(STORE_NAME);
-        const request = objectStore.add(applicationData);
-        
-        request.onsuccess = () => {
-            resolve(applicationData);
-        };
-        
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
         request.onerror = () => {
-            reject('Error adding application to database');
+            console.error('Database failed to open');
+            reject('Database failed to open');
+        };
+
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('Database opened successfully');
+            resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                const objectStore = db.createObjectStore(STORE_NAME, {
+                    keyPath: 'id',
+                    autoIncrement: false
+                });
+
+                objectStore.createIndex('status', 'status', { unique: false });
+                objectStore.createIndex('companyName', 'companyName', { unique: false });
+                objectStore.createIndex('applicationDate', 'applicationDate', { unique: false });
+                objectStore.createIndex('deadline', 'deadline', { unique: false });
+                objectStore.createIndex('progressStage', 'progressStage', { unique: false });
+
+                console.log('Object store created with indexes');
+            }
         };
     });
 }
 
-// Reset form to initial state
-function resetForm() {
-    const form = document.getElementById('applicationForm');
-    const formTitle = document.getElementById('formTitle');
-    
-    if (form) {
-        form.reset();
-        document.getElementById('applicationId').value = '';
-    }
-    
-    if (formTitle) {
-        formTitle.textContent = 'Add New Application';
-    }
+// Generate unique ID for applications
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Update the init function to include form setup
-async function init() {
-    try {
-        await initDB();
-        console.log('Application initialized successfully');
-        
-        // Set up form handling
-        setupApplicationForm();
-        
-    } catch (error) {
-        console.error('Failed to initialize application:', error);
-    }
-}
 // View Management
 function setupNavButtons() {
+    console.log('Setting up navigation buttons...');
     const navButtons = document.querySelectorAll('.nav-btn');
+    console.log('Found nav buttons:', navButtons.length);
     
-    navButtons.forEach(button => {
+    navButtons.forEach((button, index) => {
+        console.log(`Button ${index}:`, button.textContent, 'data-view:', button.dataset.view);
+        
         button.addEventListener('click', (e) => {
+            console.log('Nav button clicked:', e.target.textContent);
             const targetView = e.target.dataset.view;
+            console.log('Target view:', targetView);
+            
             if (targetView) {
                 switchView(targetView);
                 
@@ -127,21 +74,28 @@ function setupNavButtons() {
 
 // Switch between views
 function switchView(viewName) {
+    console.log('Switching to view:', viewName);
+    
     // Hide all views
     const allViews = document.querySelectorAll('.view');
+    console.log('Found views:', allViews.length);
+    
     allViews.forEach(view => {
+        console.log('Hiding view:', view.id);
         view.classList.remove('active');
     });
     
     // Show the selected view
     const targetView = document.getElementById(`${viewName}View`);
+    console.log('Target view element:', targetView);
+    
     if (targetView) {
         targetView.classList.add('active');
+        console.log('Activated view:', targetView.id);
         
         // Perform view-specific actions
         switch(viewName) {
             case 'home':
-                // Focus on first form field when switching to home
                 const firstInput = document.getElementById('jobTitle');
                 if (firstInput) {
                     firstInput.focus();
@@ -149,29 +103,39 @@ function switchView(viewName) {
                 break;
                 
             case 'list':
-                // Future: Load and display applications list
                 console.log('Switched to list view - ready for Step 6');
                 break;
                 
             case 'dashboard':
-                // Future: Load dashboard statistics
                 console.log('Switched to dashboard view');
                 break;
                 
             case 'kanban':
-                // Future: Load kanban board
                 console.log('Switched to kanban view');
                 break;
         }
+    } else {
+        console.error('View not found:', `${viewName}View`);
     }
 }
 
-// Update the cancel button to switch to list view
-function updateCancelButton() {
+// Form Setup and Handling
+function setupApplicationForm() {
+    console.log('Setting up application form...');
+    const form = document.getElementById('applicationForm');
     const cancelBtn = document.getElementById('cancelBtn');
+    
+    if (form) {
+        console.log('Form found, adding submit listener');
+        form.addEventListener('submit', handleFormSubmit);
+    } else {
+        console.error('Form not found!');
+    }
+    
     if (cancelBtn) {
-        cancelBtn.removeEventListener('click', cancelBtn._clickHandler);
-        cancelBtn._clickHandler = () => {
+        console.log('Cancel button found, adding click listener');
+        cancelBtn.addEventListener('click', () => {
+            console.log('Cancel button clicked');
             resetForm();
             switchView('list');
             
@@ -182,34 +146,16 @@ function updateCancelButton() {
                     btn.classList.add('active');
                 }
             });
-        };
-        cancelBtn.addEventListener('click', cancelBtn._clickHandler);
+        });
+    } else {
+        console.error('Cancel button not found!');
     }
 }
 
-// Update the init function to include navigation setup
-async function init() {
-    try {
-        await initDB();
-        console.log('Application initialized successfully');
-        
-        // Set up form handling
-        setupApplicationForm();
-        
-        // Set up navigation
-        setupNavButtons();
-        
-        // Update cancel button behavior
-        updateCancelButton();
-        
-    } catch (error) {
-        console.error('Failed to initialize application:', error);
-    }
-}
-
-// Also update handleFormSubmit to switch views after saving
+// Handle form submission
 async function handleFormSubmit(e) {
     e.preventDefault();
+    console.log('Form submitted');
     
     const formData = new FormData(e.target);
     const applicationData = {
@@ -251,11 +197,72 @@ async function handleFormSubmit(e) {
                     btn.classList.add('active');
                 }
             });
-            
-            // Future: show success notification
         }
     } catch (error) {
         console.error('Error saving application:', error);
-        // Future: show error notification
     }
 }
+
+// Add application to IndexedDB
+function addApplicationToDB(applicationData) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.add(applicationData);
+        
+        request.onsuccess = () => {
+            resolve(applicationData);
+        };
+        
+        request.onerror = () => {
+            reject('Error adding application to database');
+        };
+    });
+}
+
+// Reset form to initial state
+function resetForm() {
+    console.log('Resetting form');
+    const form = document.getElementById('applicationForm');
+    const formTitle = document.getElementById('formTitle');
+    
+    if (form) {
+        form.reset();
+        document.getElementById('applicationId').value = '';
+    }
+    
+    if (formTitle) {
+        formTitle.textContent = 'Add New Application';
+    }
+}
+
+// Initialize the application
+async function init() {
+    console.log('Initializing application...');
+    
+    try {
+        await initDB();
+        console.log('Database initialized');
+        
+        // Set up form handling
+        setupApplicationForm();
+        
+        // Set up navigation
+        setupNavButtons();
+        
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize application:', error);
+    }
+}
+
+// Run initialization when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, running init...');
+    init();
+});
