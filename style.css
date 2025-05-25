@@ -1359,3 +1359,16 @@ select {
     -moz-appearance: none;
     appearance: none;
 }
+/* Force remove all text decorations from selects */
+select,
+select:focus,
+select option,
+.form-group select,
+.form-group select:focus {
+    text-decoration: none !important;
+    text-decoration-line: none !important;
+    text-decoration-style: initial !important;
+    text-decoration-color: initial !important;
+    -webkit-text-decoration: none !important;
+    -moz-text-decoration: none !important;
+}
