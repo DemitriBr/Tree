@@ -1145,20 +1145,174 @@ case 'list':
     }
 }
 
-// Placeholder functions for Step 13
+// Apply filters to applications array
 function applyFilters(applications) {
-    // Will be implemented in Step 13
-    console.log('applyFilters called - to be implemented');
-    return applications;
+    let filtered = [...applications]; // Create a copy to avoid mutating original
+    
+    // Apply search filter
+    if (searchFilterState.searchTerm) {
+        filtered = filtered.filter(app => {
+            const searchTerm = searchFilterState.searchTerm.toLowerCase();
+            return (
+                app.jobTitle.toLowerCase().includes(searchTerm) ||
+                app.companyName.toLowerCase().includes(searchTerm) ||
+                (app.notes && app.notes.toLowerCase().includes(searchTerm)) ||
+                (app.location && app.location.toLowerCase().includes(searchTerm))
+            );
+        });
+    }
+    
+    // Apply status filter
+    if (searchFilterState.statusFilter) {
+        filtered = filtered.filter(app => app.status === searchFilterState.statusFilter);
+    }
+    
+    // Apply date range filter
+    if (searchFilterState.dateRangeFilter) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        filtered = filtered.filter(app => {
+            const appDate = new Date(app.applicationDate);
+            
+            switch (searchFilterState.dateRangeFilter) {
+                case 'today':
+                    return appDate.toDateString() === today.toDateString();
+                    
+                case 'week':
+                    const weekAgo = new Date(today);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return appDate >= weekAgo;
+                    
+                case 'month':
+                    const monthAgo = new Date(today);
+                    monthAgo.setMonth(monthAgo.getMonth() - 1);
+                    return appDate >= monthAgo;
+                    
+                case 'quarter':
+                    const quarterAgo = new Date(today);
+                    quarterAgo.setMonth(quarterAgo.getMonth() - 3);
+                    return appDate >= quarterAgo;
+                    
+                case 'year':
+                    const yearStart = new Date(now.getFullYear(), 0, 1);
+                    return appDate >= yearStart;
+                    
+                default:
+                    return true;
+            }
+        });
+    }
+    
+    return filtered;
 }
 
+// Apply sorting to applications array
 function applySorting(applications) {
-    // Will be implemented in Step 13
-    console.log('applySorting called - to be implemented');
-    return applications;
+    const sorted = [...applications]; // Create a copy
+    const { sortBy, sortDirection } = searchFilterState;
+    
+    sorted.sort((a, b) => {
+        let compareValue = 0;
+        
+        switch (sortBy) {
+            case 'date':
+                compareValue = new Date(a.applicationDate) - new Date(b.applicationDate);
+                break;
+                
+            case 'company':
+                compareValue = a.companyName.localeCompare(b.companyName);
+                break;
+                
+            case 'status':
+                // Define status order
+                const statusOrder = ['applied', 'screening', 'interview', 'offer', 'rejected', 'withdrawn'];
+                const aIndex = statusOrder.indexOf(a.status);
+                const bIndex = statusOrder.indexOf(b.status);
+                compareValue = aIndex - bIndex;
+                break;
+                
+            default:
+                compareValue = 0;
+        }
+        
+        // Apply sort direction
+        return sortDirection === 'asc' ? compareValue : -compareValue;
+    });
+    
+    return sorted;
 }
 
-function filterSortAndRender() {
-    // Will be implemented in Step 13
-    console.log('filterSortAndRender called - to be implemented');
+// Main function to filter, sort, and render
+async function filterSortAndRender() {
+    try {
+        // Get all applications from database
+        const allApplications = await getAllApplicationsFromDB();
+        
+        // Apply filters
+        let filteredApplications = applyFilters(allApplications);
+        
+        // Apply sorting
+        filteredApplications = applySorting(filteredApplications);
+        
+        // Update results count
+        updateResultsCount(filteredApplications.length, allApplications.length);
+        
+        // Render the filtered and sorted applications
+        renderApplicationsList(filteredApplications);
+        
+        console.log(`Showing ${filteredApplications.length} of ${allApplications.length} applications`);
+        
+    } catch (error) {
+        console.error('Error in filterSortAndRender:', error);
+    }
+}
+
+// Update the renderApplicationsList to handle pre-filtered data
+async function renderApplicationsList(applications = null) {
+    const listContainer = document.getElementById('listContainer');
+    
+    if (!listContainer) {
+        console.error('List container not found');
+        return;
+    }
+    
+    // If no applications provided, fetch them
+    if (applications === null) {
+        try {
+            applications = await getAllApplicationsFromDB();
+            // When fetching fresh, apply current filters
+            applications = applyFilters(applications);
+            applications = applySorting(applications);
+            updateResultsCount(applications.length, await getAllApplicationsFromDB().then(all => all.length));
+        } catch (error) {
+            console.error('Error fetching applications:', error);
+            applications = [];
+        }
+    }
+    
+    // Clear existing content
+    listContainer.innerHTML = '';
+    
+    // Show empty state or render applications
+    if (applications.length === 0) {
+        listContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>No applications found</h3>
+                <p>${searchFilterState.searchTerm || searchFilterState.statusFilter || searchFilterState.dateRangeFilter ? 
+                    'Try adjusting your filters' : 
+                    'Start tracking your job applications by clicking "Add Application"'}</p>
+            </div>
+        `;
+    } else {
+        // Create and append cards
+        applications.forEach(app => {
+            const card = createApplicationCard(app);
+            listContainer.appendChild(card);
+        });
+        
+        // Setup action button listeners after cards are rendered
+        setupActionButtonsListeners();
+    }
 }
