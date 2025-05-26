@@ -954,12 +954,7 @@ function debounce(func, wait) {
         console.log('Debounce timer reset');
     };
 }
-
-// Setup search, filter, and sort controls
-function setupSearchFilterSort() {
-    console.log('Setting up search, filter, and sort controls...');
-
-    // Add this temporary debug code after setupSearchFilterSort function
+// Move this function OUTSIDE and BEFORE setupSearchFilterSort
 function debugSearchInput() {
     const searchInput = document.getElementById('searchInput');
     console.log('Debug: Search input element:', searchInput);
@@ -982,6 +977,18 @@ function debugSearchInput() {
         searchInput.addEventListener('input', testDebounced);
     }
 }
+
+// Setup search, filter, and sort controls
+function setupSearchFilterSort() {
+    console.log('Setting up search, filter, and sort controls...');
+    
+    // Get control elements
+    const searchInput = document.getElementById('searchInput');
+    // ... rest of the function
+
+// Setup search, filter, and sort controls
+function setupSearchFilterSort() {
+    console.log('Setting up search, filter, and sort controls...');
 
     
     // Get control elements
