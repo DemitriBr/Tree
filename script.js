@@ -940,16 +940,18 @@ let searchFilterState = {
     sortDirection: 'desc'
 };
 
-// Debounce function for search input
+// Debounce function for search input (with debug logging)
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
         const later = () => {
             clearTimeout(timeout);
+            console.log('Debounce executing function');
             func(...args);
         };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
+        console.log('Debounce timer reset');
     };
 }
 
