@@ -984,10 +984,6 @@ function setupSearchFilterSort() {
     
     // Get control elements
     const searchInput = document.getElementById('searchInput');
-    // ... rest of the function
-    
-    // Get control elements
-    const searchInput = document.getElementById('searchInput');
     const statusFilter = document.getElementById('statusFilter');
     const dateRangeFilter = document.getElementById('dateRangeFilter');
     const sortButtons = document.querySelectorAll('.sort-btn');
