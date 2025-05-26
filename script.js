@@ -985,11 +985,6 @@ function setupSearchFilterSort() {
     // Get control elements
     const searchInput = document.getElementById('searchInput');
     // ... rest of the function
-
-// Setup search, filter, and sort controls
-function setupSearchFilterSort() {
-    console.log('Setting up search, filter, and sort controls...');
-
     
     // Get control elements
     const searchInput = document.getElementById('searchInput');
