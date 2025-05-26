@@ -96,7 +96,7 @@ function setupNavButtons() {
     });
 }
 
-// Switch between views
+// Update switchView to load dashboard when switching to dashboard view
 function switchView(viewName) {
     console.log('Switching to view:', viewName);
     
@@ -127,7 +127,8 @@ function switchView(viewName) {
                 break;
                 
             case 'dashboard':
-                console.log('Switched to dashboard view');
+                console.log('Loading dashboard statistics...');
+                renderDashboard();
                 break;
                 
             case 'kanban':
@@ -1125,47 +1126,5 @@ async function renderDashboard() {
                 <p>Chart visualization coming in next step...</p>
             </div>
         `;
-    }
-}
-
-// Update switchView to load dashboard when switching to dashboard view
-function switchView(viewName) {
-    console.log('Switching to view:', viewName);
-    
-    // Hide all views
-    const allViews = document.querySelectorAll('.view');
-    allViews.forEach(view => {
-        view.classList.remove('active');
-    });
-    
-    // Show the selected view
-    const targetView = document.getElementById(`${viewName}View`);
-    if (targetView) {
-        targetView.classList.add('active');
-        
-        // Perform view-specific actions
-        switch(viewName) {
-            case 'home':
-                const firstInput = document.getElementById('jobTitle');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-                break;
-                
-            case 'list':
-                console.log('Loading applications list...');
-                renderApplicationsList();
-                setupSearchFilterSort();
-                break;
-                
-            case 'dashboard':
-                console.log('Loading dashboard statistics...');
-                renderDashboard();
-                break;
-                
-            case 'kanban':
-                console.log('Switched to kanban view');
-                break;
-        }
     }
 }
