@@ -74,26 +74,20 @@ function setupNavButtons() {
     });
 }
 
-// Switch between views
+// Update the existing switchView function to remove the debug line:
 function switchView(viewName) {
     console.log('Switching to view:', viewName);
     
     // Hide all views
     const allViews = document.querySelectorAll('.view');
-    console.log('Found views:', allViews.length);
-    
     allViews.forEach(view => {
-        console.log('Hiding view:', view.id);
         view.classList.remove('active');
     });
     
     // Show the selected view
     const targetView = document.getElementById(`${viewName}View`);
-    console.log('Target view element:', targetView);
-    
     if (targetView) {
         targetView.classList.add('active');
-        console.log('Activated view:', targetView.id);
         
         // Perform view-specific actions
         switch(viewName) {
@@ -105,7 +99,10 @@ function switchView(viewName) {
                 break;
                 
             case 'list':
-                console.log('Switched to list view - ready for Step 6');
+                console.log('Loading applications list...');
+                renderApplicationsList();
+                setupSearchFilterSort();
+                // Remove debugSearchInput() line
                 break;
                 
             case 'dashboard':
@@ -116,8 +113,6 @@ function switchView(viewName) {
                 console.log('Switched to kanban view');
                 break;
         }
-    } else {
-        console.error('View not found:', `${viewName}View`);
     }
 }
 
@@ -506,17 +501,15 @@ function setupActionButtonsListeners() {
     listContainer.addEventListener('click', handleActionButtonClick);
 }
 
-// Handle action button clicks
+// Handle action button clicks// Also update the delete functionality to respect current filters
 async function handleActionButtonClick(e) {
-    // Check if clicked element or its parent is an action button
     const deleteBtn = e.target.closest('.delete-btn');
     const editBtn = e.target.closest('.edit-btn');
     
     if (deleteBtn) {
-        e.stopPropagation(); // Prevent card click
+        e.stopPropagation();
         const applicationId = deleteBtn.dataset.id;
         
-        // Show confirmation dialog
         const applicationCard = deleteBtn.closest('.application-card');
         const jobTitle = applicationCard.querySelector('.job-title').textContent;
         const companyName = applicationCard.querySelector('.company-info strong').textContent;
@@ -525,40 +518,34 @@ async function handleActionButtonClick(e) {
         
         if (confirmDelete) {
             try {
-                // Add loading state
                 deleteBtn.disabled = true;
                 deleteBtn.textContent = '⏳';
                 
-                // Delete from database
                 await deleteApplicationFromDB(applicationId);
                 
-                // Animate card removal
                 applicationCard.style.opacity = '0';
                 applicationCard.style.transform = 'translateX(-100%)';
                 
                 setTimeout(() => {
-                    // Re-render the list
-                    renderApplicationsList();
+                    // Use filterSortAndRender instead of renderApplicationsList
+                    // to maintain current filters after deletion
+                    filterSortAndRender();
                 }, 300);
                 
-                // Future: Show success notification
                 console.log('Application deleted successfully');
                 
             } catch (error) {
                 console.error('Error deleting application:', error);
-                // Reset button state
                 deleteBtn.disabled = false;
                 deleteBtn.textContent = '🗑️';
-                
-                // Future: Show error notification
                 alert('Failed to delete application. Please try again.');
             }
         }
     } else if (editBtn) {
-        e.stopPropagation(); // Prevent card click
+        e.stopPropagation();
         const applicationId = editBtn.dataset.id;
         console.log('Edit button clicked for ID:', applicationId);
-        // Edit functionality will be implemented in Step 8
+        await loadApplicationForEdit(applicationId);
     }
 }
 
@@ -988,15 +975,13 @@ function setupSearchFilterSort() {
     const dateRangeFilter = document.getElementById('dateRangeFilter');
     const sortButtons = document.querySelectorAll('.sort-btn');
     const resetButton = document.getElementById('resetFilters');
-
-    } 
     
     // Setup search input with debounce
     if (searchInput) {
         const debouncedSearch = debounce((e) => {
             searchFilterState.searchTerm = e.target.value.toLowerCase();
             console.log('Search term:', searchFilterState.searchTerm);
-            // filterSortAndRender() will be implemented in Step 13
+            filterSortAndRender(); // Now actually filters!
         }, 300);
         
         searchInput.addEventListener('input', debouncedSearch);
@@ -1007,7 +992,7 @@ function setupSearchFilterSort() {
         statusFilter.addEventListener('change', (e) => {
             searchFilterState.statusFilter = e.target.value;
             console.log('Status filter:', searchFilterState.statusFilter);
-            // filterSortAndRender() will be implemented in Step 13
+            filterSortAndRender(); // Now actually filters!
         });
     }
     
@@ -1016,7 +1001,7 @@ function setupSearchFilterSort() {
         dateRangeFilter.addEventListener('change', (e) => {
             searchFilterState.dateRangeFilter = e.target.value;
             console.log('Date range filter:', searchFilterState.dateRangeFilter);
-            // filterSortAndRender() will be implemented in Step 13
+            filterSortAndRender(); // Now actually filters!
         });
     }
     
@@ -1048,7 +1033,7 @@ function setupSearchFilterSort() {
             searchFilterState.sortDirection = sortDirection;
             
             console.log('Sort by:', sortBy, 'Direction:', sortDirection);
-            // filterSortAndRender() will be implemented in Step 13
+            filterSortAndRender(); // Now actually sorts!
         });
     });
     
@@ -1085,10 +1070,10 @@ function setupSearchFilterSort() {
             });
             
             console.log('Filters reset');
-            // filterSortAndRender() will be implemented in Step 13
+            filterSortAndRender(); // Now actually resets the view!
         });
     }
-
+} // This closes setupSearchFilterSort properly
 // Update results count display
 function updateResultsCount(filteredCount, totalCount) {
     const resultCountElement = document.getElementById('resultCount');
@@ -1097,50 +1082,6 @@ function updateResultsCount(filteredCount, totalCount) {
             resultCountElement.textContent = `Showing all ${totalCount} applications`;
         } else {
             resultCountElement.textContent = `Showing ${filteredCount} of ${totalCount} applications`;
-        }
-    }
-}
-
-// Update switchView to setup controls when switching to list view
-function switchView(viewName) {
-    console.log('Switching to view:', viewName);
-    
-    // Hide all views
-    const allViews = document.querySelectorAll('.view');
-    allViews.forEach(view => {
-        view.classList.remove('active');
-    });
-    
-    // Show the selected view
-    const targetView = document.getElementById(`${viewName}View`);
-    if (targetView) {
-        targetView.classList.add('active');
-        
-        // Perform view-specific actions
-        switch(viewName) {
-            case 'home':
-                const firstInput = document.getElementById('jobTitle');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-                break;
-                
-            // Call this when switching to list view
-// Add this line in the 'list' case of switchView:
-case 'list':
-    console.log('Loading applications list...');
-    renderApplicationsList();
-    setupSearchFilterSort();
-    debugSearchInput(); // Add this line
-    break;
-                
-            case 'dashboard':
-                console.log('Switched to dashboard view');
-                break;
-                
-            case 'kanban':
-                console.log('Switched to kanban view');
-                break;
         }
     }
 }
