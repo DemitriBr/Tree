@@ -1088,7 +1088,6 @@ function setupSearchFilterSort() {
             // filterSortAndRender() will be implemented in Step 13
         });
     }
-}
 
 // Update results count display
 function updateResultsCount(filteredCount, totalCount) {
