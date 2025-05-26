@@ -940,18 +940,16 @@ let searchFilterState = {
     sortDirection: 'desc'
 };
 
-// Debounce function for search input (with debug logging)
+// Debounce function for search input
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
         const later = () => {
             clearTimeout(timeout);
-            console.log('Debounce executing function');
             func(...args);
         };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
-        console.log('Debounce timer reset');
     };
 }
 
@@ -1136,35 +1134,3 @@ function filterSortAndRender() {
     // Will be implemented in Step 13
     console.log('filterSortAndRender called - to be implemented');
 }
-// Add this temporary debug code after setupSearchFilterSort function
-function debugSearchInput() {
-    const searchInput = document.getElementById('searchInput');
-    console.log('Debug: Search input element:', searchInput);
-    
-    if (searchInput) {
-        // Add multiple listeners to debug
-        searchInput.addEventListener('input', (e) => {
-            console.log('Direct input event:', e.target.value);
-        });
-        
-        searchInput.addEventListener('keyup', (e) => {
-            console.log('Keyup event:', e.target.value);
-        });
-        
-        // Also check if the debounced version works
-        const testDebounced = debounce(() => {
-            console.log('Debounced fired!');
-        }, 300);
-        
-        searchInput.addEventListener('input', testDebounced);
-    }
-}
-
-// Call this when switching to list view
-// Add this line in the 'list' case of switchView:
-case 'list':
-    console.log('Loading applications list...');
-    renderApplicationsList();
-    setupSearchFilterSort();
-    debugSearchInput(); // Add this line
-    break;
