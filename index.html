@@ -117,13 +117,81 @@
             </div>
 
             <!-- List View -->
-            <div id="listView" class="view">
-                <h2>Applications List</h2>
-                <div id="listContainer">
-                    <!-- Application cards will be rendered here -->
-                </div>
+<div id="listView" class="view">
+    <h2>Applications List</h2>
+    
+    <!-- Search, Filter, Sort Controls -->
+    <div class="list-controls glass-card">
+        <!-- Search Bar -->
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="Search by job title, company, or notes..."
+                aria-label="Search applications"
+            >
+            <span class="search-icon">🔍</span>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="filter-container">
+            <div class="filter-group">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="applied">Applied</option>
+                    <option value="screening">Screening</option>
+                    <option value="interview">Interview</option>
+                    <option value="offer">Offer</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="withdrawn">Withdrawn</option>
+                </select>
             </div>
-
+            
+            <div class="filter-group">
+                <label for="dateRangeFilter">Date Range</label>
+                <select id="dateRangeFilter" class="filter-select">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="quarter">Last 3 Months</option>
+                    <option value="year">This Year</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Sort Controls -->
+        <div class="sort-container">
+            <span class="sort-label">Sort by:</span>
+            <button class="sort-btn active" data-sort="date" data-direction="desc">
+                Date <span class="sort-arrow">↓</span>
+            </button>
+            <button class="sort-btn" data-sort="company" data-direction="asc">
+                Company <span class="sort-arrow">↑</span>
+            </button>
+            <button class="sort-btn" data-sort="status" data-direction="asc">
+                Status <span class="sort-arrow">↑</span>
+            </button>
+        </div>
+        
+        <!-- Reset Button -->
+        <button id="resetFilters" class="btn btn-secondary">
+            Reset Filters
+        </button>
+    </div>
+    
+    <!-- Results Summary -->
+    <div class="results-summary">
+        <span id="resultCount">Showing all applications</span>
+    </div>
+    
+    <!-- Applications List Container -->
+    <div id="listContainer">
+        <!-- Application cards will be rendered here -->
+    </div>
+</div>
             <!-- Dashboard View -->
             <div id="dashboardView" class="view">
                 <h2>Dashboard</h2>
