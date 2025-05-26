@@ -380,88 +380,6 @@ function createApplicationCard(application) {
     return card;
 }
 
-// Render the applications list
-async function renderApplicationsList(applications = null) {
-    const listContainer = document.getElementById('listContainer');
-    
-    if (!listContainer) {
-        console.error('List container not found');
-        return;
-    }
-    
-    // If no applications provided, fetch them
-    if (applications === null) {
-        try {
-            applications = await getAllApplicationsFromDB();
-        } catch (error) {
-            console.error('Error fetching applications:', error);
-            applications = [];
-        }
-    }
-    
-    // Clear existing content
-    listContainer.innerHTML = '';
-    
-    // Show empty state or render applications
-    if (applications.length === 0) {
-        listContainer.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📋</div>
-                <h3>No applications yet</h3>
-                <p>Start tracking your job applications by clicking "Add Application"</p>
-            </div>
-        `;
-    } else {
-        // Sort by application date (newest first)
-        applications.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
-        
-        // Create and append cards
-        applications.forEach(app => {
-            const card = createApplicationCard(app);
-            listContainer.appendChild(card);
-        });
-    }
-}
-
-// Update the switchView function to load applications when switching to list view
-function switchView(viewName) {
-    console.log('Switching to view:', viewName);
-    
-    // Hide all views
-    const allViews = document.querySelectorAll('.view');
-    allViews.forEach(view => {
-        view.classList.remove('active');
-    });
-    
-    // Show the selected view
-    const targetView = document.getElementById(`${viewName}View`);
-    if (targetView) {
-        targetView.classList.add('active');
-        
-        // Perform view-specific actions
-        switch(viewName) {
-            case 'home':
-                const firstInput = document.getElementById('jobTitle');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-                break;
-                
-            case 'list':
-                console.log('Loading applications list...');
-                renderApplicationsList();
-                break;
-                
-            case 'dashboard':
-                console.log('Switched to dashboard view');
-                break;
-                
-            case 'kanban':
-                console.log('Switched to kanban view');
-                break;
-        }
-    }
-}
 // Delete application from IndexedDB
 function deleteApplicationFromDB(id) {
     return new Promise((resolve, reject) => {
@@ -546,52 +464,6 @@ async function handleActionButtonClick(e) {
         const applicationId = editBtn.dataset.id;
         console.log('Edit button clicked for ID:', applicationId);
         await loadApplicationForEdit(applicationId);
-    }
-}
-
-// Update the renderApplicationsList function to setup listeners after rendering
-async function renderApplicationsList(applications = null) {
-    const listContainer = document.getElementById('listContainer');
-    
-    if (!listContainer) {
-        console.error('List container not found');
-        return;
-    }
-    
-    // If no applications provided, fetch them
-    if (applications === null) {
-        try {
-            applications = await getAllApplicationsFromDB();
-        } catch (error) {
-            console.error('Error fetching applications:', error);
-            applications = [];
-        }
-    }
-    
-    // Clear existing content
-    listContainer.innerHTML = '';
-    
-    // Show empty state or render applications
-    if (applications.length === 0) {
-        listContainer.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📋</div>
-                <h3>No applications yet</h3>
-                <p>Start tracking your job applications by clicking "Add Application"</p>
-            </div>
-        `;
-    } else {
-        // Sort by application date (newest first)
-        applications.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
-        
-        // Create and append cards
-        applications.forEach(app => {
-            const card = createApplicationCard(app);
-            listContainer.appendChild(card);
-        });
-        
-        // Setup action button listeners after cards are rendered
-        setupActionButtonsListeners();
     }
 }
 
@@ -709,61 +581,6 @@ function updateApplicationInDB(applicationData) {
             reject('Error updating application in database');
         };
     });
-}
-
-// Update the handleActionButtonClick function to handle edit button
-async function handleActionButtonClick(e) {
-    // Check if clicked element or its parent is an action button
-    const deleteBtn = e.target.closest('.delete-btn');
-    const editBtn = e.target.closest('.edit-btn');
-    
-    if (deleteBtn) {
-        e.stopPropagation();
-        const applicationId = deleteBtn.dataset.id;
-        
-        // Show confirmation dialog
-        const applicationCard = deleteBtn.closest('.application-card');
-        const jobTitle = applicationCard.querySelector('.job-title').textContent;
-        const companyName = applicationCard.querySelector('.company-info strong').textContent;
-        
-        const confirmDelete = confirm(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`);
-        
-        if (confirmDelete) {
-            try {
-                // Add loading state
-                deleteBtn.disabled = true;
-                deleteBtn.textContent = '⏳';
-                
-                // Delete from database
-                await deleteApplicationFromDB(applicationId);
-                
-                // Animate card removal
-                applicationCard.style.opacity = '0';
-                applicationCard.style.transform = 'translateX(-100%)';
-                
-                setTimeout(() => {
-                    // Re-render the list
-                    renderApplicationsList();
-                }, 300);
-                
-                console.log('Application deleted successfully');
-                
-            } catch (error) {
-                console.error('Error deleting application:', error);
-                // Reset button state
-                deleteBtn.disabled = false;
-                deleteBtn.textContent = '🗑️';
-                alert('Failed to delete application. Please try again.');
-            }
-        }
-    } else if (editBtn) {
-        e.stopPropagation();
-        const applicationId = editBtn.dataset.id;
-        console.log('Edit button clicked for ID:', applicationId);
-        
-        // Load the application for editing
-        await loadApplicationForEdit(applicationId);
-    }
 }
 
 // Update the handleFormSubmit function to handle both add and edit modes
