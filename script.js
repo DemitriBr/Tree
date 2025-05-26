@@ -881,7 +881,7 @@ function setupSearchFilterSort() {
     }
 }
 
-// Dark Mode Management
+// Redraw charts when theme changes
 function setupDarkModeToggle() {
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;
@@ -907,6 +907,17 @@ function setupDarkModeToggle() {
             setTimeout(() => {
                 body.style.transition = '';
             }, 300);
+            
+            // Redraw charts if on dashboard
+            const dashboardView = document.getElementById('dashboardView');
+            if (dashboardView && dashboardView.classList.contains('active')) {
+                setTimeout(async () => {
+                    const stats = await calculateDashboardStats();
+                    const applications = await getAllApplicationsFromDB();
+                    createStatusChart(stats, 'statusChart');
+                    createTimelineChart(applications, 'timelineChart');
+                }, 100);
+            }
         });
     }
 }
@@ -1032,7 +1043,7 @@ async function calculateDashboardStats() {
     }
 }
 
-// Render dashboard statistics
+// Update renderDashboard to include charts
 async function renderDashboard() {
     const statsContainer = document.getElementById('statsContainer');
     const chartsContainer = document.getElementById('chartsContainer');
@@ -1047,13 +1058,14 @@ async function renderDashboard() {
     
     // Calculate statistics
     const stats = await calculateDashboardStats();
+    const applications = await getAllApplicationsFromDB();
     
     if (!stats) {
         statsContainer.innerHTML = '<div class="error">Failed to load statistics</div>';
         return;
     }
     
-    // Render statistics cards
+    // Render statistics cards (same as before)
     statsContainer.innerHTML = `
         <div class="stats-grid">
             <div class="stat-card glass-card">
@@ -1118,13 +1130,236 @@ async function renderDashboard() {
         </div>
     `;
     
-    // Placeholder for charts (will be implemented in Step 16)
+    // Render charts
     if (chartsContainer) {
         chartsContainer.innerHTML = `
-            <div class="chart-placeholder glass-card">
-                <h3>Status Distribution Chart</h3>
-                <p>Chart visualization coming in next step...</p>
+            <div class="charts-grid">
+                <div class="chart-container glass-card">
+                    <h3>Status Distribution</h3>
+                    <canvas id="statusChart" width="400" height="300"></canvas>
+                </div>
+                
+                <div class="chart-container glass-card">
+                    <h3>Application Timeline</h3>
+                    <canvas id="timelineChart" width="400" height="300"></canvas>
+                </div>
             </div>
         `;
+        
+        // Draw charts after DOM updates
+        setTimeout(() => {
+            createStatusChart(stats, 'statusChart');
+            createTimelineChart(applications, 'timelineChart');
+        }, 100);
     }
+}
+
+
+// Create status distribution chart using Canvas
+function createStatusChart(stats, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Get status data
+    const statusData = Object.entries(stats.statusCounts)
+        .filter(([_, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1]);
+    
+    if (statusData.length === 0) {
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+        ctx.font = '16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data to display', width / 2, height / 2);
+        return;
+    }
+    
+    // Colors for each status
+    const statusColors = {
+        applied: '#667eea',
+        screening: '#64b5f6',
+        interview: '#4facfe',
+        offer: '#66bb6a',
+        rejected: '#f5576c',
+        withdrawn: '#757575'
+    };
+    
+    // Calculate dimensions
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 - 40;
+    
+    // Calculate angles
+    const total = statusData.reduce((sum, [_, count]) => sum + count, 0);
+    let currentAngle = -Math.PI / 2; // Start at top
+    
+    // Draw pie slices
+    statusData.forEach(([status, count]) => {
+        const sliceAngle = (count / total) * 2 * Math.PI;
+        
+        // Draw slice
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.closePath();
+        ctx.fillStyle = statusColors[status] || '#999';
+        ctx.fill();
+        
+        // Draw slice border
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Draw label if slice is big enough
+        if (sliceAngle > 0.3) {
+            const labelAngle = currentAngle + sliceAngle / 2;
+            const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+            const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+            
+            // Draw percentage
+            const percentage = Math.round((count / total) * 100);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${percentage}%`, labelX, labelY);
+        }
+        
+        currentAngle += sliceAngle;
+    });
+    
+    // Draw center circle for donut effect
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
+    ctx.fill();
+    
+    // Draw legend
+    const legendX = 20;
+    let legendY = height - (statusData.length * 25) - 20;
+    
+    statusData.forEach(([status, count]) => {
+        // Color box
+        ctx.fillStyle = statusColors[status] || '#999';
+        ctx.fillRect(legendX, legendY, 15, 15);
+        
+        // Label
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+        ctx.font = '14px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        const label = `${status.charAt(0).toUpperCase() + status.slice(1)}: ${count}`;
+        ctx.fillText(label, legendX + 25, legendY + 7);
+        
+        legendY += 25;
+    });
+}
+
+// Create timeline chart showing applications over time
+function createTimelineChart(applications, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    if (applications.length === 0) {
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+        ctx.font = '16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data to display', width / 2, height / 2);
+        return;
+    }
+    
+    // Group applications by month
+    const monthlyData = {};
+    applications.forEach(app => {
+        const date = new Date(app.applicationDate);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+    });
+    
+    // Get last 6 months
+    const months = [];
+    const counts = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+        
+        months.push(monthName);
+        counts.push(monthlyData[monthKey] || 0);
+    }
+    
+    // Calculate dimensions
+    const padding = 40;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+    const maxCount = Math.max(...counts, 1);
+    
+    // Draw axes
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+    ctx.lineWidth = 1;
+    
+    // Y-axis
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+    
+    // X-axis
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Draw bars
+    const barWidth = chartWidth / months.length * 0.6;
+    const barSpacing = chartWidth / months.length;
+    
+    months.forEach((month, index) => {
+        const count = counts[index];
+        const barHeight = (count / maxCount) * chartHeight;
+        const x = padding + (index * barSpacing) + (barSpacing - barWidth) / 2;
+        const y = height - padding - barHeight;
+        
+        // Draw bar with gradient effect
+        const gradient = ctx.createLinearGradient(0, y, 0, height - padding);
+        gradient.addColorStop(0, '#667eea');
+        gradient.addColorStop(1, '#764ba2');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth, barHeight);
+        
+        // Draw value on top of bar
+        if (count > 0) {
+            ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(count, x + barWidth / 2, y - 5);
+        }
+        
+        // Draw month label
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(month, x + barWidth / 2, height - padding + 20);
+    });
+    
+    // Draw title
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+    ctx.font = 'bold 16px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Applications Over Time', width / 2, 20);
 }
