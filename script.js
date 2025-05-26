@@ -947,3 +947,225 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, running init...');
     init();
 });
+
+// Dashboard Statistics Calculation
+async function calculateDashboardStats() {
+    try {
+        const applications = await getAllApplicationsFromDB();
+        
+        // Initialize statistics
+        const stats = {
+            total: applications.length,
+            statusCounts: {
+                applied: 0,
+                screening: 0,
+                interview: 0,
+                offer: 0,
+                rejected: 0,
+                withdrawn: 0
+            },
+            activeApplications: 0,
+            responseRate: 0,
+            averageResponseTime: 0,
+            upcomingDeadlines: 0,
+            thisMonthApplications: 0
+        };
+        
+        // Calculate status counts and other metrics
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        let totalResponseTime = 0;
+        let responsesReceived = 0;
+        
+        applications.forEach(app => {
+            // Count by status
+            if (stats.statusCounts.hasOwnProperty(app.status)) {
+                stats.statusCounts[app.status]++;
+            }
+            
+            // Count active applications (not rejected or withdrawn)
+            if (app.status !== 'rejected' && app.status !== 'withdrawn') {
+                stats.activeApplications++;
+            }
+            
+            // Calculate response metrics
+            if (app.status !== 'applied') {
+                responsesReceived++;
+                const appDate = new Date(app.applicationDate);
+                const responseTime = Math.ceil((currentDate - appDate) / (1000 * 60 * 60 * 24));
+                totalResponseTime += responseTime;
+            }
+            
+            // Count upcoming deadlines (within 7 days)
+            if (app.deadline) {
+                const deadline = new Date(app.deadline);
+                const daysUntilDeadline = Math.ceil((deadline - currentDate) / (1000 * 60 * 60 * 24));
+                if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) {
+                    stats.upcomingDeadlines++;
+                }
+            }
+            
+            // Count applications from this month
+            const appDate = new Date(app.applicationDate);
+            if (appDate.getMonth() === currentMonth && appDate.getFullYear() === currentYear) {
+                stats.thisMonthApplications++;
+            }
+        });
+        
+        // Calculate response rate percentage
+        stats.responseRate = stats.total > 0 
+            ? Math.round((responsesReceived / stats.total) * 100) 
+            : 0;
+        
+        // Calculate average response time in days
+        stats.averageResponseTime = responsesReceived > 0 
+            ? Math.round(totalResponseTime / responsesReceived) 
+            : 0;
+        
+        return stats;
+        
+    } catch (error) {
+        console.error('Error calculating dashboard stats:', error);
+        return null;
+    }
+}
+
+// Render dashboard statistics
+async function renderDashboard() {
+    const statsContainer = document.getElementById('statsContainer');
+    const chartsContainer = document.getElementById('chartsContainer');
+    
+    if (!statsContainer) {
+        console.error('Stats container not found');
+        return;
+    }
+    
+    // Show loading state
+    statsContainer.innerHTML = '<div class="loading">Loading statistics...</div>';
+    
+    // Calculate statistics
+    const stats = await calculateDashboardStats();
+    
+    if (!stats) {
+        statsContainer.innerHTML = '<div class="error">Failed to load statistics</div>';
+        return;
+    }
+    
+    // Render statistics cards
+    statsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-card glass-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.total}</h3>
+                    <p class="stat-label">Total Applications</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.activeApplications}</h3>
+                    <p class="stat-label">Active Applications</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.responseRate}%</h3>
+                    <p class="stat-label">Response Rate</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.averageResponseTime}</h3>
+                    <p class="stat-label">Avg Response (Days)</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">⏰</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.upcomingDeadlines}</h3>
+                    <p class="stat-label">Upcoming Deadlines</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.thisMonthApplications}</h3>
+                    <p class="stat-label">This Month</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-breakdown">
+            <h3>Application Status Breakdown</h3>
+            <div class="status-grid">
+                ${Object.entries(stats.statusCounts).map(([status, count]) => `
+                    <div class="status-item">
+                        <span class="status-label">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                        <span class="status-count status-${status}">${count}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    // Placeholder for charts (will be implemented in Step 16)
+    if (chartsContainer) {
+        chartsContainer.innerHTML = `
+            <div class="chart-placeholder glass-card">
+                <h3>Status Distribution Chart</h3>
+                <p>Chart visualization coming in next step...</p>
+            </div>
+        `;
+    }
+}
+
+// Update switchView to load dashboard when switching to dashboard view
+function switchView(viewName) {
+    console.log('Switching to view:', viewName);
+    
+    // Hide all views
+    const allViews = document.querySelectorAll('.view');
+    allViews.forEach(view => {
+        view.classList.remove('active');
+    });
+    
+    // Show the selected view
+    const targetView = document.getElementById(`${viewName}View`);
+    if (targetView) {
+        targetView.classList.add('active');
+        
+        // Perform view-specific actions
+        switch(viewName) {
+            case 'home':
+                const firstInput = document.getElementById('jobTitle');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+                break;
+                
+            case 'list':
+                console.log('Loading applications list...');
+                renderApplicationsList();
+                setupSearchFilterSort();
+                break;
+                
+            case 'dashboard':
+                console.log('Loading dashboard statistics...');
+                renderDashboard();
+                break;
+                
+            case 'kanban':
+                console.log('Switched to kanban view');
+                break;
+        }
+    }
+}
