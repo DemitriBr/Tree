@@ -931,3 +931,206 @@ async function init() {
         console.error('Failed to initialize application:', error);
     }
 }
+// Search, Filter, Sort State Management
+let searchFilterState = {
+    searchTerm: '',
+    statusFilter: '',
+    dateRangeFilter: '',
+    sortBy: 'date',
+    sortDirection: 'desc'
+};
+
+// Debounce function for search input
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Setup search, filter, and sort controls
+function setupSearchFilterSort() {
+    console.log('Setting up search, filter, and sort controls...');
+    
+    // Get control elements
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateRangeFilter = document.getElementById('dateRangeFilter');
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    const resetButton = document.getElementById('resetFilters');
+    
+    // Setup search input with debounce
+    if (searchInput) {
+        const debouncedSearch = debounce((e) => {
+            searchFilterState.searchTerm = e.target.value.toLowerCase();
+            console.log('Search term:', searchFilterState.searchTerm);
+            // filterSortAndRender() will be implemented in Step 13
+        }, 300);
+        
+        searchInput.addEventListener('input', debouncedSearch);
+    }
+    
+    // Setup status filter
+    if (statusFilter) {
+        statusFilter.addEventListener('change', (e) => {
+            searchFilterState.statusFilter = e.target.value;
+            console.log('Status filter:', searchFilterState.statusFilter);
+            // filterSortAndRender() will be implemented in Step 13
+        });
+    }
+    
+    // Setup date range filter
+    if (dateRangeFilter) {
+        dateRangeFilter.addEventListener('change', (e) => {
+            searchFilterState.dateRangeFilter = e.target.value;
+            console.log('Date range filter:', searchFilterState.dateRangeFilter);
+            // filterSortAndRender() will be implemented in Step 13
+        });
+    }
+    
+    // Setup sort buttons
+    sortButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const sortBy = button.dataset.sort;
+            let sortDirection = button.dataset.direction;
+            
+            // If clicking the already active button, toggle direction
+            if (button.classList.contains('active')) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                button.dataset.direction = sortDirection;
+                
+                // Update arrow
+                const arrow = button.querySelector('.sort-arrow');
+                if (arrow) {
+                    arrow.textContent = sortDirection === 'asc' ? '↑' : '↓';
+                }
+            } else {
+                // Remove active class from all buttons
+                sortButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                button.classList.add('active');
+            }
+            
+            // Update state
+            searchFilterState.sortBy = sortBy;
+            searchFilterState.sortDirection = sortDirection;
+            
+            console.log('Sort by:', sortBy, 'Direction:', sortDirection);
+            // filterSortAndRender() will be implemented in Step 13
+        });
+    });
+    
+    // Setup reset button
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            // Reset state
+            searchFilterState = {
+                searchTerm: '',
+                statusFilter: '',
+                dateRangeFilter: '',
+                sortBy: 'date',
+                sortDirection: 'desc'
+            };
+            
+            // Reset UI elements
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = '';
+            if (dateRangeFilter) dateRangeFilter.value = '';
+            
+            // Reset sort buttons
+            sortButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.sort === 'date') {
+                    btn.classList.add('active');
+                    btn.dataset.direction = 'desc';
+                    const arrow = btn.querySelector('.sort-arrow');
+                    if (arrow) arrow.textContent = '↓';
+                } else {
+                    btn.dataset.direction = 'asc';
+                    const arrow = btn.querySelector('.sort-arrow');
+                    if (arrow) arrow.textContent = '↑';
+                }
+            });
+            
+            console.log('Filters reset');
+            // filterSortAndRender() will be implemented in Step 13
+        });
+    }
+}
+
+// Update results count display
+function updateResultsCount(filteredCount, totalCount) {
+    const resultCountElement = document.getElementById('resultCount');
+    if (resultCountElement) {
+        if (filteredCount === totalCount) {
+            resultCountElement.textContent = `Showing all ${totalCount} applications`;
+        } else {
+            resultCountElement.textContent = `Showing ${filteredCount} of ${totalCount} applications`;
+        }
+    }
+}
+
+// Update switchView to setup controls when switching to list view
+function switchView(viewName) {
+    console.log('Switching to view:', viewName);
+    
+    // Hide all views
+    const allViews = document.querySelectorAll('.view');
+    allViews.forEach(view => {
+        view.classList.remove('active');
+    });
+    
+    // Show the selected view
+    const targetView = document.getElementById(`${viewName}View`);
+    if (targetView) {
+        targetView.classList.add('active');
+        
+        // Perform view-specific actions
+        switch(viewName) {
+            case 'home':
+                const firstInput = document.getElementById('jobTitle');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+                break;
+                
+            case 'list':
+                console.log('Loading applications list...');
+                renderApplicationsList();
+                // Setup search/filter/sort controls if not already done
+                setupSearchFilterSort();
+                break;
+                
+            case 'dashboard':
+                console.log('Switched to dashboard view');
+                break;
+                
+            case 'kanban':
+                console.log('Switched to kanban view');
+                break;
+        }
+    }
+}
+
+// Placeholder functions for Step 13
+function applyFilters(applications) {
+    // Will be implemented in Step 13
+    console.log('applyFilters called - to be implemented');
+    return applications;
+}
+
+function applySorting(applications) {
+    // Will be implemented in Step 13
+    console.log('applySorting called - to be implemented');
+    return applications;
+}
+
+function filterSortAndRender() {
+    // Will be implemented in Step 13
+    console.log('filterSortAndRender called - to be implemented');
+}
