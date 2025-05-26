@@ -956,6 +956,31 @@ function debounce(func, wait) {
 // Setup search, filter, and sort controls
 function setupSearchFilterSort() {
     console.log('Setting up search, filter, and sort controls...');
+
+    // Add this temporary debug code after setupSearchFilterSort function
+function debugSearchInput() {
+    const searchInput = document.getElementById('searchInput');
+    console.log('Debug: Search input element:', searchInput);
+    
+    if (searchInput) {
+        // Add multiple listeners to debug
+        searchInput.addEventListener('input', (e) => {
+            console.log('Direct input event:', e.target.value);
+        });
+        
+        searchInput.addEventListener('keyup', (e) => {
+            console.log('Keyup event:', e.target.value);
+        });
+        
+        // Also check if the debounced version works
+        const testDebounced = debounce(() => {
+            console.log('Debounced fired!');
+        }, 300);
+        
+        searchInput.addEventListener('input', testDebounced);
+    }
+}
+
     
     // Get control elements
     const searchInput = document.getElementById('searchInput');
@@ -1099,12 +1124,14 @@ function switchView(viewName) {
                 }
                 break;
                 
-            case 'list':
-                console.log('Loading applications list...');
-                renderApplicationsList();
-                // Setup search/filter/sort controls if not already done
-                setupSearchFilterSort();
-                break;
+            // Call this when switching to list view
+// Add this line in the 'list' case of switchView:
+case 'list':
+    console.log('Loading applications list...');
+    renderApplicationsList();
+    setupSearchFilterSort();
+    debugSearchInput(); // Add this line
+    break;
                 
             case 'dashboard':
                 console.log('Switched to dashboard view');
