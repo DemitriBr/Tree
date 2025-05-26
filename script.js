@@ -992,6 +992,8 @@ function setupSearchFilterSort() {
     const dateRangeFilter = document.getElementById('dateRangeFilter');
     const sortButtons = document.querySelectorAll('.sort-btn');
     const resetButton = document.getElementById('resetFilters');
+
+    } 
     
     // Setup search input with debounce
     if (searchInput) {
