@@ -1252,7 +1252,7 @@ statusData.forEach(([status, count]) => {
     
     legendY += 20;
 });
-}
+} // <-- ADD THIS CLOSING BRACE for createStatusChart
 // Create timeline chart showing applications over time
 function createTimelineChart(applications, canvasId) {
     const canvas = document.getElementById(canvasId);
