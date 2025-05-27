@@ -1155,7 +1155,7 @@ async function renderDashboard() {
 }
 
 
-// Create status distribution chart using Canvas (NO LEGEND)
+// Create status distribution chart using Canvas (with side legend)
 function createStatusChart(stats, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -1190,10 +1190,12 @@ function createStatusChart(stats, canvasId) {
         withdrawn: '#757575'
     };
     
-    // Calculate dimensions - use full canvas since no legend
-    const centerX = width / 2;
+    // Calculate dimensions - reserve space for legend on the right
+    const legendWidth = 180;
+    const chartArea = width - legendWidth - 20; // 20px gap between chart and legend
+    const centerX = chartArea / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) / 2 - 20; // Small padding from edges
+    const radius = Math.min(chartArea, height) / 2 - 30; // Padding from edges
     
     // Calculate angles
     const total = statusData.reduce((sum, [_, count]) => sum + count, 0);
@@ -1229,6 +1231,51 @@ function createStatusChart(stats, canvasId) {
     ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-border');
     ctx.lineWidth = 2;
     ctx.stroke();
+
+    // Draw legend on the right side
+    const legendX = chartArea + 20; // Start legend after chart area + gap
+    let legendY = 40;
+
+    // Legend title
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+    ctx.font = 'bold 14px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Status Breakdown', legendX, legendY);
+
+    legendY += 25;
+
+    // Legend items
+    statusData.forEach(([status, count]) => {
+        const percentage = Math.round((count / total) * 100);
+        
+        // Color box
+        ctx.fillStyle = statusColors[status] || '#999';
+        ctx.fillRect(legendX, legendY - 8, 14, 14);
+        
+        // Add border to color box
+        ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-border');
+        ctx.lineWidth = 1;
+        ctx.strokeRect(legendX, legendY - 8, 14, 14);
+        
+        // Label with count and percentage
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        
+        // Capitalize first letter of status
+        const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+        const label = `${statusLabel}: ${count} (${percentage}%)`;
+        ctx.fillText(label, legendX + 22, legendY);
+        
+        legendY += 22;
+    });
+
+    // Add total at the bottom of legend
+    legendY += 10;
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.fillText(`Total: ${total}`, legendX, legendY);
 }
 function createTimelineChart(applications, canvasId) {
     const canvas = document.getElementById(canvasId);
