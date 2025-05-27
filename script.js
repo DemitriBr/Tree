@@ -1466,6 +1466,11 @@ async function renderKanbanBoard() {
         });
         
         console.log('Kanban board rendered successfully');
+
+        // Setup drag and drop after rendering
+        setTimeout(() => {
+            setupDragAndDrop();
+        }, 100);
         
     } catch (error) {
         console.error('Error rendering kanban board:', error);
@@ -1587,4 +1592,216 @@ function createKanbanCard(application) {
     });
     
     return card;
+}
+// Add this code to your script.js file after the kanban rendering functions
+
+// Drag and Drop functionality for Kanban Board
+let draggedCard = null;
+let draggedApplicationId = null;
+let originalStatus = null;
+
+// Setup drag and drop event listeners
+function setupDragAndDrop() {
+    console.log('Setting up drag and drop for kanban board...');
+    
+    // Get all kanban cards and columns
+    const kanbanCards = document.querySelectorAll('.kanban-card');
+    const kanbanColumns = document.querySelectorAll('.kanban-cards-container');
+    
+    // Add event listeners to cards
+    kanbanCards.forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+    });
+    
+    // Add event listeners to columns (drop zones)
+    kanbanColumns.forEach(column => {
+        column.addEventListener('dragover', handleDragOver);
+        column.addEventListener('drop', handleDrop);
+        column.addEventListener('dragleave', handleDragLeave);
+        column.addEventListener('dragenter', handleDragEnter);
+    });
+}
+
+// Handle drag start
+function handleDragStart(e) {
+    draggedCard = e.target;
+    draggedApplicationId = e.target.dataset.id;
+    
+    // Get the original status from the parent column
+    const parentColumn = e.target.closest('.kanban-column');
+    originalStatus = parentColumn.dataset.status;
+    
+    // Add dragging class for visual feedback
+    e.target.classList.add('dragging');
+    
+    // Store the drag data
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.innerHTML);
+    
+    console.log('Started dragging application:', draggedApplicationId, 'from status:', originalStatus);
+}
+
+// Handle drag over - allow dropping
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault(); // Allows us to drop
+    }
+    
+    e.dataTransfer.dropEffect = 'move';
+    
+    // Add visual feedback to the column
+    const column = e.target.closest('.kanban-column');
+    if (column && !column.classList.contains('drag-over')) {
+        // Remove drag-over class from all columns first
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+        column.classList.add('drag-over');
+    }
+    
+    // Optional: Show where the card will be inserted
+    const afterElement = getDragAfterElement(e.target.closest('.kanban-cards-container'), e.clientY);
+    if (afterElement == null) {
+        e.target.closest('.kanban-cards-container').appendChild(draggedCard);
+    } else {
+        e.target.closest('.kanban-cards-container').insertBefore(draggedCard, afterElement);
+    }
+    
+    return false;
+}
+
+// Get the element after which the dragged element should be inserted
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Handle drag enter
+function handleDragEnter(e) {
+    // Add visual feedback when entering a drop zone
+    const column = e.target.closest('.kanban-column');
+    if (column) {
+        column.classList.add('drag-over');
+    }
+}
+
+// Handle drag leave
+function handleDragLeave(e) {
+    // Remove visual feedback when leaving a drop zone
+    const column = e.target.closest('.kanban-column');
+    if (column && !column.contains(e.relatedTarget)) {
+        column.classList.remove('drag-over');
+    }
+}
+
+// Handle drop
+async function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation(); // Stops some browsers from redirecting
+    }
+    
+    const dropZone = e.target.closest('.kanban-cards-container');
+    const newStatus = dropZone.dataset.status;
+    
+    // Only process if we have a valid dragged card and it's a different status
+    if (draggedCard && draggedApplicationId) {
+        console.log('Dropping application:', draggedApplicationId, 'to status:', newStatus);
+        
+        // Check if the status actually changed
+        if (originalStatus !== newStatus) {
+            try {
+                // Update the application status in the database
+                const application = await getApplicationFromDB(draggedApplicationId);
+                application.status = newStatus;
+                application.updatedAt = new Date().toISOString();
+                
+                await updateApplicationInDB(application);
+                
+                console.log('Application status updated successfully');
+                
+                // Update the UI - Update column counts
+                updateColumnCounts();
+                
+                // Show success notification (we'll implement this in a later step)
+                // For now, just log it
+                console.log(`Moved "${application.jobTitle}" to ${newStatus}`);
+                
+            } catch (error) {
+                console.error('Error updating application status:', error);
+                // Revert the UI change by re-rendering the kanban board
+                renderKanbanBoard();
+                alert('Failed to update application status. Please try again.');
+            }
+        }
+    }
+    
+    // Remove drag-over class from all columns
+    document.querySelectorAll('.kanban-column').forEach(col => {
+        col.classList.remove('drag-over');
+    });
+    
+    return false;
+}
+
+// Handle drag end
+function handleDragEnd(e) {
+    // Remove dragging class
+    e.target.classList.remove('dragging');
+    
+    // Clean up any remaining drag-over classes
+    document.querySelectorAll('.kanban-column').forEach(col => {
+        col.classList.remove('drag-over');
+    });
+    
+    // Reset drag state
+    draggedCard = null;
+    draggedApplicationId = null;
+    originalStatus = null;
+    
+    console.log('Drag ended');
+}
+
+// Update column counts after a successful drop
+function updateColumnCounts() {
+    // Get all columns
+    const columns = document.querySelectorAll('.kanban-column');
+    
+    columns.forEach(column => {
+        const status = column.dataset.status;
+        const cardsContainer = column.querySelector('.kanban-cards-container');
+        const countElement = column.querySelector('.kanban-column-count');
+        
+        // Count non-empty-state cards
+        const cardCount = cardsContainer.querySelectorAll('.kanban-card').length;
+        
+        // Update count
+        if (countElement) {
+            countElement.textContent = cardCount;
+        }
+        
+        // Update empty state
+        const emptyState = cardsContainer.querySelector('.kanban-empty-state');
+        if (cardCount === 0 && !emptyState) {
+            // Add empty state
+            cardsContainer.innerHTML = `
+                <div class="kanban-empty-state">
+                    <p>No applications</p>
+                </div>
+            `;
+        } else if (cardCount > 0 && emptyState) {
+            // Remove empty state
+            emptyState.remove();
+        }
+    });
 }
