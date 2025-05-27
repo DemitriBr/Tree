@@ -1199,61 +1199,60 @@ function createStatusChart(stats, canvasId) {
     const total = statusData.reduce((sum, [_, count]) => sum + count, 0);
     let currentAngle = -Math.PI / 2; // Start at top
     
-// Draw pie slices
-statusData.forEach(([status, count]) => {
-    const sliceAngle = (count / total) * 2 * Math.PI;
-    
-    // Draw slice
+    // Draw pie slices
+    statusData.forEach(([status, count]) => {
+        const sliceAngle = (count / total) * 2 * Math.PI;
+        
+        // Draw slice
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.closePath();
+        ctx.fillStyle = statusColors[status] || '#999';
+        ctx.fill();
+        
+        // Draw slice border
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        currentAngle += sliceAngle;
+    });
+
+    // Draw center circle for donut effect
     ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-    ctx.closePath();
-    ctx.fillStyle = statusColors[status] || '#999';
+    ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
     ctx.fill();
-    
-    // Draw slice border
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    currentAngle += sliceAngle;
-});
 
-// Draw center circle for donut effect
-ctx.beginPath();
-ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI);
-ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
-ctx.fill();
+    // Draw legend with percentages
+    const legendX = width - 180; // Give more room
+    let legendY = 30;
 
-// Draw legend with percentages
-const legendX = width - 180; // Give more room
-let legendY = 30;
-
-ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
-ctx.font = 'bold 12px Inter, sans-serif';
-ctx.fillText('Status Breakdown', legendX, legendY - 10);
-
-legendY += 10;
-
-statusData.forEach(([status, count]) => {
-    const percentage = Math.round((count / total) * 100);
-    
-    // Color box
-    ctx.fillStyle = statusColors[status] || '#999';
-    ctx.fillRect(legendX, legendY, 12, 12);
-    
-    // Label with percentage
     ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
-    ctx.font = '11px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    const label = `${status.charAt(0).toUpperCase() + status.slice(1)}: ${count} (${percentage}%)`;
-    ctx.fillText(label, legendX + 18, legendY + 6);
-    
-    legendY += 20;
-});
-} // <-- ADD THIS CLOSING BRACE for createStatusChart
-// Create timeline chart showing applications over time
+    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.fillText('Status Breakdown', legendX, legendY - 10);
+
+    legendY += 10;
+
+    statusData.forEach(([status, count]) => {
+        const percentage = Math.round((count / total) * 100);
+        
+        // Color box
+        ctx.fillStyle = statusColors[status] || '#999';
+        ctx.fillRect(legendX, legendY, 12, 12);
+        
+        // Label with percentage
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        const label = `${status.charAt(0).toUpperCase() + status.slice(1)}: ${count} (${percentage}%)`;
+        ctx.fillText(label, legendX + 18, legendY + 6);
+        
+        legendY += 20;
+    });
+}
 function createTimelineChart(applications, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
