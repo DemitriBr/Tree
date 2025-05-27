@@ -1281,19 +1281,20 @@ function createTimelineChart(applications, canvasId) {
         monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
     });
     
-    // Get last 6 months
-    const months = [];
-    const counts = [];
-    const now = new Date();
+   // Get last 6 months INCLUDING future months
+const months = [];
+const counts = [];
+const now = new Date();
+
+// Start from 3 months ago to include future applications
+for (let i = 3; i >= -2; i--) {  // Changed from 5 to 3, and 0 to -2
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
     
-    for (let i = 5; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-        
-        months.push(monthName);
-        counts.push(monthlyData[monthKey] || 0);
-    }
+    months.push(monthName);
+    counts.push(monthlyData[monthKey] || 0);
+}
     
     // Calculate dimensions
     const padding = 40;
