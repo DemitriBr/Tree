@@ -1224,32 +1224,6 @@ function createStatusChart(stats, canvasId) {
     ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI);
     ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
     ctx.fill();
-
-    // Draw legend with percentages
-    const legendX = width - 180; // Give more room
-    let legendY = 30;
-
-    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
-    ctx.font = 'bold 12px Inter, sans-serif';
-    
-    legendY += 10;
-
-    statusData.forEach(([status, count]) => {
-        const percentage = Math.round((count / total) * 100);
-        
-        // Color box
-        ctx.fillStyle = statusColors[status] || '#999';
-        ctx.fillRect(legendX, legendY, 12, 12);
-        
-        // Label with percentage
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
-        ctx.font = '11px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        const label = `${status.charAt(0).toUpperCase() + status.slice(1)}: ${count} (${percentage}%)`;
-        ctx.fillText(label, legendX + 18, legendY + 6);
-        
-        legendY += 20;
     });
 }
 function createTimelineChart(applications, canvasId) {
