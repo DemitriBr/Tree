@@ -96,7 +96,9 @@ function setupNavButtons() {
     });
 }
 
-// Update switchView to load dashboard when switching to dashboard view
+// Find your existing switchView function and update the kanban case
+// The function should look like this after the update:
+
 function switchView(viewName) {
     console.log('Switching to view:', viewName);
     
@@ -132,7 +134,8 @@ function switchView(viewName) {
                 break;
                 
             case 'kanban':
-                console.log('Switched to kanban view');
+                console.log('Loading kanban board...');
+                renderKanbanBoard();
                 break;
         }
     }
@@ -1420,4 +1423,168 @@ for (let i = 3; i >= -2; i--) {  // Changed from 5 to 3, and 0 to -2
     ctx.font = 'bold 16px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Applications Over Time', width / 2, 20);
+}
+// Add this code to your script.js file after the existing dashboard functions
+
+// Kanban Board Implementation
+async function renderKanbanBoard() {
+    const kanbanContainer = document.getElementById('kanbanContainer');
+    
+    if (!kanbanContainer) {
+        console.error('Kanban container not found');
+        return;
+    }
+    
+    // Show loading state
+    kanbanContainer.innerHTML = '<div class="loading">Loading kanban board...</div>';
+    
+    try {
+        // Fetch all applications
+        const applications = await getAllApplicationsFromDB();
+        
+        // Define kanban columns based on status
+        const kanbanColumns = [
+            { id: 'applied', title: 'Applied', icon: '📤' },
+            { id: 'screening', title: 'Screening', icon: '👀' },
+            { id: 'interview', title: 'Interview', icon: '🎤' },
+            { id: 'offer', title: 'Offer', icon: '🎉' },
+            { id: 'rejected', title: 'Rejected', icon: '❌' },
+            { id: 'withdrawn', title: 'Withdrawn', icon: '🚪' }
+        ];
+        
+        // Group applications by status
+        const groupedApplications = groupApplicationsByStatus(applications);
+        
+        // Clear container and create columns
+        kanbanContainer.innerHTML = '';
+        kanbanContainer.className = 'kanban-board';
+        
+        // Create each column
+        kanbanColumns.forEach(column => {
+            const columnElement = createKanbanColumn(column, groupedApplications[column.id] || []);
+            kanbanContainer.appendChild(columnElement);
+        });
+        
+        console.log('Kanban board rendered successfully');
+        
+    } catch (error) {
+        console.error('Error rendering kanban board:', error);
+        kanbanContainer.innerHTML = '<div class="error">Failed to load kanban board</div>';
+    }
+}
+
+// Group applications by status
+function groupApplicationsByStatus(applications) {
+    return applications.reduce((groups, app) => {
+        const status = app.status || 'applied';
+        if (!groups[status]) {
+            groups[status] = [];
+        }
+        groups[status].push(app);
+        return groups;
+    }, {});
+}
+
+// Create a kanban column
+function createKanbanColumn(column, applications) {
+    const columnDiv = document.createElement('div');
+    columnDiv.className = 'kanban-column';
+    columnDiv.dataset.status = column.id;
+    
+    // Column header
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'kanban-column-header';
+    headerDiv.innerHTML = `
+        <div class="kanban-column-title">
+            <span class="kanban-column-icon">${column.icon}</span>
+            <h3>${column.title}</h3>
+        </div>
+        <span class="kanban-column-count">${applications.length}</span>
+    `;
+    
+    // Cards container
+    const cardsContainer = document.createElement('div');
+    cardsContainer.className = 'kanban-cards-container';
+    cardsContainer.dataset.status = column.id;
+    
+    // Add empty state or cards
+    if (applications.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'kanban-empty-state';
+        emptyState.innerHTML = `
+            <p>No applications</p>
+        `;
+        cardsContainer.appendChild(emptyState);
+    } else {
+        // Sort applications by date (newest first)
+        applications.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
+        
+        // Create cards
+        applications.forEach(app => {
+            const card = createKanbanCard(app);
+            cardsContainer.appendChild(card);
+        });
+    }
+    
+    columnDiv.appendChild(headerDiv);
+    columnDiv.appendChild(cardsContainer);
+    
+    return columnDiv;
+}
+
+// Create a kanban card
+function createKanbanCard(application) {
+    const card = document.createElement('div');
+    card.className = 'kanban-card';
+    card.dataset.id = application.id;
+    card.draggable = true; // Make it draggable for future drag-and-drop functionality
+    
+    // Calculate days since application
+    const daysAgo = Math.floor((new Date() - new Date(application.applicationDate)) / (1000 * 60 * 60 * 24));
+    const daysAgoText = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+    
+    // Check for upcoming deadline
+    let deadlineHtml = '';
+    if (application.deadline) {
+        const daysUntilDeadline = Math.ceil((new Date(application.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) {
+            deadlineHtml = `<div class="kanban-card-deadline">⏰ ${daysUntilDeadline} days left</div>`;
+        } else if (daysUntilDeadline < 0) {
+            deadlineHtml = `<div class="kanban-card-deadline deadline-passed">⏰ Deadline passed</div>`;
+        }
+    }
+    
+    card.innerHTML = `
+        <div class="kanban-card-header">
+            <h4 class="kanban-card-title">${application.jobTitle}</h4>
+            <button class="kanban-card-edit" data-id="${application.id}" title="Edit">
+                ✏️
+            </button>
+        </div>
+        
+        <div class="kanban-card-company">${application.companyName}</div>
+        
+        ${application.location ? `<div class="kanban-card-location">📍 ${application.location}</div>` : ''}
+        
+        <div class="kanban-card-date">${daysAgoText}</div>
+        
+        ${deadlineHtml}
+        
+        ${application.salary ? `<div class="kanban-card-salary">💰 ${application.salary}</div>` : ''}
+        
+        ${application.notes ? `
+            <div class="kanban-card-notes">
+                ${application.notes.substring(0, 60)}${application.notes.length > 60 ? '...' : ''}
+            </div>
+        ` : ''}
+    `;
+    
+    // Add click handler for edit button
+    const editBtn = card.querySelector('.kanban-card-edit');
+    editBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await loadApplicationForEdit(application.id);
+    });
+    
+    return card;
 }
