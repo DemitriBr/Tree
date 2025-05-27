@@ -1155,7 +1155,7 @@ async function renderDashboard() {
 }
 
 
-// Create status distribution chart using Canvas
+// Create status distribution chart using Canvas (NO LEGEND)
 function createStatusChart(stats, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -1190,10 +1190,10 @@ function createStatusChart(stats, canvasId) {
         withdrawn: '#757575'
     };
     
-    // Calculate dimensions
+    // Calculate dimensions - use full canvas since no legend
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = Math.min(width, height) / 2 - 40;
+    const radius = Math.min(width, height) / 2 - 20; // Small padding from edges
     
     // Calculate angles
     const total = statusData.reduce((sum, [_, count]) => sum + count, 0);
@@ -1212,8 +1212,8 @@ function createStatusChart(stats, canvasId) {
         ctx.fill();
         
         // Draw slice border
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
+        ctx.lineWidth = 3;
         ctx.stroke();
         
         currentAngle += sliceAngle;
@@ -1221,36 +1221,14 @@ function createStatusChart(stats, canvasId) {
 
     // Draw center circle for donut effect
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.3, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, radius * 0.35, 0, 2 * Math.PI);
     ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
     ctx.fill();
-    // Draw legend with percentages
-const legendX = width - 180; // Give more room
-let legendY = 30;
-
-ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
-ctx.font = 'bold 12px Inter, sans-serif';
-ctx.fillText('Status Breakdown', legendX, legendY - 10);
-
-legendY += 10;
-
-statusData.forEach(([status, count]) => {
-    const percentage = Math.round((count / total) * 100);
     
-    // Color box
-    ctx.fillStyle = statusColors[status] || '#999';
-    ctx.fillRect(legendX, legendY, 12, 12);
-    
-    // Label with percentage
-    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
-    ctx.font = '11px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    const label = `${status.charAt(0).toUpperCase() + status.slice(1)}: ${count} (${percentage}%)`;
-    ctx.fillText(label, legendX + 18, legendY + 6);
-    
-    legendY += 20;
-});
+    // Add subtle border to center circle
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-border');
+    ctx.lineWidth = 2;
+    ctx.stroke();
 }
 function createTimelineChart(applications, canvasId) {
     const canvas = document.getElementById(canvasId);
