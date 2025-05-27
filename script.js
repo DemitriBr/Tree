@@ -1231,8 +1231,7 @@ function createStatusChart(stats, canvasId) {
 
     ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
     ctx.font = 'bold 12px Inter, sans-serif';
-    ctx.fillText('Status Breakdown', legendX, legendY - 10);
-
+    
     legendY += 10;
 
     statusData.forEach(([status, count]) => {
