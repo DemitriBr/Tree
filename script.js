@@ -1155,7 +1155,7 @@ async function renderDashboard() {
 }
 
 
-// Create status distribution chart using Canvas (with side legend)
+// Create status distribution chart using Canvas (with slice percentages and side legend)
 function createStatusChart(stats, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -1197,11 +1197,11 @@ function createStatusChart(stats, canvasId) {
     const centerY = height / 2;
     const radius = Math.min(chartArea, height) / 2 - 30; // Padding from edges
     
-    // Calculate angles
+    // Calculate angles and total
     const total = statusData.reduce((sum, [_, count]) => sum + count, 0);
     let currentAngle = -Math.PI / 2; // Start at top
     
-    // Draw pie slices
+    // First pass: Draw pie slices
     statusData.forEach(([status, count]) => {
         const sliceAngle = (count / total) * 2 * Math.PI;
         
@@ -1231,6 +1231,48 @@ function createStatusChart(stats, canvasId) {
     ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-border');
     ctx.lineWidth = 2;
     ctx.stroke();
+
+    // Second pass: Draw percentage labels on slices
+    currentAngle = -Math.PI / 2; // Reset angle
+    
+    statusData.forEach(([status, count]) => {
+        const sliceAngle = (count / total) * 2 * Math.PI;
+        const percentage = Math.round((count / total) * 100);
+        
+        // Only show percentage if slice is large enough (at least 5%)
+        if (percentage >= 5) {
+            // Calculate middle angle of slice
+            const middleAngle = currentAngle + sliceAngle / 2;
+            
+            // Calculate text position (70% of radius from center)
+            const textRadius = radius * 0.7;
+            const textX = centerX + Math.cos(middleAngle) * textRadius;
+            const textY = centerY + Math.sin(middleAngle) * textRadius;
+            
+            // Set text style
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Add text shadow for better readability
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 3;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            
+            // Draw percentage
+            ctx.fillText(`${percentage}%`, textX, textY);
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        }
+        
+        currentAngle += sliceAngle;
+    });
 
     // Draw legend on the right side
     const legendX = chartArea + 20; // Start legend after chart area + gap
