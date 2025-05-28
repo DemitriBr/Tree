@@ -1750,18 +1750,17 @@ function handleDragLeave(e) {
     }
 }
 
-// Handle drop
+// Replace the existing handleDrop function with this corrected version
 async function handleDrop(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
     }
     
-    e.preventDefault(); // Important to prevent default behavior
+    e.preventDefault();
     
-    // Find the drop zone - could be the container or a child element
+    // Find the drop zone
     let dropZone = e.target.closest('.kanban-cards-container');
     
-    // If we didn't find a cards container, check if we're over a column
     if (!dropZone) {
         const column = e.target.closest('.kanban-column');
         if (column) {
@@ -1769,10 +1768,8 @@ async function handleDrop(e) {
         }
     }
     
-    // If still no drop zone, exit gracefully
     if (!dropZone) {
         console.log('No valid drop zone found');
-        // Clean up drag states
         document.querySelectorAll('.kanban-column').forEach(col => {
             col.classList.remove('drag-over');
         });
@@ -1781,11 +1778,10 @@ async function handleDrop(e) {
     
     const newStatus = dropZone.dataset.status;
     
-    // Check if we have a valid dragged card
     if (draggedCard && draggedApplicationId && originalStatus) {
         // Only process if status actually changed
         if (originalStatus !== newStatus) {
-            // Show loading state on the card - CHECK IF draggedCard EXISTS
+            // Show loading state on the card
             if (draggedCard && draggedCard.classList) {
                 draggedCard.classList.add('updating');
             }
@@ -1815,9 +1811,16 @@ async function handleDrop(e) {
                 
                 console.log(`Successfully moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
                 
-                // Remove updating state - CHECK IF draggedCard EXISTS
+                // Remove updating state and ensure card is draggable
                 if (draggedCard && draggedCard.classList) {
                     draggedCard.classList.remove('updating');
+                    draggedCard.classList.remove('dragging');
+                    
+                    // IMPORTANT: Restore draggable state immediately
+                    draggedCard.draggable = true;
+                    draggedCard.style.opacity = '';
+                    draggedCard.style.pointerEvents = '';
+                    draggedCard.style.cursor = '';
                     
                     // Add success animation
                     draggedCard.classList.add('drop-success');
@@ -1831,30 +1834,45 @@ async function handleDrop(e) {
                 // Update column counts and empty states
                 updateKanbanUI();
                 
+                // IMPORTANT: Immediately reattach listeners to ensure cards remain draggable
+                setTimeout(() => {
+                    reattachDragListeners();
+                }, 50);
+                
             } catch (error) {
                 console.error('Error updating application status:', error);
                 
-                // Remove updating state - CHECK IF draggedCard EXISTS
                 if (draggedCard && draggedCard.classList) {
                     draggedCard.classList.remove('updating');
+                    draggedCard.classList.remove('dragging');
+                    draggedCard.style.opacity = '';
+                    draggedCard.style.pointerEvents = '';
+                    draggedCard.style.cursor = '';
+                    draggedCard.draggable = true;
                 }
                 
-                // Rollback UI - move card back to original column
+                // Rollback UI
                 const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
                 if (originalColumn && draggedCard) {
                     originalColumn.appendChild(draggedCard);
                 }
                 
-                // Re-render the entire kanban board to ensure consistency
                 setTimeout(() => {
                     renderKanbanBoard();
                 }, 300);
                 
                 alert(`Failed to update status. Please try again.`);
             }
+        } else {
+            // If dropped in the same column, ensure card remains draggable
+            if (draggedCard) {
+                draggedCard.classList.remove('dragging');
+                draggedCard.style.opacity = '';
+                draggedCard.style.pointerEvents = '';
+                draggedCard.style.cursor = '';
+                draggedCard.draggable = true;
+            }
         }
-    } else {
-        console.log('Missing dragged card or application ID');
     }
     
     // Clean up drag states
@@ -1862,24 +1880,33 @@ async function handleDrop(e) {
         col.classList.remove('drag-over');
     });
     
+    // Clean up any remaining dragging cards
+    document.querySelectorAll('.kanban-card.dragging').forEach(card => {
+        card.classList.remove('dragging');
+        card.style.opacity = '';
+        card.style.pointerEvents = '';
+        card.style.cursor = '';
+        card.draggable = true;
+    });
+    
+    // Reset drag state variables
+    draggedCard = null;
+    draggedApplicationId = null;
+    originalStatus = null;
+    
     return false;
 }
-
-// Handle drag end
+// Replace the existing handleDragEnd function with this improved version
 function handleDragEnd(e) {
     // Get the actual card element
     const card = e.target.closest('.kanban-card');
     
-    // Remove dragging class
+    // Remove dragging class and restore all styles
     if (card && card.classList) {
         card.classList.remove('dragging');
-        
-        // IMPORTANT: Ensure the element is fully restored
         card.style.opacity = '';
         card.style.pointerEvents = '';
         card.style.cursor = '';
-        
-        // Ensure draggable is still true
         card.draggable = true;
     }
     
@@ -1888,9 +1915,13 @@ function handleDragEnd(e) {
         col.classList.remove('drag-over');
     });
     
-    // Clean up any cards that might still have the dragging class
-    document.querySelectorAll('.kanban-card.dragging').forEach(card => {
-        card.classList.remove('dragging');
+    // Clean up ALL cards that might still have the dragging class
+    document.querySelectorAll('.kanban-card').forEach(card => {
+        if (card.classList.contains('dragging')) {
+            card.classList.remove('dragging');
+        }
+        // Ensure all cards are draggable
+        card.draggable = true;
         card.style.opacity = '';
         card.style.pointerEvents = '';
         card.style.cursor = '';
@@ -1901,34 +1932,15 @@ function handleDragEnd(e) {
     draggedApplicationId = null;
     originalStatus = null;
     
+    // Force reattach listeners as a safety measure
+    setTimeout(() => {
+        reattachDragListeners();
+    }, 100);
+    
     console.log('Drag ended and cleaned up');
 }
 
-// Function to reattach drag listeners to all kanban cards
-function reattachDragListeners() {
-    const kanbanCards = document.querySelectorAll('.kanban-card');
-    kanbanCards.forEach(card => {
-        // Remove existing listeners to avoid duplicates
-        card.removeEventListener('dragstart', handleDragStart);
-        card.removeEventListener('dragend', handleDragEnd);
-        
-        // Reattach listeners
-        card.addEventListener('dragstart', handleDragStart);
-        card.addEventListener('dragend', handleDragEnd);
-        
-        // Ensure draggable is true
-        card.draggable = true;
-        
-        // Clear any lingering styles
-        card.style.opacity = '';
-        card.style.pointerEvents = '';
-        card.style.cursor = '';
-    });
-    
-    console.log('Reattached drag listeners to', kanbanCards.length, 'cards');
-}
-
-// Update the entire Kanban UI (counts, empty states, etc.)
+// Replace the existing updateKanbanUI function with this improved version
 function updateKanbanUI() {
     const columns = document.querySelectorAll('.kanban-column');
     
@@ -1942,8 +1954,6 @@ function updateKanbanUI() {
         // Update count
         if (countElement) {
             countElement.textContent = cardCount;
-            
-            // Add animation to count change
             countElement.classList.add('count-updated');
             setTimeout(() => {
                 countElement.classList.remove('count-updated');
@@ -1955,25 +1965,73 @@ function updateKanbanUI() {
         
         if (cardCount === 0) {
             if (!emptyState) {
-                // Create and add empty state with fade-in animation
                 const emptyDiv = document.createElement('div');
                 emptyDiv.className = 'kanban-empty-state fade-in';
                 emptyDiv.innerHTML = '<p>No applications</p>';
                 cardsContainer.appendChild(emptyDiv);
             }
         } else if (emptyState) {
-            // Remove empty state with fade-out animation
             emptyState.classList.add('fade-out');
             setTimeout(() => {
                 emptyState.remove();
             }, 300);
         }
+        
+        // Ensure all cards in this container are draggable
+        cards.forEach(card => {
+            card.draggable = true;
+            card.classList.remove('dragging');
+            card.style.opacity = '';
+            card.style.pointerEvents = '';
+            card.style.cursor = '';
+        });
     });
     
-    // IMPORTANT: Reattach drag listeners after UI update
-    setTimeout(() => {
-        reattachDragListeners();
-    }, 100);
+    // Immediately reattach drag listeners without delay
+    reattachDragListeners();
+}
+
+// Improved reattachDragListeners function
+function reattachDragListeners() {
+    const kanbanCards = document.querySelectorAll('.kanban-card');
+    const kanbanColumns = document.querySelectorAll('.kanban-cards-container');
+    
+    // Reattach listeners to all cards
+    kanbanCards.forEach(card => {
+        // Remove existing listeners to avoid duplicates
+        card.removeEventListener('dragstart', handleDragStart);
+        card.removeEventListener('dragend', handleDragEnd);
+        
+        // Ensure card is draggable
+        card.draggable = true;
+        
+        // Clear any lingering styles
+        card.classList.remove('dragging');
+        card.style.opacity = '';
+        card.style.pointerEvents = '';
+        card.style.cursor = '';
+        
+        // Reattach listeners
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+    });
+    
+    // Ensure column drop zone listeners are attached
+    kanbanColumns.forEach(column => {
+        // Remove existing listeners
+        column.removeEventListener('dragover', handleDragOver);
+        column.removeEventListener('drop', handleDrop);
+        column.removeEventListener('dragleave', handleDragLeave);
+        column.removeEventListener('dragenter', handleDragEnter);
+        
+        // Reattach listeners
+        column.addEventListener('dragover', handleDragOver);
+        column.addEventListener('drop', handleDrop);
+        column.addEventListener('dragleave', handleDragLeave);
+        column.addEventListener('dragenter', handleDragEnter);
+    });
+    
+    console.log('Reattached drag listeners to', kanbanCards.length, 'cards and', kanbanColumns.length, 'columns');
 }
 
 // Optional: Auto-refresh functionality
