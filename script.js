@@ -1651,8 +1651,7 @@ function setupDragAndDrop() {
     });
 }
 
-// Also update handleDragStart to ensure draggedCard is properly set:
-
+// Handle drag start
 function handleDragStart(e) {
     // Ensure we're dragging a kanban card
     const card = e.target.closest('.kanban-card');
@@ -1683,8 +1682,7 @@ function handleDragStart(e) {
     console.log('Started dragging application:', draggedApplicationId, 'from status:', originalStatus);
 }
 
-// And make handleDragOver more robust:
-
+// Handle drag over - allow dropping
 function handleDragOver(e) {
     if (e.preventDefault) {
         e.preventDefault(); // Allows us to drop
@@ -1717,6 +1715,7 @@ function handleDragOver(e) {
     
     return false;
 }
+
 // Get the element after which the dragged element should be inserted
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
@@ -1742,8 +1741,7 @@ function handleDragEnter(e) {
     }
 }
 
-// Also update handleDragLeave to be more defensive:
-
+// Handle drag leave
 function handleDragLeave(e) {
     // Remove visual feedback when leaving a drop zone
     const column = e.target.closest('.kanban-column');
@@ -1752,8 +1750,7 @@ function handleDragLeave(e) {
     }
 }
 
-// Replace the entire handleDrop function with this fully defensive version:
-
+// Handle drop
 async function handleDrop(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
@@ -1868,8 +1865,7 @@ async function handleDrop(e) {
     return false;
 }
 
-// Update handleDragEnd to be more defensive:
-
+// Handle drag end
 function handleDragEnd(e) {
     // Get the actual card element
     const card = e.target.closest('.kanban-card');
@@ -1932,7 +1928,7 @@ function reattachDragListeners() {
     console.log('Reattached drag listeners to', kanbanCards.length, 'cards');
 }
 
-// Update your updateKanbanUI function to reattach listeners after UI updates:
+// Update the entire Kanban UI (counts, empty states, etc.)
 function updateKanbanUI() {
     const columns = document.querySelectorAll('.kanban-column');
     
