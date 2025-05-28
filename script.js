@@ -1736,12 +1736,14 @@ function handleDragLeave(e) {
     }
 }
 
-// Replace your existing handleDrop function with this fixed version:
+// Replace your existing handleDrop and handleDragEnd functions with these fixed versions:
 
 async function handleDrop(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
     }
+    
+    e.preventDefault(); // Important to prevent default behavior
     
     const dropZone = e.target.closest('.kanban-cards-container');
     if (!dropZone) return false;
@@ -1752,8 +1754,7 @@ async function handleDrop(e) {
         // Only process if status actually changed
         if (originalStatus !== newStatus) {
             // Show loading state on the card
-            draggedCard.style.opacity = '0.6';
-            draggedCard.style.pointerEvents = 'none';
+            draggedCard.classList.add('updating');
             
             try {
                 // Fetch the current application data
@@ -1780,9 +1781,8 @@ async function handleDrop(e) {
                 
                 console.log(`Successfully moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
                 
-                // Update the card's visual state - ENSURE these are reset
-                draggedCard.style.opacity = '1';
-                draggedCard.style.pointerEvents = 'auto';
+                // Remove updating state
+                draggedCard.classList.remove('updating');
                 
                 // Add success animation
                 draggedCard.classList.add('drop-success');
@@ -1796,9 +1796,8 @@ async function handleDrop(e) {
             } catch (error) {
                 console.error('Error updating application status:', error);
                 
-                // Restore card visual state on error
-                draggedCard.style.opacity = '1';
-                draggedCard.style.pointerEvents = 'auto';
+                // Remove updating state
+                draggedCard.classList.remove('updating');
                 
                 // Rollback UI - move card back to original column
                 const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
@@ -1813,10 +1812,6 @@ async function handleDrop(e) {
                 
                 alert(`Failed to update status. Please try again.`);
             }
-        } else {
-            // If dropped in same column, just restore opacity
-            draggedCard.style.opacity = '1';
-            draggedCard.style.pointerEvents = 'auto';
         }
     }
     
@@ -1827,16 +1822,19 @@ async function handleDrop(e) {
     
     return false;
 }
-// Also update the handleDragEnd function to ensure cleanup:
 
 function handleDragEnd(e) {
     // Remove dragging class
-    e.target.classList.remove('dragging');
-    
-    // IMPORTANT: Restore opacity in case drop wasn't successful
-    if (e.target.style.opacity !== '1') {
-        e.target.style.opacity = '1';
-        e.target.style.pointerEvents = 'auto';
+    if (e.target) {
+        e.target.classList.remove('dragging');
+        
+        // IMPORTANT: Ensure the element is fully restored
+        e.target.style.opacity = '';
+        e.target.style.pointerEvents = '';
+        e.target.style.cursor = '';
+        
+        // Ensure draggable is still true
+        e.target.draggable = true;
     }
     
     // Clean up any remaining drag-over classes
@@ -1844,14 +1842,23 @@ function handleDragEnd(e) {
         col.classList.remove('drag-over');
     });
     
+    // Clean up any cards that might still have the dragging class
+    document.querySelectorAll('.kanban-card.dragging').forEach(card => {
+        card.classList.remove('dragging');
+        card.style.opacity = '';
+        card.style.pointerEvents = '';
+        card.style.cursor = '';
+    });
+    
     // Reset drag state
     draggedCard = null;
     draggedApplicationId = null;
     originalStatus = null;
     
-    console.log('Drag ended');
+    console.log('Drag ended and cleaned up');
 }
-// Update the entire Kanban UI (counts, empty states, etc.)
+
+// Update your updateKanbanUI function to reattach listeners after UI updates:
 function updateKanbanUI() {
     const columns = document.querySelectorAll('.kanban-column');
     
@@ -1892,6 +1899,11 @@ function updateKanbanUI() {
             }, 300);
         }
     });
+    
+    // IMPORTANT: Reattach drag listeners after UI update
+    setTimeout(() => {
+        reattachDragListeners();
+    }, 100);
 }
 
 // Optional: Auto-refresh functionality
