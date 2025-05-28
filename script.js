@@ -1736,7 +1736,8 @@ function handleDragLeave(e) {
     }
 }
 
-// Handle drop
+// Replace your existing handleDrop function with this fixed version:
+
 async function handleDrop(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
@@ -1747,68 +1748,75 @@ async function handleDrop(e) {
     
     const newStatus = dropZone.dataset.status;
     
-    if (draggedCard && draggedApplicationId && originalStatus !== newStatus) {
-        // Show loading state on the card
-        draggedCard.style.opacity = '0.6';
-        draggedCard.style.pointerEvents = 'none';
-        
-        try {
-            // Fetch the current application data
-            const application = await getApplicationFromDB(draggedApplicationId);
+    if (draggedCard && draggedApplicationId) {
+        // Only process if status actually changed
+        if (originalStatus !== newStatus) {
+            // Show loading state on the card
+            draggedCard.style.opacity = '0.6';
+            draggedCard.style.pointerEvents = 'none';
             
-            // Update status and progress stage
-            application.status = newStatus;
-            application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
-            application.updatedAt = new Date().toISOString();
-            
-            // Add status change to history
-            if (!application.statusHistory) {
-                application.statusHistory = [];
+            try {
+                // Fetch the current application data
+                const application = await getApplicationFromDB(draggedApplicationId);
+                
+                // Update status and progress stage
+                application.status = newStatus;
+                application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
+                application.updatedAt = new Date().toISOString();
+                
+                // Add status change to history
+                if (!application.statusHistory) {
+                    application.statusHistory = [];
+                }
+                application.statusHistory.push({
+                    from: originalStatus,
+                    to: newStatus,
+                    date: new Date().toISOString(),
+                    action: 'kanban-drag'
+                });
+                
+                // Update in database
+                await updateApplicationInDB(application);
+                
+                console.log(`Successfully moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
+                
+                // Update the card's visual state - ENSURE these are reset
+                draggedCard.style.opacity = '1';
+                draggedCard.style.pointerEvents = 'auto';
+                
+                // Add success animation
+                draggedCard.classList.add('drop-success');
+                setTimeout(() => {
+                    draggedCard.classList.remove('drop-success');
+                }, 500);
+                
+                // Update column counts and empty states
+                updateKanbanUI();
+                
+            } catch (error) {
+                console.error('Error updating application status:', error);
+                
+                // Restore card visual state on error
+                draggedCard.style.opacity = '1';
+                draggedCard.style.pointerEvents = 'auto';
+                
+                // Rollback UI - move card back to original column
+                const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
+                if (originalColumn) {
+                    originalColumn.appendChild(draggedCard);
+                }
+                
+                // Re-render the entire kanban board to ensure consistency
+                setTimeout(() => {
+                    renderKanbanBoard();
+                }, 300);
+                
+                alert(`Failed to update status. Please try again.`);
             }
-            application.statusHistory.push({
-                from: originalStatus,
-                to: newStatus,
-                date: new Date().toISOString(),
-                action: 'kanban-drag'
-            });
-            
-            // Update in database
-            await updateApplicationInDB(application);
-            
-            console.log(`Successfully moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
-            
-            // Update the card's visual state
+        } else {
+            // If dropped in same column, just restore opacity
             draggedCard.style.opacity = '1';
             draggedCard.style.pointerEvents = 'auto';
-            
-            // Add success animation
-            draggedCard.classList.add('drop-success');
-            setTimeout(() => {
-                draggedCard.classList.remove('drop-success');
-            }, 500);
-            
-            // Update column counts and empty states
-            updateKanbanUI();
-            
-        } catch (error) {
-            console.error('Error updating application status:', error);
-            
-            // Restore card visual state
-            draggedCard.style.opacity = '1';
-            draggedCard.style.pointerEvents = 'auto';
-            
-            // Rollback UI - move card back to original column
-            const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
-            if (originalColumn) {
-                originalColumn.appendChild(draggedCard);
-            }
-            
-            // Re-render the entire kanban board to ensure consistency
-            setTimeout(() => {
-                renderKanbanBoard();
-            }, 300);
-            
-            alert(`Failed to update status. Please try again.`);
         }
     }
     
@@ -1819,11 +1827,17 @@ async function handleDrop(e) {
     
     return false;
 }
+// Also update the handleDragEnd function to ensure cleanup:
 
-// Handle drag end
 function handleDragEnd(e) {
     // Remove dragging class
     e.target.classList.remove('dragging');
+    
+    // IMPORTANT: Restore opacity in case drop wasn't successful
+    if (e.target.style.opacity !== '1') {
+        e.target.style.opacity = '1';
+        e.target.style.pointerEvents = 'auto';
+    }
     
     // Clean up any remaining drag-over classes
     document.querySelectorAll('.kanban-column').forEach(col => {
@@ -1837,7 +1851,6 @@ function handleDragEnd(e) {
     
     console.log('Drag ended');
 }
-
 // Update the entire Kanban UI (counts, empty states, etc.)
 function updateKanbanUI() {
     const columns = document.querySelectorAll('.kanban-column');
