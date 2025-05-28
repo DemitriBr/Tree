@@ -96,11 +96,12 @@ function setupNavButtons() {
     });
 }
 
-// Find your existing switchView function and update the kanban case
-// The function should look like this after the update:
-
+// 3. Update your switchView function to manage auto-refresh:
 function switchView(viewName) {
     console.log('Switching to view:', viewName);
+    
+    // Stop any kanban auto-refresh when switching views
+    stopKanbanAutoRefresh();
     
     // Hide all views
     const allViews = document.querySelectorAll('.view');
@@ -136,6 +137,8 @@ function switchView(viewName) {
             case 'kanban':
                 console.log('Loading kanban board...');
                 renderKanbanBoard();
+                // Optional: Enable auto-refresh for kanban board
+                // startKanbanAutoRefresh(30000); // Refresh every 30 seconds
                 break;
         }
     }
@@ -1537,12 +1540,13 @@ function createKanbanColumn(column, applications) {
     return columnDiv;
 }
 
-// Create a kanban card
+// 1. Replace your existing createKanbanCard function with this enhanced version:
 function createKanbanCard(application) {
     const card = document.createElement('div');
     card.className = 'kanban-card';
     card.dataset.id = application.id;
-    card.draggable = true; // Make it draggable for future drag-and-drop functionality
+    card.dataset.applicationDate = application.applicationDate; // Add this for sorting
+    card.draggable = true;
     
     // Calculate days since application
     const daysAgo = Math.floor((new Date() - new Date(application.applicationDate)) / (1000 * 60 * 60 * 24));
@@ -1559,12 +1563,25 @@ function createKanbanCard(application) {
         }
     }
     
+    // Progress indicator based on progress stage
+    const progressStageIcons = {
+        'to-apply': '📝',
+        'applied': '✅',
+        'in-progress': '🔄',
+        'final-stage': '🎯',
+        'completed': '🏁'
+    };
+    const progressIcon = progressStageIcons[application.progressStage] || '📋';
+    
     card.innerHTML = `
         <div class="kanban-card-header">
             <h4 class="kanban-card-title">${application.jobTitle}</h4>
-            <button class="kanban-card-edit" data-id="${application.id}" title="Edit">
-                ✏️
-            </button>
+            <div class="kanban-card-actions">
+                <span class="kanban-card-progress" title="Progress: ${application.progressStage}">${progressIcon}</span>
+                <button class="kanban-card-edit" data-id="${application.id}" title="Edit">
+                    ✏️
+                </button>
+            </div>
         </div>
         
         <div class="kanban-card-company">${application.companyName}</div>
@@ -1705,48 +1722,88 @@ function handleDragLeave(e) {
     }
 }
 
-// Handle drop
+// 2. Replace your existing handleDrop function with handleDropEnhanced
 async function handleDrop(e) {
     if (e.stopPropagation) {
-        e.stopPropagation(); // Stops some browsers from redirecting
+        e.stopPropagation();
     }
     
     const dropZone = e.target.closest('.kanban-cards-container');
     const newStatus = dropZone.dataset.status;
     
-    // Only process if we have a valid dragged card and it's a different status
-    if (draggedCard && draggedApplicationId) {
-        console.log('Dropping application:', draggedApplicationId, 'to status:', newStatus);
+    if (draggedCard && draggedApplicationId && originalStatus !== newStatus) {
+        // Show loading state on the card
+        draggedCard.style.opacity = '0.6';
+        draggedCard.style.pointerEvents = 'none';
         
-        // Check if the status actually changed
-        if (originalStatus !== newStatus) {
-            try {
-                // Update the application status in the database
-                const application = await getApplicationFromDB(draggedApplicationId);
-                application.status = newStatus;
-                application.updatedAt = new Date().toISOString();
-                
-                await updateApplicationInDB(application);
-                
-                console.log('Application status updated successfully');
-                
-                // Update the UI - Update column counts
-                updateColumnCounts();
-                
-                // Show success notification (we'll implement this in a later step)
-                // For now, just log it
-                console.log(`Moved "${application.jobTitle}" to ${newStatus}`);
-                
-            } catch (error) {
-                console.error('Error updating application status:', error);
-                // Revert the UI change by re-rendering the kanban board
-                renderKanbanBoard();
-                alert('Failed to update application status. Please try again.');
+        try {
+            // Fetch the current application data
+            const application = await getApplicationFromDB(draggedApplicationId);
+            
+            // Store original values for rollback
+            const originalAppStatus = application.status;
+            const originalProgressStage = application.progressStage;
+            
+            // Update status and progress stage
+            application.status = newStatus;
+            application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
+            application.updatedAt = new Date().toISOString();
+            
+            // Add status change to history (if you want to track changes)
+            if (!application.statusHistory) {
+                application.statusHistory = [];
             }
+            application.statusHistory.push({
+                from: originalStatus,
+                to: newStatus,
+                date: new Date().toISOString(),
+                action: 'kanban-drag'
+            });
+            
+            // Update in database
+            await updateApplicationInDB(application);
+            
+            console.log(`Successfully moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
+            
+            // Update the card's visual state
+            draggedCard.style.opacity = '1';
+            draggedCard.style.pointerEvents = 'auto';
+            
+            // Add success animation
+            draggedCard.classList.add('drop-success');
+            setTimeout(() => {
+                draggedCard.classList.remove('drop-success');
+            }, 500);
+            
+            // Update column counts and empty states
+            updateKanbanUI();
+            
+            // Optional: Show success notification (for Step 21)
+            // showNotification(`Moved "${application.jobTitle}" to ${newStatus}`, 'success');
+            
+        } catch (error) {
+            console.error('Error updating application status:', error);
+            
+            // Restore card visual state
+            draggedCard.style.opacity = '1';
+            draggedCard.style.pointerEvents = 'auto';
+            
+            // Rollback UI - move card back to original column
+            const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
+            if (originalColumn) {
+                originalColumn.appendChild(draggedCard);
+            }
+            
+            // Re-render the entire kanban board to ensure consistency
+            setTimeout(() => {
+                renderKanbanBoard();
+            }, 300);
+            
+            alert(`Failed to update status. Please try again.`);
         }
     }
     
-    // Remove drag-over class from all columns
+    // Clean up drag states
     document.querySelectorAll('.kanban-column').forEach(col => {
         col.classList.remove('drag-over');
     });
@@ -1804,4 +1861,168 @@ function updateColumnCounts() {
             emptyState.remove();
         }
     });
+}
+// Add this code to your script.js file to enhance the drag-and-drop functionality
+
+// Enhanced status to progress stage mapping
+const statusToProgressStageMap = {
+    'applied': 'applied',
+    'screening': 'in-progress',
+    'interview': 'in-progress',
+    'offer': 'final-stage',
+    'rejected': 'completed',
+    'withdrawn': 'completed'
+};
+
+// Enhanced handleDrop function with better DB update and UI refresh
+async function handleDropEnhanced(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    const dropZone = e.target.closest('.kanban-cards-container');
+    const newStatus = dropZone.dataset.status;
+    
+    if (draggedCard && draggedApplicationId && originalStatus !== newStatus) {
+        // Show loading state on the card
+        draggedCard.style.opacity = '0.6';
+        draggedCard.style.pointerEvents = 'none';
+        
+        try {
+            // Fetch the current application data
+            const application = await getApplicationFromDB(draggedApplicationId);
+            
+            // Store original values for rollback
+            const originalAppStatus = application.status;
+            const originalProgressStage = application.progressStage;
+            
+            // Update status and progress stage
+            application.status = newStatus;
+            application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
+            application.updatedAt = new Date().toISOString();
+            
+            // Add status change to history (if you want to track changes)
+            if (!application.statusHistory) {
+                application.statusHistory = [];
+            }
+            application.statusHistory.push({
+                from: originalStatus,
+                to: newStatus,
+                date: new Date().toISOString(),
+                action: 'kanban-drag'
+            });
+            
+            // Update in database
+            await updateApplicationInDB(application);
+            
+            console.log(`Successfully moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
+            
+            // Update the card's visual state
+            draggedCard.style.opacity = '1';
+            draggedCard.style.pointerEvents = 'auto';
+            
+            // Add success animation
+            draggedCard.classList.add('drop-success');
+            setTimeout(() => {
+                draggedCard.classList.remove('drop-success');
+            }, 500);
+            
+            // Update column counts and empty states
+            updateKanbanUI();
+            
+            // Optional: Show success notification (for Step 21)
+            // showNotification(`Moved "${application.jobTitle}" to ${newStatus}`, 'success');
+            
+        } catch (error) {
+            console.error('Error updating application status:', error);
+            
+            // Restore card visual state
+            draggedCard.style.opacity = '1';
+            draggedCard.style.pointerEvents = 'auto';
+            
+            // Rollback UI - move card back to original column
+            const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
+            if (originalColumn) {
+                originalColumn.appendChild(draggedCard);
+            }
+            
+            // Re-render the entire kanban board to ensure consistency
+            setTimeout(() => {
+                renderKanbanBoard();
+            }, 300);
+            
+            alert(`Failed to update status. Please try again.`);
+        }
+    }
+    
+    // Clean up drag states
+    document.querySelectorAll('.kanban-column').forEach(col => {
+        col.classList.remove('drag-over');
+    });
+    
+    return false;
+}
+
+// Update the entire Kanban UI (counts, empty states, etc.)
+function updateKanbanUI() {
+    const columns = document.querySelectorAll('.kanban-column');
+    
+    columns.forEach(column => {
+        const status = column.dataset.status;
+        const cardsContainer = column.querySelector('.kanban-cards-container');
+        const countElement = column.querySelector('.kanban-column-count');
+        const cards = cardsContainer.querySelectorAll('.kanban-card');
+        const cardCount = cards.length;
+        
+        // Update count
+        if (countElement) {
+            countElement.textContent = cardCount;
+            
+            // Add animation to count change
+            countElement.classList.add('count-updated');
+            setTimeout(() => {
+                countElement.classList.remove('count-updated');
+            }, 300);
+        }
+        
+        // Handle empty state
+        const emptyState = cardsContainer.querySelector('.kanban-empty-state');
+        
+        if (cardCount === 0) {
+            if (!emptyState) {
+                // Create and add empty state with fade-in animation
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'kanban-empty-state fade-in';
+                emptyDiv.innerHTML = '<p>No applications</p>';
+                cardsContainer.appendChild(emptyDiv);
+            }
+        } else if (emptyState) {
+            // Remove empty state with fade-out animation
+            emptyState.classList.add('fade-out');
+            setTimeout(() => {
+                emptyState.remove();
+            }, 300);
+        }
+        
+        // Re-sort cards by date if needed
+        if (cardCount > 1) {
+            sortKanbanCards(cardsContainer);
+        }
+    });
+}
+
+// Sort cards within a column by application date (newest first)
+function sortKanbanCards(container) {
+    const cards = Array.from(container.querySelectorAll('.kanban-card'));
+    
+    cards.sort((a, b) => {
+        // You might need to store the date in a data attribute when creating cards
+        // For now, we'll skip sorting, but here's how you'd implement it:
+        // const dateA = new Date(a.dataset.applicationDate);
+        // const dateB = new Date(b.dataset.applicationDate);
+        // return dateB - dateA; // Newest first
+    });
+    
+    // Re-append cards in sorted order
+    cards.forEach(card => container.appendChild(card));
 }
