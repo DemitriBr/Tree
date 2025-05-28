@@ -2392,3 +2392,263 @@ canvas {
 .kanban-column:focus-within {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
+/* Add these styles to your style.css file for enhanced UI refresh animations */
+
+/* Count update animation */
+@keyframes countPulse {
+    0% {
+        transform: scale(1);
+        background: var(--primary-gradient);
+    }
+    50% {
+        transform: scale(1.2);
+        background: var(--success-gradient);
+        box-shadow: 0 0 15px rgba(79, 172, 254, 0.6);
+    }
+    100% {
+        transform: scale(1);
+        background: var(--primary-gradient);
+    }
+}
+
+.kanban-column-count.count-updated {
+    animation: countPulse 0.3s ease;
+}
+
+/* Fade animations for empty states */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.kanban-empty-state.fade-in {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+.kanban-empty-state.fade-out {
+    animation: fadeOut 0.3s ease forwards;
+}
+
+/* Enhanced drop success animation */
+@keyframes dropSuccess {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4),
+                    0 0 0 0 rgba(102, 126, 234, 0.7);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1),
+                    0 0 0 10px rgba(102, 126, 234, 0);
+    }
+}
+
+.kanban-card.drop-success {
+    animation: dropSuccess 0.5s ease;
+}
+
+/* Progress stage indicator */
+.kanban-card-progress {
+    font-size: 1rem;
+    padding: 0.25rem;
+    margin: -0.25rem;
+    cursor: help;
+    transition: transform 0.2s ease;
+}
+
+.kanban-card-progress:hover {
+    transform: scale(1.2);
+}
+
+/* Enhanced card actions layout */
+.kanban-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Loading state for cards during update */
+.kanban-card.updating {
+    position: relative;
+    overflow: hidden;
+}
+
+.kanban-card.updating::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+    );
+    animation: loadingShimmer 1s infinite;
+}
+
+@keyframes loadingShimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Status change animation */
+@keyframes statusChange {
+    0% {
+        background-color: rgba(102, 126, 234, 0.1);
+    }
+    50% {
+        background-color: rgba(102, 126, 234, 0.3);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.kanban-card.status-changed {
+    animation: statusChange 1s ease;
+}
+
+/* Smooth card reordering */
+.kanban-cards-container {
+    transition: min-height 0.3s ease;
+}
+
+.kanban-card {
+    transition: all 0.3s ease;
+}
+
+/* Visual feedback for auto-refresh */
+@keyframes refreshPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.kanban-board.refreshing {
+    animation: refreshPulse 0.5s ease;
+}
+
+/* Enhanced column status indicators */
+.kanban-column[data-status="applied"] .kanban-column-icon {
+    color: var(--status-applied);
+}
+
+.kanban-column[data-status="screening"] .kanban-column-icon {
+    color: var(--status-screening);
+}
+
+.kanban-column[data-status="interview"] .kanban-column-icon {
+    color: var(--status-interview);
+}
+
+.kanban-column[data-status="offer"] .kanban-column-icon {
+    color: var(--status-offer);
+}
+
+.kanban-column[data-status="rejected"] .kanban-column-icon {
+    color: var(--status-rejected);
+}
+
+.kanban-column[data-status="withdrawn"] .kanban-column-icon {
+    color: var(--status-withdrawn);
+}
+
+/* Rollback animation for failed drops */
+@keyframes rollback {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.05);
+        background-color: rgba(245, 87, 108, 0.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+        background-color: transparent;
+    }
+}
+
+.kanban-card.rollback {
+    animation: rollback 0.5s ease;
+}
+
+/* Dark mode enhancements */
+[data-theme="dark"] .kanban-card.drop-success {
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6);
+}
+
+[data-theme="dark"] .kanban-card.updating::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+    );
+}
+
+/* Improved mobile touch feedback */
+@media (max-width: 768px) {
+    .kanban-card:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .kanban-column-count {
+        font-size: 1rem;
+        min-width: 36px;
+        height: 36px;
+    }
+}
+
+/* Accessibility improvements */
+.kanban-card:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+.kanban-column:focus-within {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+/* Performance optimizations */
+.kanban-board * {
+    will-change: auto;
+}
+
+.kanban-card.dragging,
+.kanban-column.drag-over {
+    will-change: transform, opacity;
+}
