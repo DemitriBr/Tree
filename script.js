@@ -1561,7 +1561,9 @@ const dragHandlers = {
                 draggedCard.classList.add('drop-success');
                 
                 setTimeout(() => {
-                    draggedCard.classList.remove('drop-success');
+                    if (draggedCard && draggedCard.classList) {
+                        draggedCard.classList.remove('drop-success');
+                    }
                 }, 500);
                 
                 updateKanbanUI();
