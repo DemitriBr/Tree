@@ -1858,6 +1858,30 @@ function handleDragEnd(e) {
     console.log('Drag ended and cleaned up');
 }
 
+// Function to reattach drag listeners to all kanban cards
+function reattachDragListeners() {
+    const kanbanCards = document.querySelectorAll('.kanban-card');
+    kanbanCards.forEach(card => {
+        // Remove existing listeners to avoid duplicates
+        card.removeEventListener('dragstart', handleDragStart);
+        card.removeEventListener('dragend', handleDragEnd);
+        
+        // Reattach listeners
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        
+        // Ensure draggable is true
+        card.draggable = true;
+        
+        // Clear any lingering styles
+        card.style.opacity = '';
+        card.style.pointerEvents = '';
+        card.style.cursor = '';
+    });
+    
+    console.log('Reattached drag listeners to', kanbanCards.length, 'cards');
+}
+
 // Update your updateKanbanUI function to reattach listeners after UI updates:
 function updateKanbanUI() {
     const columns = document.querySelectorAll('.kanban-column');
