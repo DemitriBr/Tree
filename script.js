@@ -1670,7 +1670,8 @@ function handleDragStart(e) {
     console.log('Started dragging application:', draggedApplicationId, 'from status:', originalStatus);
 }
 
-// Handle drag over - allow dropping
+// And make handleDragOver more robust:
+
 function handleDragOver(e) {
     if (e.preventDefault) {
         e.preventDefault(); // Allows us to drop
@@ -1680,10 +1681,12 @@ function handleDragOver(e) {
     
     // Add visual feedback to the column
     const column = e.target.closest('.kanban-column');
-    if (column && !column.classList.contains('drag-over')) {
+    if (column && column.classList && !column.classList.contains('drag-over')) {
         // Remove drag-over class from all columns first
         document.querySelectorAll('.kanban-column').forEach(col => {
-            col.classList.remove('drag-over');
+            if (col.classList) {
+                col.classList.remove('drag-over');
+            }
         });
         column.classList.add('drag-over');
     }
@@ -1701,7 +1704,6 @@ function handleDragOver(e) {
     
     return false;
 }
-
 // Get the element after which the dragged element should be inserted
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
@@ -1727,16 +1729,17 @@ function handleDragEnter(e) {
     }
 }
 
-// Handle drag leave
+// Also update handleDragLeave to be more defensive:
+
 function handleDragLeave(e) {
     // Remove visual feedback when leaving a drop zone
     const column = e.target.closest('.kanban-column');
-    if (column && !column.contains(e.relatedTarget)) {
+    if (column && column.classList && !column.contains(e.relatedTarget)) {
         column.classList.remove('drag-over');
     }
 }
 
-// Replace your existing handleDrop and handleDragEnd functions with these fixed versions:
+// Replace your handleDrop function with this fixed version:
 
 async function handleDrop(e) {
     if (e.stopPropagation) {
@@ -1745,8 +1748,26 @@ async function handleDrop(e) {
     
     e.preventDefault(); // Important to prevent default behavior
     
-    const dropZone = e.target.closest('.kanban-cards-container');
-    if (!dropZone) return false;
+    // Find the drop zone - could be the container or a child element
+    let dropZone = e.target.closest('.kanban-cards-container');
+    
+    // If we didn't find a cards container, check if we're over a column
+    if (!dropZone) {
+        const column = e.target.closest('.kanban-column');
+        if (column) {
+            dropZone = column.querySelector('.kanban-cards-container');
+        }
+    }
+    
+    // If still no drop zone, exit gracefully
+    if (!dropZone) {
+        console.log('No valid drop zone found');
+        // Clean up drag states
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+        return false;
+    }
     
     const newStatus = dropZone.dataset.status;
     
