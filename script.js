@@ -1651,21 +1651,34 @@ function setupDragAndDrop() {
     });
 }
 
-// Handle drag start
+// Also update handleDragStart to ensure draggedCard is properly set:
+
 function handleDragStart(e) {
-    draggedCard = e.target;
-    draggedApplicationId = e.target.dataset.id;
+    // Ensure we're dragging a kanban card
+    const card = e.target.closest('.kanban-card');
+    if (!card) {
+        console.error('No kanban card found for drag start');
+        return;
+    }
+    
+    draggedCard = card;
+    draggedApplicationId = card.dataset.id;
     
     // Get the original status from the parent column
-    const parentColumn = e.target.closest('.kanban-column');
-    originalStatus = parentColumn.dataset.status;
+    const parentColumn = card.closest('.kanban-column');
+    if (parentColumn) {
+        originalStatus = parentColumn.dataset.status;
+    } else {
+        console.error('No parent column found for dragged card');
+        return;
+    }
     
     // Add dragging class for visual feedback
-    e.target.classList.add('dragging');
+    card.classList.add('dragging');
     
     // Store the drag data
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.target.innerHTML);
+    e.dataTransfer.setData('text/html', card.innerHTML);
     
     console.log('Started dragging application:', draggedApplicationId, 'from status:', originalStatus);
 }
@@ -1739,7 +1752,7 @@ function handleDragLeave(e) {
     }
 }
 
-// Replace your handleDrop function with this fixed version:
+// Replace the entire handleDrop function with this fully defensive version:
 
 async function handleDrop(e) {
     if (e.stopPropagation) {
@@ -1771,11 +1784,14 @@ async function handleDrop(e) {
     
     const newStatus = dropZone.dataset.status;
     
-    if (draggedCard && draggedApplicationId) {
+    // Check if we have a valid dragged card
+    if (draggedCard && draggedApplicationId && originalStatus) {
         // Only process if status actually changed
         if (originalStatus !== newStatus) {
-            // Show loading state on the card
-            draggedCard.classList.add('updating');
+            // Show loading state on the card - CHECK IF draggedCard EXISTS
+            if (draggedCard && draggedCard.classList) {
+                draggedCard.classList.add('updating');
+            }
             
             try {
                 // Fetch the current application data
@@ -1802,14 +1818,18 @@ async function handleDrop(e) {
                 
                 console.log(`Successfully moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
                 
-                // Remove updating state
-                draggedCard.classList.remove('updating');
-                
-                // Add success animation
-                draggedCard.classList.add('drop-success');
-                setTimeout(() => {
-                    draggedCard.classList.remove('drop-success');
-                }, 500);
+                // Remove updating state - CHECK IF draggedCard EXISTS
+                if (draggedCard && draggedCard.classList) {
+                    draggedCard.classList.remove('updating');
+                    
+                    // Add success animation
+                    draggedCard.classList.add('drop-success');
+                    setTimeout(() => {
+                        if (draggedCard && draggedCard.classList) {
+                            draggedCard.classList.remove('drop-success');
+                        }
+                    }, 500);
+                }
                 
                 // Update column counts and empty states
                 updateKanbanUI();
@@ -1817,12 +1837,14 @@ async function handleDrop(e) {
             } catch (error) {
                 console.error('Error updating application status:', error);
                 
-                // Remove updating state
-                draggedCard.classList.remove('updating');
+                // Remove updating state - CHECK IF draggedCard EXISTS
+                if (draggedCard && draggedCard.classList) {
+                    draggedCard.classList.remove('updating');
+                }
                 
                 // Rollback UI - move card back to original column
                 const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
-                if (originalColumn) {
+                if (originalColumn && draggedCard) {
                     originalColumn.appendChild(draggedCard);
                 }
                 
@@ -1834,6 +1856,8 @@ async function handleDrop(e) {
                 alert(`Failed to update status. Please try again.`);
             }
         }
+    } else {
+        console.log('Missing dragged card or application ID');
     }
     
     // Clean up drag states
@@ -1844,18 +1868,23 @@ async function handleDrop(e) {
     return false;
 }
 
+// Update handleDragEnd to be more defensive:
+
 function handleDragEnd(e) {
+    // Get the actual card element
+    const card = e.target.closest('.kanban-card');
+    
     // Remove dragging class
-    if (e.target) {
-        e.target.classList.remove('dragging');
+    if (card && card.classList) {
+        card.classList.remove('dragging');
         
         // IMPORTANT: Ensure the element is fully restored
-        e.target.style.opacity = '';
-        e.target.style.pointerEvents = '';
-        e.target.style.cursor = '';
+        card.style.opacity = '';
+        card.style.pointerEvents = '';
+        card.style.cursor = '';
         
         // Ensure draggable is still true
-        e.target.draggable = true;
+        card.draggable = true;
     }
     
     // Clean up any remaining drag-over classes
