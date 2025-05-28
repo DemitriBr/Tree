@@ -2652,3 +2652,20 @@ canvas {
 .kanban-column.drag-over {
     will-change: transform, opacity;
 }
+/* Add this CSS to your style.css file to handle the updating state */
+
+.kanban-card.updating {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: wait;
+}
+
+/* Ensure cards are always draggable when not updating */
+.kanban-card:not(.updating) {
+    cursor: grab;
+    pointer-events: auto;
+}
+
+.kanban-card:not(.updating):active {
+    cursor: grabbing;
+}
