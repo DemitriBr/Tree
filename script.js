@@ -6,8 +6,11 @@ const DB_VERSION = 1;
 const STORE_NAME = 'applications';
 
 let db = null;
-let isModalOpening = false;
-let isModalClosing = false;
+// Global modal state management
+let activeModal = null;
+let modalStack = [];
+let isModalTransitioning = false; // Single flag for all transitions
+
 
 
 // Initialize IndexedDB
@@ -710,7 +713,7 @@ function setupActionButtonsListeners() {
     }
 }
 
-// Simplified handleActionButtonClick that prevents double-clicks more effectively
+// Handle action button clicks - CLEANED UP VERSION
 async function handleActionButtonClick(e) {
     // Don't prevent default for links
     if (e.target.tagName !== 'A' && !e.target.closest('a')) {
@@ -733,9 +736,9 @@ async function handleActionButtonClick(e) {
     if (deleteBtn) {
         e.stopPropagation();
         
-        // Check if modal is already open or opening
-        if (isModalOpening || isModalClosing || document.getElementById('modalContainer').classList.contains('active')) {
-            console.log('Modal already active, ignoring delete click');
+        // Prevent action if modal is transitioning or active
+        if (isModalTransitioning) {
+            console.log('Modal is transitioning, ignoring delete click');
             return;
         }
         
@@ -747,69 +750,77 @@ async function handleActionButtonClick(e) {
             return;
         }
         
-        // Get job title and company name based on card type
+        // Get job title and company name
         let jobTitle, companyName;
         
         if (applicationCard.classList.contains('application-card')) {
-            // List view card
             jobTitle = applicationCard.querySelector('.job-title')?.textContent || 'Unknown';
             companyName = applicationCard.querySelector('.company-info strong')?.textContent || 'Unknown';
         } else {
-            // Kanban card
             jobTitle = applicationCard.querySelector('.kanban-card-title')?.textContent || 'Unknown';
             companyName = applicationCard.querySelector('.kanban-card-company')?.textContent || 'Unknown';
         }
         
-        // Disable the button immediately
-        deleteBtn.disabled = true;
+        // Store original state
         const originalContent = deleteBtn.innerHTML;
+        const wasDisabled = deleteBtn.disabled;
+        deleteBtn.disabled = true;
         
         // Show confirmation modal
-        showConfirmModal(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`, {
-            title: 'Delete Application',
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
-            confirmClass: 'btn btn-danger',
-            cancelClass: 'btn btn-secondary',
-            onConfirm: async () => {
-                try {
-                    deleteBtn.innerHTML = '⏳';
-                    
-                    await deleteApplicationFromDB(applicationId);
-                    
-                    // Animate card removal
-                    applicationCard.style.transition = 'all 0.3s ease';
-                    applicationCard.style.opacity = '0';
-                    applicationCard.style.transform = 'translateX(-100%)';
-                    
-                    notifySuccess(`Application for "${jobTitle}" at ${companyName} deleted successfully.`);
-                    
-                    // Refresh the appropriate view
-                    setTimeout(() => {
-                        if (document.getElementById('listView').classList.contains('active')) {
-                            filterSortAndRender();
-                        } else if (document.getElementById('kanbanView').classList.contains('active')) {
-                            renderKanbanBoard();
-                        }
-                    }, 300);
-                    
-                } catch (error) {
-                    console.error('Error deleting application:', error);
-                    deleteBtn.disabled = false;
+        const modal = showConfirmModal(
+            `Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`,
+            {
+                title: 'Delete Application',
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                confirmClass: 'btn btn-danger',
+                cancelClass: 'btn btn-secondary',
+                onConfirm: async () => {
+                    try {
+                        deleteBtn.innerHTML = '⏳';
+                        await deleteApplicationFromDB(applicationId);
+                        
+                        // Animate removal
+                        applicationCard.style.transition = 'all 0.3s ease';
+                        applicationCard.style.opacity = '0';
+                        applicationCard.style.transform = 'translateX(-100%)';
+                        
+                        notifySuccess(`Application for "${jobTitle}" at ${companyName} deleted successfully.`);
+                        
+                        // Refresh view
+                        setTimeout(() => {
+                            if (document.getElementById('listView').classList.contains('active')) {
+                                filterSortAndRender();
+                            } else if (document.getElementById('kanbanView').classList.contains('active')) {
+                                renderKanbanBoard();
+                            }
+                        }, 300);
+                    } catch (error) {
+                        console.error('Error deleting application:', error);
+                        deleteBtn.disabled = wasDisabled;
+                        deleteBtn.innerHTML = originalContent;
+                        notifyError('Failed to delete application. Please try again.');
+                    }
+                },
+                onCancel: () => {
+                    deleteBtn.disabled = wasDisabled;
                     deleteBtn.innerHTML = originalContent;
-                    notifyError('Failed to delete application. Please try again.');
+                },
+                onClose: () => {
+                    // Ensure cleanup
+                    if (deleteBtn) {
+                        deleteBtn.disabled = wasDisabled;
+                        deleteBtn.innerHTML = originalContent;
+                    }
                 }
-            },
-            onCancel: () => {
-                deleteBtn.disabled = false;
-                deleteBtn.innerHTML = originalContent;
-            },
-            onClose: () => {
-                // Ensure button is re-enabled even if modal is closed by escape or backdrop
-                deleteBtn.disabled = false;
-                deleteBtn.innerHTML = originalContent;
             }
-        });
+        );
+        
+        // If modal failed to open, reset button
+        if (!modal) {
+            deleteBtn.disabled = wasDisabled;
+            deleteBtn.innerHTML = originalContent;
+        }
     }
 }
 
@@ -2025,32 +2036,40 @@ function stopKanbanAutoRefresh() {
 let activeModal = null;
 let modalStack = [];
 
-// Show modal with dynamic content - FIXED VERSION WITH MUTEX
+// Show modal with dynamic content - COMPLETELY FIXED VERSION
 function showModal(content, options = {}) {
     const modalContainer = document.getElementById('modalContainer');
     
     if (!modalContainer) {
         console.error('Modal container not found');
-        return;
+        return null;
     }
     
-    // Prevent opening if already opening or if modal is active
-    if (isModalOpening || isModalClosing || modalContainer.classList.contains('active')) {
-        console.warn('Modal operation already in progress');
-        return;
+    // Check if modal is already active or transitioning
+    if (isModalTransitioning) {
+        console.warn('Modal transition in progress, blocking new modal');
+        return null;
     }
     
-    // Set mutex
-    isModalOpening = true;
+    if (modalContainer.style.display === 'flex' || modalContainer.classList.contains('active')) {
+        console.warn('Modal already active, blocking new modal');
+        return null;
+    }
+    
+    // Set transition flag
+    isModalTransitioning = true;
     
     const modal = modalContainer.querySelector('.modal');
     const modalContent = modal.querySelector('.modal-content') || modal;
     
     if (!modal) {
         console.error('Modal element not found');
-        isModalOpening = false;
-        return;
+        isModalTransitioning = false;
+        return null;
     }
+    
+    // Clear any existing content first
+    modalContent.innerHTML = '';
     
     // Default options
     const settings = {
@@ -2087,51 +2106,51 @@ function showModal(content, options = {}) {
         settings: settings
     };
     
-    // Push to modal stack for nested modals support
-    modalStack.push(activeModal);
+    // Push to modal stack
+    modalStack = [activeModal]; // Reset stack to prevent issues
     
     // Show modal with animation
     modalContainer.style.display = 'flex';
+    
+    // Use double RAF to ensure display change is processed
     requestAnimationFrame(() => {
-        modalContainer.classList.add('active');
-        modal.classList.add('modal-enter');
-        
-        setTimeout(() => {
-            modal.classList.remove('modal-enter');
-            isModalOpening = false; // Release mutex after animation
-        }, 300);
+        requestAnimationFrame(() => {
+            modalContainer.classList.add('active');
+            modal.classList.add('modal-enter');
+            
+            setTimeout(() => {
+                modal.classList.remove('modal-enter');
+                isModalTransitioning = false;
+                
+                // Setup close listeners after transition
+                setupModalCloseListeners(modalContainer, settings);
+                
+                // Call onOpen callback
+                if (settings.onOpen && typeof settings.onOpen === 'function') {
+                    settings.onOpen(modal);
+                }
+                
+                // Focus management
+                const focusableElements = modal.querySelectorAll(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+                if (focusableElements.length > 0) {
+                    focusableElements[0].focus();
+                }
+                
+                // Trap focus
+                trapFocus(modal);
+            }, 300);
+        });
     });
-    
-    // Setup close listeners
-    setupModalCloseListeners(modalContainer, settings);
-    
-    // Focus management
-    setTimeout(() => {
-        const focusableElements = modal.querySelectorAll(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusableElements.length > 0) {
-            focusableElements[0].focus();
-        }
-    }, 100);
-    
-    // Call onOpen callback if provided
-    if (settings.onOpen && typeof settings.onOpen === 'function') {
-        setTimeout(() => {
-            settings.onOpen(modal);
-        }, 50);
-    }
-    
-    // Trap focus within modal
-    trapFocus(modal);
     
     return modal;
 }
 
-// Hide the currently active modal - FIXED VERSION WITH MUTEX
+// Hide modal - COMPLETELY FIXED VERSION
 function hideModal(modalContainer = null) {
-    if (isModalClosing) {
-        console.warn('Modal is already closing');
+    if (isModalTransitioning) {
+        console.warn('Modal transition in progress');
         return;
     }
     
@@ -2139,23 +2158,59 @@ function hideModal(modalContainer = null) {
         modalContainer = activeModal.container;
     }
     
-    if (!modalContainer || !modalContainer.classList.contains('active')) {
-        console.log('No active modal to hide');
+    if (!modalContainer || modalContainer.style.display === 'none') {
+        console.log('No modal to hide');
         return;
     }
     
-    // Set mutex
-    isModalClosing = true;
+    // Set transition flag
+    isModalTransitioning = true;
     
     const modal = modalContainer.querySelector('.modal');
     const settings = activeModal ? activeModal.settings : {};
     
-    // Remove event listeners
+    // Clean up all event listeners
+    cleanupModalListeners(modalContainer, settings);
+    
+    // Add exit animation
+    modal.classList.add('modal-exit');
+    modalContainer.classList.remove('active');
+    
+    // Call onClose callback
+    if (settings.onClose && typeof settings.onClose === 'function') {
+        settings.onClose(modal);
+    }
+    
+    // Hide after animation
+    setTimeout(() => {
+        modalContainer.style.display = 'none';
+        modal.classList.remove('modal-exit');
+        
+        // Clear content
+        const modalContent = modal.querySelector('.modal-content') || modal;
+        modalContent.innerHTML = '';
+        
+        // Reset modal state
+        modalStack = [];
+        activeModal = null;
+        isModalTransitioning = false;
+        
+        // Restore focus
+        if (settings.triggerElement) {
+            settings.triggerElement.focus();
+        }
+    }, 300);
+}
+
+// Cleanup modal listeners - NEW FUNCTION
+function cleanupModalListeners(modalContainer, settings) {
+    // Remove backdrop listener
     if (modalContainer._backdropHandler) {
         modalContainer.removeEventListener('click', modalContainer._backdropHandler);
         modalContainer._backdropHandler = null;
     }
     
+    // Remove escape listener
     if (settings._escapeHandler) {
         document.removeEventListener('keydown', settings._escapeHandler);
         settings._escapeHandler = null;
@@ -2168,69 +2223,31 @@ function hideModal(modalContainer = null) {
         closeBtn._closeHandler = null;
     }
     
-    // Add exit animation
-    modal.classList.add('modal-exit');
-    modalContainer.classList.remove('active');
-    
-    // Call onClose callback if provided
-    if (settings.onClose && typeof settings.onClose === 'function') {
-        settings.onClose(modal);
+    // Remove trap focus listener
+    const modal = modalContainer.querySelector('.modal');
+    if (modal && modal._trapHandler) {
+        modal.removeEventListener('keydown', modal._trapHandler);
+        modal._trapHandler = null;
     }
-    
-    // Hide after animation completes
-    setTimeout(() => {
-        modalContainer.style.display = 'none';
-        modal.classList.remove('modal-exit');
-        
-        // Clear modal content
-        const modalContent = modal.querySelector('.modal-content') || modal;
-        modalContent.innerHTML = '';
-        
-        // Remove from modal stack
-        modalStack.pop();
-        
-        // Update active modal reference
-        activeModal = modalStack.length > 0 ? modalStack[modalStack.length - 1] : null;
-        
-        // Restore focus to the element that triggered the modal
-        if (settings.triggerElement) {
-            settings.triggerElement.focus();
-        }
-        
-        // Release mutex
-        isModalClosing = false;
-    }, 300);
 }
 
-// Setup modal close event listeners - ENHANCED VERSION
+// Setup modal close listeners - IMPROVED VERSION
 function setupModalCloseListeners(modalContainer, settings) {
-    // Close button click
+    // Close button
     const closeBtn = modalContainer.querySelector('.modal-close');
     if (closeBtn) {
-        // Remove any existing listener first
-        if (closeBtn._closeHandler) {
-            closeBtn.removeEventListener('click', closeBtn._closeHandler);
-        }
-        
         closeBtn._closeHandler = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (!isModalClosing) {
-                hideModal(modalContainer);
-            }
+            hideModal(modalContainer);
         };
-        
-        closeBtn.addEventListener('click', closeBtn._closeHandler);
+        closeBtn.addEventListener('click', closeBtn._closeHandler, { once: true });
     }
     
     // Backdrop click
-    if (modalContainer._backdropHandler) {
-        modalContainer.removeEventListener('click', modalContainer._backdropHandler);
-    }
-    
     if (settings.closeOnBackdrop) {
         modalContainer._backdropHandler = (e) => {
-            if (e.target === modalContainer && !isModalClosing) {
+            if (e.target === modalContainer) {
                 e.stopPropagation();
                 hideModal(modalContainer);
             }
@@ -2238,14 +2255,10 @@ function setupModalCloseListeners(modalContainer, settings) {
         modalContainer.addEventListener('click', modalContainer._backdropHandler);
     }
     
-    // Escape key press
-    if (settings._escapeHandler) {
-        document.removeEventListener('keydown', settings._escapeHandler);
-    }
-    
+    // Escape key
     if (settings.closeOnEscape) {
         settings._escapeHandler = (e) => {
-            if (e.key === 'Escape' && activeModal && activeModal.container === modalContainer && !isModalClosing) {
+            if (e.key === 'Escape' && activeModal && activeModal.container === modalContainer) {
                 e.preventDefault();
                 hideModal(modalContainer);
             }
@@ -2289,10 +2302,14 @@ function trapFocus(modal) {
     modal._trapHandler = trapHandler;
 }
 
-// Replace the showConfirmModal function in your script.js with this fixed version:
-
-// Utility function to create a confirmation modal - FIXED VERSION
+// Show confirmation modal - COMPLETELY REWRITTEN
 function showConfirmModal(message, options = {}) {
+    // Prevent opening if modal is already active
+    if (isModalTransitioning || (activeModal && activeModal.container.style.display === 'flex')) {
+        console.warn('Cannot open confirm modal - another modal is active');
+        return null;
+    }
+    
     const settings = {
         title: 'Confirm',
         confirmText: 'Confirm',
@@ -2321,181 +2338,51 @@ function showConfirmModal(message, options = {}) {
         </div>
     `;
     
-    const modal = showModal(content, {
+    return showModal(content, {
         title: settings.title,
         size: 'small',
         closeOnBackdrop: settings.closeOnBackdrop,
         closeOnEscape: settings.closeOnEscape,
         onClose: settings.onClose,
         onOpen: (modal) => {
-            // Setup button handlers with proper event handling
             const confirmBtn = modal.querySelector('#modalConfirmBtn');
             const cancelBtn = modal.querySelector('#modalCancelBtn');
             
-            // Store handlers as properties to ensure cleanup
-            const handleConfirm = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Disable buttons to prevent double-click
-                confirmBtn.disabled = true;
-                cancelBtn.disabled = true;
-                
-                // Close modal first
+            if (!confirmBtn || !cancelBtn) {
+                console.error('Modal buttons not found');
+                return;
+            }
+            
+            // Confirm handler
+            const handleConfirm = () => {
                 hideModal();
-                
-                // Then execute callback after a small delay to ensure modal is closed
-                if (settings.onConfirm && typeof settings.onConfirm === 'function') {
-                    setTimeout(() => {
+                // Execute callback after modal is hidden
+                setTimeout(() => {
+                    if (settings.onConfirm && typeof settings.onConfirm === 'function') {
                         settings.onConfirm();
-                    }, 50);
-                }
+                    }
+                }, 350);
             };
             
-            const handleCancel = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Disable buttons to prevent double-click
-                confirmBtn.disabled = true;
-                cancelBtn.disabled = true;
-                
-                // Close modal first
+            // Cancel handler
+            const handleCancel = () => {
                 hideModal();
-                
-                // Then execute callback after a small delay
-                if (settings.onCancel && typeof settings.onCancel === 'function') {
-                    setTimeout(() => {
+                // Execute callback after modal is hidden
+                setTimeout(() => {
+                    if (settings.onCancel && typeof settings.onCancel === 'function') {
                         settings.onCancel();
-                    }, 50);
-                }
+                    }
+                }, 350);
             };
             
-            // Remove any existing listeners first
-            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
-            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            // Add listeners with once option
+            confirmBtn.addEventListener('click', handleConfirm, { once: true });
+            cancelBtn.addEventListener('click', handleCancel, { once: true });
             
-            // Get fresh references after cloning
-            const newConfirmBtn = modal.querySelector('#modalConfirmBtn');
-            const newCancelBtn = modal.querySelector('#modalCancelBtn');
-            
-            // Add new listeners
-            newConfirmBtn.addEventListener('click', handleConfirm, { once: true });
-            newCancelBtn.addEventListener('click', handleCancel, { once: true });
-            
-            // Focus the cancel button by default (safer option)
-            setTimeout(() => {
-                newCancelBtn.focus();
-            }, 100);
+            // Focus cancel button (safer default)
+            cancelBtn.focus();
         }
     });
-    
-    return modal;
-}
-
-
-// Replace the showConfirmModal function in your script.js with this fixed version:
-
-// Utility function to create a confirmation modal - FIXED VERSION
-function showConfirmModal(message, options = {}) {
-    const settings = {
-        title: 'Confirm',
-        confirmText: 'Confirm',
-        cancelText: 'Cancel',
-        confirmClass: 'btn btn-primary',
-        cancelClass: 'btn btn-secondary',
-        onConfirm: null,
-        onCancel: null,
-        onClose: null,
-        closeOnBackdrop: true,
-        closeOnEscape: true,
-        ...options
-    };
-    
-    const content = `
-        <div class="modal-message">
-            <p>${message}</p>
-        </div>
-        <div class="modal-actions">
-            <button type="button" class="${settings.cancelClass}" id="modalCancelBtn">
-                ${settings.cancelText}
-            </button>
-            <button type="button" class="${settings.confirmClass}" id="modalConfirmBtn">
-                ${settings.confirmText}
-            </button>
-        </div>
-    `;
-    
-    const modal = showModal(content, {
-        title: settings.title,
-        size: 'small',
-        closeOnBackdrop: settings.closeOnBackdrop,
-        closeOnEscape: settings.closeOnEscape,
-        onClose: settings.onClose,
-        onOpen: (modal) => {
-            // Setup button handlers with proper event handling
-            const confirmBtn = modal.querySelector('#modalConfirmBtn');
-            const cancelBtn = modal.querySelector('#modalCancelBtn');
-            
-            // Store handlers as properties to ensure cleanup
-            const handleConfirm = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Disable buttons to prevent double-click
-                confirmBtn.disabled = true;
-                cancelBtn.disabled = true;
-                
-                // Close modal first
-                hideModal();
-                
-                // Then execute callback after a small delay to ensure modal is closed
-                if (settings.onConfirm && typeof settings.onConfirm === 'function') {
-                    setTimeout(() => {
-                        settings.onConfirm();
-                    }, 50);
-                }
-            };
-            
-            const handleCancel = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                // Disable buttons to prevent double-click
-                confirmBtn.disabled = true;
-                cancelBtn.disabled = true;
-                
-                // Close modal first
-                hideModal();
-                
-                // Then execute callback after a small delay
-                if (settings.onCancel && typeof settings.onCancel === 'function') {
-                    setTimeout(() => {
-                        settings.onCancel();
-                    }, 50);
-                }
-            };
-            
-            // Remove any existing listeners first
-            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
-            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
-            
-            // Get fresh references after cloning
-            const newConfirmBtn = modal.querySelector('#modalConfirmBtn');
-            const newCancelBtn = modal.querySelector('#modalCancelBtn');
-            
-            // Add new listeners
-            newConfirmBtn.addEventListener('click', handleConfirm, { once: true });
-            newCancelBtn.addEventListener('click', handleCancel, { once: true });
-            
-            // Focus the cancel button by default (safer option)
-            setTimeout(() => {
-                newCancelBtn.focus();
-            }, 100);
-        }
-    });
-    
-    return modal;
 }
 
 
