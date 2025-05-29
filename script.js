@@ -6,6 +6,9 @@ const DB_VERSION = 1;
 const STORE_NAME = 'applications';
 
 let db = null;
+let isModalOpening = false;
+let isModalClosing = false;
+
 
 // Initialize IndexedDB
 function initDB() {
@@ -707,7 +710,7 @@ function setupActionButtonsListeners() {
     }
 }
 
-// Handle action button clicks - ENHANCED VERSION
+// Simplified handleActionButtonClick that prevents double-clicks more effectively
 async function handleActionButtonClick(e) {
     // Don't prevent default for links
     if (e.target.tagName !== 'A' && !e.target.closest('a')) {
@@ -722,19 +725,7 @@ async function handleActionButtonClick(e) {
         e.stopPropagation();
         const applicationId = editBtn.dataset.id;
         console.log('Edit button clicked for ID:', applicationId);
-        
-        // Prevent double-clicks
-        if (editBtn.disabled) return;
-        editBtn.disabled = true;
-        
-        try {
-            await loadApplicationForEdit(applicationId);
-        } finally {
-            // Re-enable after navigation
-            setTimeout(() => {
-                if (editBtn) editBtn.disabled = false;
-            }, 500);
-        }
+        await loadApplicationForEdit(applicationId);
         return;
     }
     
@@ -742,23 +733,17 @@ async function handleActionButtonClick(e) {
     if (deleteBtn) {
         e.stopPropagation();
         
-        // Prevent double-clicks
-        if (deleteBtn.disabled || deleteBtn.dataset.processing === 'true') {
-            console.log('Delete already in progress, ignoring click');
+        // Check if modal is already open or opening
+        if (isModalOpening || isModalClosing || document.getElementById('modalContainer').classList.contains('active')) {
+            console.log('Modal already active, ignoring delete click');
             return;
         }
-        
-        // Mark as processing
-        deleteBtn.dataset.processing = 'true';
-        deleteBtn.disabled = true;
         
         const applicationId = deleteBtn.dataset.id;
         const applicationCard = deleteBtn.closest('.application-card') || deleteBtn.closest('.kanban-card');
         
         if (!applicationCard) {
             console.error('Card not found');
-            deleteBtn.dataset.processing = 'false';
-            deleteBtn.disabled = false;
             return;
         }
         
@@ -775,6 +760,8 @@ async function handleActionButtonClick(e) {
             companyName = applicationCard.querySelector('.kanban-card-company')?.textContent || 'Unknown';
         }
         
+        // Disable the button immediately
+        deleteBtn.disabled = true;
         const originalContent = deleteBtn.innerHTML;
         
         // Show confirmation modal
@@ -786,7 +773,6 @@ async function handleActionButtonClick(e) {
             cancelClass: 'btn btn-secondary',
             onConfirm: async () => {
                 try {
-                    console.log('Delete confirmed for:', applicationId);
                     deleteBtn.innerHTML = '⏳';
                     
                     await deleteApplicationFromDB(applicationId);
@@ -809,22 +795,17 @@ async function handleActionButtonClick(e) {
                     
                 } catch (error) {
                     console.error('Error deleting application:', error);
-                    deleteBtn.dataset.processing = 'false';
                     deleteBtn.disabled = false;
                     deleteBtn.innerHTML = originalContent;
                     notifyError('Failed to delete application. Please try again.');
                 }
             },
             onCancel: () => {
-                console.log('Delete cancelled');
-                deleteBtn.dataset.processing = 'false';
                 deleteBtn.disabled = false;
                 deleteBtn.innerHTML = originalContent;
             },
             onClose: () => {
                 // Ensure button is re-enabled even if modal is closed by escape or backdrop
-                console.log('Modal closed');
-                deleteBtn.dataset.processing = 'false';
                 deleteBtn.disabled = false;
                 deleteBtn.innerHTML = originalContent;
             }
@@ -2044,7 +2025,7 @@ function stopKanbanAutoRefresh() {
 let activeModal = null;
 let modalStack = [];
 
-// Show modal with dynamic content - FIXED VERSION
+// Show modal with dynamic content - FIXED VERSION WITH MUTEX
 function showModal(content, options = {}) {
     const modalContainer = document.getElementById('modalContainer');
     
@@ -2053,17 +2034,21 @@ function showModal(content, options = {}) {
         return;
     }
     
-    // If modal is already visible, don't open another
-    if (modalContainer.classList.contains('active')) {
-        console.warn('Modal is already active, preventing double open');
+    // Prevent opening if already opening or if modal is active
+    if (isModalOpening || isModalClosing || modalContainer.classList.contains('active')) {
+        console.warn('Modal operation already in progress');
         return;
     }
+    
+    // Set mutex
+    isModalOpening = true;
     
     const modal = modalContainer.querySelector('.modal');
     const modalContent = modal.querySelector('.modal-content') || modal;
     
     if (!modal) {
         console.error('Modal element not found');
+        isModalOpening = false;
         return;
     }
     
@@ -2113,6 +2098,7 @@ function showModal(content, options = {}) {
         
         setTimeout(() => {
             modal.classList.remove('modal-enter');
+            isModalOpening = false; // Release mutex after animation
         }, 300);
     });
     
@@ -2131,7 +2117,9 @@ function showModal(content, options = {}) {
     
     // Call onOpen callback if provided
     if (settings.onOpen && typeof settings.onOpen === 'function') {
-        settings.onOpen(modal);
+        setTimeout(() => {
+            settings.onOpen(modal);
+        }, 50);
     }
     
     // Trap focus within modal
@@ -2140,8 +2128,13 @@ function showModal(content, options = {}) {
     return modal;
 }
 
-// Hide the currently active modal - FIXED VERSION
+// Hide the currently active modal - FIXED VERSION WITH MUTEX
 function hideModal(modalContainer = null) {
+    if (isModalClosing) {
+        console.warn('Modal is already closing');
+        return;
+    }
+    
     if (!modalContainer && activeModal) {
         modalContainer = activeModal.container;
     }
@@ -2150,6 +2143,9 @@ function hideModal(modalContainer = null) {
         console.log('No active modal to hide');
         return;
     }
+    
+    // Set mutex
+    isModalClosing = true;
     
     const modal = modalContainer.querySelector('.modal');
     const settings = activeModal ? activeModal.settings : {};
@@ -2163,6 +2159,13 @@ function hideModal(modalContainer = null) {
     if (settings._escapeHandler) {
         document.removeEventListener('keydown', settings._escapeHandler);
         settings._escapeHandler = null;
+    }
+    
+    // Remove close button listener
+    const closeBtn = modalContainer.querySelector('.modal-close');
+    if (closeBtn && closeBtn._closeHandler) {
+        closeBtn.removeEventListener('click', closeBtn._closeHandler);
+        closeBtn._closeHandler = null;
     }
     
     // Add exit animation
@@ -2193,12 +2196,15 @@ function hideModal(modalContainer = null) {
         if (settings.triggerElement) {
             settings.triggerElement.focus();
         }
+        
+        // Release mutex
+        isModalClosing = false;
     }, 300);
 }
 
-// Setup modal close event listeners - FIXED VERSION
+// Setup modal close event listeners - ENHANCED VERSION
 function setupModalCloseListeners(modalContainer, settings) {
-    // Close button click - use addEventListener instead of onclick
+    // Close button click
     const closeBtn = modalContainer.querySelector('.modal-close');
     if (closeBtn) {
         // Remove any existing listener first
@@ -2209,20 +2215,22 @@ function setupModalCloseListeners(modalContainer, settings) {
         closeBtn._closeHandler = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            hideModal(modalContainer);
+            if (!isModalClosing) {
+                hideModal(modalContainer);
+            }
         };
         
         closeBtn.addEventListener('click', closeBtn._closeHandler);
     }
     
-    // Backdrop click - remove old handler first
+    // Backdrop click
     if (modalContainer._backdropHandler) {
         modalContainer.removeEventListener('click', modalContainer._backdropHandler);
     }
     
     if (settings.closeOnBackdrop) {
         modalContainer._backdropHandler = (e) => {
-            if (e.target === modalContainer) {
+            if (e.target === modalContainer && !isModalClosing) {
                 e.stopPropagation();
                 hideModal(modalContainer);
             }
@@ -2230,14 +2238,14 @@ function setupModalCloseListeners(modalContainer, settings) {
         modalContainer.addEventListener('click', modalContainer._backdropHandler);
     }
     
-    // Escape key press - remove old handler first
+    // Escape key press
     if (settings._escapeHandler) {
         document.removeEventListener('keydown', settings._escapeHandler);
     }
     
     if (settings.closeOnEscape) {
         settings._escapeHandler = (e) => {
-            if (e.key === 'Escape' && activeModal && activeModal.container === modalContainer) {
+            if (e.key === 'Escape' && activeModal && activeModal.container === modalContainer && !isModalClosing) {
                 e.preventDefault();
                 hideModal(modalContainer);
             }
