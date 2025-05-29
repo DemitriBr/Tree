@@ -697,41 +697,42 @@ async function renderApplicationsList(applications = null) {
     }
 }
 
-// Also update the setupActionButtonsListeners function to ensure single registration:
-
+// Setup action buttons event listeners using event delegation - FIXED VERSION
 function setupActionButtonsListeners() {
     const listContainer = document.getElementById('listContainer');
     const kanbanContainer = document.getElementById('kanbanContainer');
     
     // Setup for list view
     if (listContainer) {
-        // Remove ALL existing listeners first
-        const clonedList = listContainer.cloneNode(true);
-        listContainer.parentNode.replaceChild(clonedList, listContainer);
-        const newListContainer = document.getElementById('listContainer');
+        // Remove old listener if exists
+        if (listContainer._clickHandler) {
+            listContainer.removeEventListener('click', listContainer._clickHandler);
+        }
         
-        // Add single listener
-        newListContainer.addEventListener('click', handleActionButtonClick, { capture: true });
+        listContainer._clickHandler = handleActionButtonClick;
+        listContainer.addEventListener('click', listContainer._clickHandler);
     }
     
-    // Setup for kanban view
+    // Setup for kanban view - use event delegation
     if (kanbanContainer) {
-        // Remove ALL existing listeners first
-        const clonedKanban = kanbanContainer.cloneNode(true);
-        kanbanContainer.parentNode.replaceChild(clonedKanban, kanbanContainer);
-        const newKanbanContainer = document.getElementById('kanbanContainer');
+        // Remove old listener if exists
+        if (kanbanContainer._clickHandler) {
+            kanbanContainer.removeEventListener('click', kanbanContainer._clickHandler);
+        }
         
-        // Add single listener
-        newKanbanContainer.addEventListener('click', (e) => {
+        kanbanContainer._clickHandler = (e) => {
+            // Check if click is on edit or delete button within kanban
             if (e.target.closest('.kanban-card-edit') || e.target.closest('.delete-btn')) {
                 handleActionButtonClick(e);
             }
-        }, { capture: true });
+        };
+        
+        kanbanContainer.addEventListener('click', kanbanContainer._clickHandler);
     }
 }
 
 // Replace the handleActionButtonClick function with this updated version:
-const clickDebounce = new Map();
+
 async function handleActionButtonClick(e) {
     // Don't prevent default for links
     if (e.target.tagName !== 'A' && !e.target.closest('a')) {
@@ -753,20 +754,6 @@ async function handleActionButtonClick(e) {
     // Handle delete button click
     if (deleteBtn) {
         e.stopPropagation();
-        e.stopImmediatePropagation(); // Prevent any other handlers
-        
-        const applicationId = deleteBtn.dataset.id;
-        
-        // Check debounce - prevent multiple clicks within 500ms
-        const lastClick = clickDebounce.get(applicationId);
-        const now = Date.now();
-        
-        if (lastClick && (now - lastClick) < 500) {
-            console.log('Delete click debounced');
-            return;
-        }
-        
-        clickDebounce.set(applicationId, now);
         
         // Check if any modal is already open
         if (isModalOpen()) {
@@ -774,20 +761,11 @@ async function handleActionButtonClick(e) {
             return;
         }
         
-        // Check if button is already disabled
-        if (deleteBtn.disabled || deleteBtn.dataset.processing === 'true') {
-            console.log('Delete button already processing');
-            return;
-        }
-        
-        // Mark as processing
-        deleteBtn.dataset.processing = 'true';
-        
+        const applicationId = deleteBtn.dataset.id;
         const applicationCard = deleteBtn.closest('.application-card') || deleteBtn.closest('.kanban-card');
         
         if (!applicationCard) {
             console.error('Card not found');
-            deleteBtn.dataset.processing = 'false';
             return;
         }
         
@@ -836,9 +814,6 @@ async function handleActionButtonClick(e) {
                         // Show success notification
                         notifySuccess(`Application for "${jobTitle}" at ${companyName} deleted successfully.`);
                         
-                        // Clean up debounce
-                        clickDebounce.delete(applicationId);
-                        
                         // Refresh the appropriate view
                         setTimeout(() => {
                             if (document.getElementById('listView').classList.contains('active')) {
@@ -856,7 +831,6 @@ async function handleActionButtonClick(e) {
                         deleteBtn.innerHTML = originalContent;
                         deleteBtn.style.opacity = '';
                         deleteBtn.style.cursor = '';
-                        deleteBtn.dataset.processing = 'false';
                         
                         notifyError('Failed to delete application. Please try again.');
                     }
@@ -867,7 +841,6 @@ async function handleActionButtonClick(e) {
                     deleteBtn.innerHTML = originalContent;
                     deleteBtn.style.opacity = '';
                     deleteBtn.style.cursor = '';
-                    deleteBtn.dataset.processing = 'false';
                 },
                 onClose: () => {
                     // Ensure button state is restored on close
@@ -876,13 +849,13 @@ async function handleActionButtonClick(e) {
                         deleteBtn.innerHTML = originalContent;
                         deleteBtn.style.opacity = '';
                         deleteBtn.style.cursor = '';
-                        deleteBtn.dataset.processing = 'false';
                     }
                 }
             }
         );
     }
 }
+
 // Load application data into form for editing
 async function loadApplicationForEdit(applicationId) {
     try {
@@ -1151,31 +1124,9 @@ async function init() {
     }
 }
 
-
-// Keep your existing DOMContentLoaded but modify it to include modal reset:
-
 // Run initialization when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, running init...');
-    
-    // Reset modal state before initialization
-    modalState.activeModals = [];
-    modalState.isAnimating = false;
-    activeConfirmModal = null;
-    
-    // Ensure modal container is hidden
-    const modalContainer = document.getElementById('modalContainer');
-    if (modalContainer) {
-        modalContainer.style.display = 'none';
-        modalContainer.classList.remove('active');
-        
-        const modal = modalContainer.querySelector('.modal');
-        if (modal) {
-            modal.classList.remove('modal-enter', 'modal-exit');
-        }
-    }
-    
-    // Run main initialization
     init();
 });
 
@@ -2196,21 +2147,9 @@ function initializeModalSystem() {
     return true;
 }
 
-// ===== COMPLETE MODAL CLASS WITH ALL UPDATES =====
-
-// Add static property for rate limiting
-Modal.lastOpenTime = 0;
-
 // Create modal instance
 class Modal {
     constructor(content, options = {}) {
-        // Check if modal was recently opened (within 300ms)
-        const now = Date.now();
-        if (Modal.lastOpenTime && (now - Modal.lastOpenTime) < 300) {
-            console.warn('Modal open request too soon after previous');
-            throw new Error('Modal rate limited');
-        }
-        
         this.id = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         this.content = content;
         this.options = { ...modalDefaults, ...options };
@@ -2227,9 +2166,6 @@ class Modal {
     
     // Open modal
     async open() {
-        // Update last open time
-        Modal.lastOpenTime = Date.now();
-        
         if (this.isOpen || modalState.isAnimating) {
             console.warn('Modal is already open or animating');
             return false;
@@ -2300,7 +2236,6 @@ class Modal {
         } catch (error) {
             console.error('Error opening modal:', error);
             modalState.isAnimating = false;
-            Modal.lastOpenTime = 0; // Reset on error
             return false;
         }
     }
@@ -2522,20 +2457,13 @@ class Modal {
 
 // Public API functions
 
-// Update showModal to handle rate limit errors:
+// Show modal
 function showModal(content, options = {}) {
-    try {
-        const modal = new Modal(content, options);
-        modal.open();
-        return modal;
-    } catch (error) {
-        if (error.message === 'Modal rate limited') {
-            console.log('Modal rate limited, ignoring request');
-            return null;
-        }
-        throw error;
-    }
+    const modal = new Modal(content, options);
+    modal.open();
+    return modal;
 }
+
 // Hide active modal
 function hideModal() {
     const activeModal = modalState.activeModals[modalState.activeModals.length - 1];
@@ -2583,19 +2511,8 @@ function showAlertModal(message, options = {}) {
     return modal;
 }
 
-
-// Replace the showConfirmModal function with this singleton pattern version:
-
-// Track active confirm modals to prevent duplicates
-let activeConfirmModal = null;
-
+// Show confirmation modal
 function showConfirmModal(message, options = {}) {
-    // If a confirm modal is already active, ignore the request
-    if (activeConfirmModal && activeConfirmModal.isOpen) {
-        console.warn('Confirm modal already active, ignoring duplicate request');
-        return activeConfirmModal;
-    }
-    
     const defaultOptions = {
         title: 'Confirm',
         confirmText: 'Confirm',
@@ -2623,80 +2540,35 @@ function showConfirmModal(message, options = {}) {
         </div>
     `;
     
-    // Clear any stale reference
-    if (activeConfirmModal && !activeConfirmModal.isOpen) {
-        activeConfirmModal = null;
-    }
+    const modal = showModal(content, settings);
     
-    // Create modal with singleton check
-    const modal = showModal(content, {
-        ...settings,
-        onOpen: (modalElement) => {
-            // Set as active confirm modal
-            activeConfirmModal = modal;
-            
-            const confirmBtn = modalElement.querySelector('.modal-confirm-btn');
-            const cancelBtn = modalElement.querySelector('.modal-cancel-btn');
-            
-            if (!confirmBtn || !cancelBtn) {
-                console.error('Modal buttons not found');
-                return;
-            }
-            
-            // Prevent double-click on buttons
-            let isProcessing = false;
-            
-            // Confirm handler
-            const handleConfirm = async () => {
-                if (isProcessing) return;
-                isProcessing = true;
-                
-                confirmBtn.disabled = true;
-                cancelBtn.disabled = true;
-                
+    // Setup button handlers after modal opens
+    modal.options.onOpen = (modalElement) => {
+        const confirmBtn = modalElement.querySelector('.modal-confirm-btn');
+        const cancelBtn = modalElement.querySelector('.modal-cancel-btn');
+        
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
                 await modal.close();
-                activeConfirmModal = null;
-                
-                // Execute callback after modal is hidden
-                if (settings.onConfirm && typeof settings.onConfirm === 'function') {
+                if (settings.onConfirm) {
+                    // Small delay to ensure modal is fully closed
                     setTimeout(() => settings.onConfirm(), 100);
                 }
-            };
-            
-            // Cancel handler
-            const handleCancel = async () => {
-                if (isProcessing) return;
-                isProcessing = true;
-                
-                confirmBtn.disabled = true;
-                cancelBtn.disabled = true;
-                
+            }, { once: true });
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', async () => {
                 await modal.close();
-                activeConfirmModal = null;
-                
-                // Execute callback after modal is hidden
-                if (settings.onCancel && typeof settings.onCancel === 'function') {
+                if (settings.onCancel) {
                     setTimeout(() => settings.onCancel(), 100);
                 }
-            };
+            }, { once: true });
             
-            // Add listeners with once option
-            confirmBtn.addEventListener('click', handleConfirm, { once: true });
-            cancelBtn.addEventListener('click', handleCancel, { once: true });
-            
-            // Focus cancel button (safer default)
+            // Focus cancel button by default (safer option)
             cancelBtn.focus();
-        },
-        onClose: () => {
-            // Clear active reference
-            activeConfirmModal = null;
-            
-            // Call original onClose if provided
-            if (settings.onClose && typeof settings.onClose === 'function') {
-                settings.onClose();
-            }
         }
-    });
+    };
     
     return modal;
 }
