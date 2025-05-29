@@ -707,7 +707,7 @@ function setupActionButtonsListeners() {
     }
 }
 
-// Handle action button clicks - FIXED VERSION
+// Handle action button clicks - ENHANCED VERSION
 async function handleActionButtonClick(e) {
     // Don't prevent default for links
     if (e.target.tagName !== 'A' && !e.target.closest('a')) {
@@ -722,8 +722,20 @@ async function handleActionButtonClick(e) {
         e.stopPropagation();
         const applicationId = editBtn.dataset.id;
         console.log('Edit button clicked for ID:', applicationId);
-        await loadApplicationForEdit(applicationId);
-        return; // Important: return early to prevent further processing
+        
+        // Prevent double-clicks
+        if (editBtn.disabled) return;
+        editBtn.disabled = true;
+        
+        try {
+            await loadApplicationForEdit(applicationId);
+        } finally {
+            // Re-enable after navigation
+            setTimeout(() => {
+                if (editBtn) editBtn.disabled = false;
+            }, 500);
+        }
+        return;
     }
     
     // Handle delete button click
@@ -731,15 +743,22 @@ async function handleActionButtonClick(e) {
         e.stopPropagation();
         
         // Prevent double-clicks
-        if (deleteBtn.disabled) {
+        if (deleteBtn.disabled || deleteBtn.dataset.processing === 'true') {
+            console.log('Delete already in progress, ignoring click');
             return;
         }
+        
+        // Mark as processing
+        deleteBtn.dataset.processing = 'true';
+        deleteBtn.disabled = true;
         
         const applicationId = deleteBtn.dataset.id;
         const applicationCard = deleteBtn.closest('.application-card') || deleteBtn.closest('.kanban-card');
         
         if (!applicationCard) {
             console.error('Card not found');
+            deleteBtn.dataset.processing = 'false';
+            deleteBtn.disabled = false;
             return;
         }
         
@@ -756,8 +775,6 @@ async function handleActionButtonClick(e) {
             companyName = applicationCard.querySelector('.kanban-card-company')?.textContent || 'Unknown';
         }
         
-        // Disable button to prevent double-clicks
-        deleteBtn.disabled = true;
         const originalContent = deleteBtn.innerHTML;
         
         // Show confirmation modal
@@ -769,6 +786,7 @@ async function handleActionButtonClick(e) {
             cancelClass: 'btn btn-secondary',
             onConfirm: async () => {
                 try {
+                    console.log('Delete confirmed for:', applicationId);
                     deleteBtn.innerHTML = '⏳';
                     
                     await deleteApplicationFromDB(applicationId);
@@ -791,17 +809,22 @@ async function handleActionButtonClick(e) {
                     
                 } catch (error) {
                     console.error('Error deleting application:', error);
+                    deleteBtn.dataset.processing = 'false';
                     deleteBtn.disabled = false;
                     deleteBtn.innerHTML = originalContent;
                     notifyError('Failed to delete application. Please try again.');
                 }
             },
             onCancel: () => {
+                console.log('Delete cancelled');
+                deleteBtn.dataset.processing = 'false';
                 deleteBtn.disabled = false;
                 deleteBtn.innerHTML = originalContent;
             },
             onClose: () => {
                 // Ensure button is re-enabled even if modal is closed by escape or backdrop
+                console.log('Modal closed');
+                deleteBtn.dataset.processing = 'false';
                 deleteBtn.disabled = false;
                 deleteBtn.innerHTML = originalContent;
             }
@@ -2258,6 +2281,8 @@ function trapFocus(modal) {
     modal._trapHandler = trapHandler;
 }
 
+// Replace the showConfirmModal function in your script.js with this fixed version:
+
 // Utility function to create a confirmation modal - FIXED VERSION
 function showConfirmModal(message, options = {}) {
     const settings = {
@@ -2295,50 +2320,87 @@ function showConfirmModal(message, options = {}) {
         closeOnEscape: settings.closeOnEscape,
         onClose: settings.onClose,
         onOpen: (modal) => {
-            // Setup button handlers
+            // Setup button handlers with proper event handling
             const confirmBtn = modal.querySelector('#modalConfirmBtn');
             const cancelBtn = modal.querySelector('#modalCancelBtn');
             
-            // Ensure we remove any existing event listeners
-            const newConfirmBtn = confirmBtn.cloneNode(true);
-            const newCancelBtn = cancelBtn.cloneNode(true);
-            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-            
-            // Add click handlers
-            newConfirmBtn.addEventListener('click', (e) => {
+            // Store handlers as properties to ensure cleanup
+            const handleConfirm = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                // Disable buttons to prevent double-click
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                // Close modal first
                 hideModal();
-                if (settings.onConfirm) {
-                    settings.onConfirm();
+                
+                // Then execute callback after a small delay to ensure modal is closed
+                if (settings.onConfirm && typeof settings.onConfirm === 'function') {
+                    setTimeout(() => {
+                        settings.onConfirm();
+                    }, 50);
                 }
-            });
+            };
             
-            newCancelBtn.addEventListener('click', (e) => {
+            const handleCancel = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                // Disable buttons to prevent double-click
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                // Close modal first
                 hideModal();
-                if (settings.onCancel) {
-                    settings.onCancel();
+                
+                // Then execute callback after a small delay
+                if (settings.onCancel && typeof settings.onCancel === 'function') {
+                    setTimeout(() => {
+                        settings.onCancel();
+                    }, 50);
                 }
-            });
+            };
+            
+            // Remove any existing listeners first
+            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            
+            // Get fresh references after cloning
+            const newConfirmBtn = modal.querySelector('#modalConfirmBtn');
+            const newCancelBtn = modal.querySelector('#modalCancelBtn');
+            
+            // Add new listeners
+            newConfirmBtn.addEventListener('click', handleConfirm, { once: true });
+            newCancelBtn.addEventListener('click', handleCancel, { once: true });
             
             // Focus the cancel button by default (safer option)
-            newCancelBtn.focus();
+            setTimeout(() => {
+                newCancelBtn.focus();
+            }, 100);
         }
     });
     
     return modal;
 }
 
-// Utility function to create an alert modal
-function showAlertModal(message, options = {}) {
+
+// Replace the showConfirmModal function in your script.js with this fixed version:
+
+// Utility function to create a confirmation modal - FIXED VERSION
+function showConfirmModal(message, options = {}) {
     const settings = {
-        title: 'Alert',
-        okText: 'OK',
-        okClass: 'btn-primary',
-        onOk: null,
+        title: 'Confirm',
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        confirmClass: 'btn btn-primary',
+        cancelClass: 'btn btn-secondary',
+        onConfirm: null,
+        onCancel: null,
+        onClose: null,
+        closeOnBackdrop: true,
+        closeOnEscape: true,
         ...options
     };
     
@@ -2347,8 +2409,11 @@ function showAlertModal(message, options = {}) {
             <p>${message}</p>
         </div>
         <div class="modal-actions">
-            <button class="btn ${settings.okClass}" id="modalOkBtn">
-                ${settings.okText}
+            <button type="button" class="${settings.cancelClass}" id="modalCancelBtn">
+                ${settings.cancelText}
+            </button>
+            <button type="button" class="${settings.confirmClass}" id="modalConfirmBtn">
+                ${settings.confirmText}
             </button>
         </div>
     `;
@@ -2356,95 +2421,75 @@ function showAlertModal(message, options = {}) {
     const modal = showModal(content, {
         title: settings.title,
         size: 'small',
-        closeOnBackdrop: true,
-        closeOnEscape: true,
+        closeOnBackdrop: settings.closeOnBackdrop,
+        closeOnEscape: settings.closeOnEscape,
+        onClose: settings.onClose,
         onOpen: (modal) => {
-            const okBtn = modal.querySelector('#modalOkBtn');
-            okBtn.onclick = () => {
+            // Setup button handlers with proper event handling
+            const confirmBtn = modal.querySelector('#modalConfirmBtn');
+            const cancelBtn = modal.querySelector('#modalCancelBtn');
+            
+            // Store handlers as properties to ensure cleanup
+            const handleConfirm = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Disable buttons to prevent double-click
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                // Close modal first
                 hideModal();
-                if (settings.onOk) settings.onOk();
+                
+                // Then execute callback after a small delay to ensure modal is closed
+                if (settings.onConfirm && typeof settings.onConfirm === 'function') {
+                    setTimeout(() => {
+                        settings.onConfirm();
+                    }, 50);
+                }
             };
             
-            // Auto-focus OK button
-            okBtn.focus();
+            const handleCancel = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Disable buttons to prevent double-click
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                // Close modal first
+                hideModal();
+                
+                // Then execute callback after a small delay
+                if (settings.onCancel && typeof settings.onCancel === 'function') {
+                    setTimeout(() => {
+                        settings.onCancel();
+                    }, 50);
+                }
+            };
+            
+            // Remove any existing listeners first
+            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+            cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+            
+            // Get fresh references after cloning
+            const newConfirmBtn = modal.querySelector('#modalConfirmBtn');
+            const newCancelBtn = modal.querySelector('#modalCancelBtn');
+            
+            // Add new listeners
+            newConfirmBtn.addEventListener('click', handleConfirm, { once: true });
+            newCancelBtn.addEventListener('click', handleCancel, { once: true });
+            
+            // Focus the cancel button by default (safer option)
+            setTimeout(() => {
+                newCancelBtn.focus();
+            }, 100);
         }
     });
     
     return modal;
 }
 
-// Utility function to create a form modal
-function showFormModal(formHtml, options = {}) {
-    const settings = {
-        title: 'Form',
-        submitText: 'Submit',
-        cancelText: 'Cancel',
-        submitClass: 'btn-primary',
-        cancelClass: 'btn-secondary',
-        onSubmit: null,
-        onCancel: null,
-        validateForm: null,
-        ...options
-    };
-    
-    const content = `
-        <form id="modalForm" class="modal-form">
-            ${formHtml}
-            <div class="modal-actions">
-                <button type="button" class="btn ${settings.cancelClass}" id="modalFormCancelBtn">
-                    ${settings.cancelText}
-                </button>
-                <button type="submit" class="btn ${settings.submitClass}" id="modalFormSubmitBtn">
-                    ${settings.submitText}
-                </button>
-            </div>
-        </form>
-    `;
-    
-    const modal = showModal(content, {
-        title: settings.title,
-        size: settings.size || 'medium',
-        closeOnBackdrop: false,
-        closeOnEscape: true,
-        onOpen: (modal) => {
-            const form = modal.querySelector('#modalForm');
-            const cancelBtn = modal.querySelector('#modalFormCancelBtn');
-            
-            // Handle form submission
-            form.onsubmit = async (e) => {
-                e.preventDefault();
-                
-                // Run validation if provided
-                if (settings.validateForm) {
-                    const isValid = settings.validateForm(form);
-                    if (!isValid) return;
-                }
-                
-                // Get form data
-                const formData = new FormData(form);
-                
-                // Call onSubmit callback
-                if (settings.onSubmit) {
-                    try {
-                        await settings.onSubmit(formData, form);
-                        hideModal();
-                    } catch (error) {
-                        console.error('Form submission error:', error);
-                        // Keep modal open on error
-                    }
-                }
-            };
-            
-            // Handle cancel
-            cancelBtn.onclick = () => {
-                hideModal();
-                if (settings.onCancel) settings.onCancel();
-            };
-        }
-    });
-    
-    return modal;
-}
 
 // Initialize modal system when DOM is ready
 function initializeModalSystem() {
