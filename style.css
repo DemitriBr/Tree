@@ -3222,5 +3222,44 @@ canvas {
         transform: scale(1);
     }
 }
+/* Add these styles to your existing button styles in style.css */
 
+/* Danger Button Style */
+.btn-danger {
+    background: var(--danger-gradient);
+    color: white;
+    box-shadow: 0 4px 15px 0 rgba(245, 87, 108, 0.4);
+}
+
+.btn-danger:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px 0 rgba(245, 87, 108, 0.5);
+}
+
+.btn-danger::before {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Modal with danger theme */
+.modal-danger .modal-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    margin: -2rem -2rem 1.5rem -2rem;
+    padding: 1.5rem 2rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.modal-danger .modal-header h3 {
+    color: white;
+}
+
+.modal-danger .modal-close {
+    color: white;
+    opacity: 0.9;
+}
+
+.modal-danger .modal-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+}
 /* ===== END OF ENHANCED NOTIFICATION STYLES ===== */
