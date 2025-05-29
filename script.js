@@ -673,77 +673,91 @@ async function renderApplicationsList(applications = null) {
     }
 }
 
-// Also update setupActionButtonsListeners to be more robust
+// Setup action buttons event listeners using event delegation - FIXED VERSION
 function setupActionButtonsListeners() {
     const listContainer = document.getElementById('listContainer');
+    const kanbanContainer = document.getElementById('kanbanContainer');
     
-    if (!listContainer) {
-        console.error('List container not found for action buttons');
-        return;
-    }
-    
-    // Remove the old event listener before adding a new one
-    // Store the handler reference so we can remove it properly
-    if (listContainer._actionHandler) {
-        listContainer.removeEventListener('click', listContainer._actionHandler);
-    }
-    
-    // Create and store the handler
-    listContainer._actionHandler = handleActionButtonClick;
-    
-    // Add event delegation listener
-    listContainer.addEventListener('click', listContainer._actionHandler);
-    
-    console.log('Action button listeners setup complete');
-}
-
-// Handle action button clicks - FIXED VERSION WITH SAFEGUARDS
-async function handleActionButtonClick(e) {
-    // Prevent any bubbling that might cause double triggers
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation(); // This is crucial - stops ALL propagation
-    
-    const deleteBtn = e.target.closest('.delete-btn');
-    const editBtn = e.target.closest('.edit-btn');
-    
-    if (deleteBtn) {
-        // Check if button is already disabled (prevents double-click)
-        if (deleteBtn.disabled || deleteBtn.dataset.processing === 'true') {
-            console.log('Delete button already processing, ignoring click');
-            return;
+    // Setup for list view
+    if (listContainer) {
+        // Remove old listener if exists
+        if (listContainer._clickHandler) {
+            listContainer.removeEventListener('click', listContainer._clickHandler);
         }
         
-        // Check if a modal is already open
-        if (activeModal) {
-            console.log('Modal already open, ignoring delete click');
+        listContainer._clickHandler = handleActionButtonClick;
+        listContainer.addEventListener('click', listContainer._clickHandler);
+    }
+    
+    // Setup for kanban view - use event delegation
+    if (kanbanContainer) {
+        // Remove old listener if exists
+        if (kanbanContainer._clickHandler) {
+            kanbanContainer.removeEventListener('click', kanbanContainer._clickHandler);
+        }
+        
+        kanbanContainer._clickHandler = (e) => {
+            // Check if click is on edit or delete button within kanban
+            if (e.target.closest('.kanban-card-edit') || e.target.closest('.delete-btn')) {
+                handleActionButtonClick(e);
+            }
+        };
+        
+        kanbanContainer.addEventListener('click', kanbanContainer._clickHandler);
+    }
+}
+
+// Handle action button clicks - FIXED VERSION
+async function handleActionButtonClick(e) {
+    // Don't prevent default for links
+    if (e.target.tagName !== 'A' && !e.target.closest('a')) {
+        e.preventDefault();
+    }
+    
+    const deleteBtn = e.target.closest('.delete-btn');
+    const editBtn = e.target.closest('.edit-btn') || e.target.closest('.kanban-card-edit');
+    
+    // Handle edit button click
+    if (editBtn) {
+        e.stopPropagation();
+        const applicationId = editBtn.dataset.id;
+        console.log('Edit button clicked for ID:', applicationId);
+        await loadApplicationForEdit(applicationId);
+        return; // Important: return early to prevent further processing
+    }
+    
+    // Handle delete button click
+    if (deleteBtn) {
+        e.stopPropagation();
+        
+        // Prevent double-clicks
+        if (deleteBtn.disabled) {
             return;
         }
         
         const applicationId = deleteBtn.dataset.id;
-        const applicationCard = deleteBtn.closest('.application-card');
+        const applicationCard = deleteBtn.closest('.application-card') || deleteBtn.closest('.kanban-card');
         
         if (!applicationCard) {
-            console.error('Application card not found');
+            console.error('Card not found');
             return;
         }
         
-        const jobTitleElement = applicationCard.querySelector('.job-title');
-        const companyNameElement = applicationCard.querySelector('.company-info strong');
+        // Get job title and company name based on card type
+        let jobTitle, companyName;
         
-        if (!jobTitleElement || !companyNameElement) {
-            console.error('Required elements not found in card');
-            return;
+        if (applicationCard.classList.contains('application-card')) {
+            // List view card
+            jobTitle = applicationCard.querySelector('.job-title')?.textContent || 'Unknown';
+            companyName = applicationCard.querySelector('.company-info strong')?.textContent || 'Unknown';
+        } else {
+            // Kanban card
+            jobTitle = applicationCard.querySelector('.kanban-card-title')?.textContent || 'Unknown';
+            companyName = applicationCard.querySelector('.kanban-card-company')?.textContent || 'Unknown';
         }
         
-        const jobTitle = jobTitleElement.textContent;
-        const companyName = companyNameElement.textContent;
-        
-        // Mark button as processing and disable it
+        // Disable button to prevent double-clicks
         deleteBtn.disabled = true;
-        deleteBtn.dataset.processing = 'true';
-        
-        // Store original content
         const originalContent = deleteBtn.innerHTML;
         
         // Show confirmation modal
@@ -753,14 +767,10 @@ async function handleActionButtonClick(e) {
             cancelText: 'Cancel',
             confirmClass: 'btn btn-danger',
             cancelClass: 'btn btn-secondary',
-            closeOnBackdrop: true,
-            closeOnEscape: true,
             onConfirm: async () => {
                 try {
-                    // Update button to show loading
                     deleteBtn.innerHTML = '⏳';
                     
-                    // Delete from database
                     await deleteApplicationFromDB(applicationId);
                     
                     // Animate card removal
@@ -768,47 +778,80 @@ async function handleActionButtonClick(e) {
                     applicationCard.style.opacity = '0';
                     applicationCard.style.transform = 'translateX(-100%)';
                     
-                    // Show success notification
                     notifySuccess(`Application for "${jobTitle}" at ${companyName} deleted successfully.`);
                     
-                    // Remove card and refresh list after animation
+                    // Refresh the appropriate view
                     setTimeout(() => {
-                        filterSortAndRender();
+                        if (document.getElementById('listView').classList.contains('active')) {
+                            filterSortAndRender();
+                        } else if (document.getElementById('kanbanView').classList.contains('active')) {
+                            renderKanbanBoard();
+                        }
                     }, 300);
-                    
-                    console.log('Application deleted successfully');
                     
                 } catch (error) {
                     console.error('Error deleting application:', error);
-                    
-                    // Restore button state
                     deleteBtn.disabled = false;
-                    deleteBtn.dataset.processing = 'false';
                     deleteBtn.innerHTML = originalContent;
-                    
-                    // Show error notification
                     notifyError('Failed to delete application. Please try again.');
                 }
             },
             onCancel: () => {
-                // Re-enable the delete button when cancelled
                 deleteBtn.disabled = false;
-                deleteBtn.dataset.processing = 'false';
                 deleteBtn.innerHTML = originalContent;
-                console.log('Delete cancelled by user');
             },
             onClose: () => {
-                // Ensure button is re-enabled if modal is closed any other way
+                // Ensure button is re-enabled even if modal is closed by escape or backdrop
                 deleteBtn.disabled = false;
-                deleteBtn.dataset.processing = 'false';
                 deleteBtn.innerHTML = originalContent;
             }
         });
+    }
+}
+
+// Load application data into form for editing
+async function loadApplicationForEdit(applicationId) {
+    try {
+        // Fetch the application data
+        const application = await getApplicationFromDB(applicationId);
+        console.log('Loading application for edit:', application);
         
-    } else if (editBtn) {
-        const applicationId = editBtn.dataset.id;
-        console.log('Edit button clicked for ID:', applicationId);
-        await loadApplicationForEdit(applicationId);
+        // Update form title
+        const formTitle = document.getElementById('formTitle');
+        if (formTitle) {
+            formTitle.textContent = 'Edit Application';
+        }
+        
+        // Populate form fields
+        document.getElementById('applicationId').value = application.id;
+        document.getElementById('jobTitle').value = application.jobTitle || '';
+        document.getElementById('companyName').value = application.companyName || '';
+        document.getElementById('applicationDate').value = application.applicationDate || '';
+        document.getElementById('status').value = application.status || '';
+        document.getElementById('deadline').value = application.deadline || '';
+        document.getElementById('url').value = application.url || '';
+        document.getElementById('salary').value = application.salary || '';
+        document.getElementById('location').value = application.location || '';
+        document.getElementById('progressStage').value = application.progressStage || 'to-apply';
+        document.getElementById('notes').value = application.notes || '';
+        
+        // Switch to home view
+        switchView('home');
+        
+        // Update navigation active state
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.view === 'home') {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Focus on the job title field
+        document.getElementById('jobTitle').focus();
+        
+    } catch (error) {
+        console.error('Error loading application for edit:', error);
+        notifyError('Failed to load application for editing');
     }
 }
 
@@ -989,7 +1032,7 @@ async function init() {
         // Set up dark mode toggle
         setupDarkModeToggle();
 
-        // Initialize modal system - ADD THIS LINE
+        // Initialize modal system
         initializeModalSystem();
         
         console.log('Application initialized successfully');
@@ -1363,6 +1406,7 @@ function createStatusChart(stats, canvasId) {
     ctx.font = 'bold 12px Inter, sans-serif';
     ctx.fillText(`Total: ${total}`, legendX, legendY);
 }
+
 function createTimelineChart(applications, canvasId) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -1390,20 +1434,20 @@ function createTimelineChart(applications, canvasId) {
         monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
     });
     
-   // Get last 6 months INCLUDING future months
-const months = [];
-const counts = [];
-const now = new Date();
+    // Get last 6 months INCLUDING future months
+    const months = [];
+    const counts = [];
+    const now = new Date();
 
-// Start from 3 months ago to include future applications
-for (let i = 3; i >= -2; i--) {  // Changed from 5 to 3, and 0 to -2
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
-    
-    months.push(monthName);
-    counts.push(monthlyData[monthKey] || 0);
-}
+    // Start from 3 months ago to include future applications
+    for (let i = 3; i >= -2; i--) {  // Changed from 5 to 3, and 0 to -2
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+        
+        months.push(monthName);
+        counts.push(monthlyData[monthKey] || 0);
+    }
     
     // Calculate dimensions
     const padding = 40;
@@ -1465,6 +1509,7 @@ for (let i = 3; i >= -2; i--) {  // Changed from 5 to 3, and 0 to -2
     ctx.textAlign = 'center';
     ctx.fillText('Applications Over Time', width / 2, 20);
 }
+
 // ===== KANBAN BOARD SECTION =====
 // Complete Kanban Board implementation with fixed drag-and-drop
 
@@ -1619,6 +1664,7 @@ const dragHandlers = {
                 updateKanbanUI();
                 
             } catch (error) {
+                console.error('Error updating status:', error);
                 notifyError('Failed to update application status. Please try again.');
                 
                 // Remove updating class
@@ -1631,8 +1677,6 @@ const dragHandlers = {
                 if (originalColumn && currentCard && currentCard.parentNode) {
                     originalColumn.appendChild(currentCard);
                 }
-                
-                alert('Failed to update status. Please try again.');
             }
         }
         
@@ -1701,6 +1745,7 @@ async function renderKanbanBoard() {
         // Setup drag and drop after rendering
         setTimeout(() => {
             setupDragAndDrop();
+            setupActionButtonsListeners(); // Add this line
         }, 100);
         
     } catch (error) {
@@ -1766,14 +1811,14 @@ function createKanbanColumn(column, applications) {
     return columnDiv;
 }
 
-// Create a kanban card
+// Create a kanban card - FIXED VERSION
 function createKanbanCard(application) {
     const card = document.createElement('div');
     card.className = 'kanban-card';
     card.dataset.id = application.id;
     card.dataset.applicationDate = application.applicationDate;
     card.draggable = true;
-    card.setAttribute('draggable', 'true'); // Ensure attribute is set
+    card.setAttribute('draggable', 'true');
     
     // Calculate days since application
     const daysAgo = Math.floor((new Date() - new Date(application.applicationDate)) / (1000 * 60 * 60 * 24));
@@ -1828,13 +1873,8 @@ function createKanbanCard(application) {
         ` : ''}
     `;
     
-    // Add click handler for edit button using event delegation
-    const editBtn = card.querySelector('.kanban-card-edit');
-    editBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        await loadApplicationForEdit(application.id);
-    });
+    // Note: We're NOT adding individual event listeners here anymore
+    // Event delegation will handle clicks on edit buttons
     
     return card;
 }
@@ -1973,6 +2013,7 @@ function stopKanbanAutoRefresh() {
 }
 
 // ===== END OF KANBAN BOARD SECTION =====
+
 // ===== MODAL SYSTEM SECTION =====
 // Generic modal handling for the application
 
@@ -1980,32 +2021,33 @@ function stopKanbanAutoRefresh() {
 let activeModal = null;
 let modalStack = [];
 
-// Update the showModal function to add a safeguard
+// Show modal with dynamic content - FIXED VERSION
 function showModal(content, options = {}) {
-    // Check if a modal is already open
-    if (activeModal && activeModal.container && activeModal.container.style.display === 'flex') {
-        console.warn('A modal is already open. Closing it first.');
-        hideModal();
-        // Wait for the hide animation to complete
-        setTimeout(() => {
-            showModal(content, options);
-        }, 350);
+    const modalContainer = document.getElementById('modalContainer');
+    
+    if (!modalContainer) {
+        console.error('Modal container not found');
         return;
     }
     
-    const modalContainer = document.getElementById('modalContainer');
+    // If modal is already visible, don't open another
+    if (modalContainer.classList.contains('active')) {
+        console.warn('Modal is already active, preventing double open');
+        return;
+    }
+    
     const modal = modalContainer.querySelector('.modal');
     const modalContent = modal.querySelector('.modal-content') || modal;
     
-    if (!modalContainer || !modal) {
-        console.error('Modal container not found');
+    if (!modal) {
+        console.error('Modal element not found');
         return;
     }
     
     // Default options
     const settings = {
         title: '',
-        size: 'medium', // small, medium, large
+        size: 'medium',
         closeOnBackdrop: true,
         closeOnEscape: true,
         onClose: null,
@@ -2046,7 +2088,6 @@ function showModal(content, options = {}) {
         modalContainer.classList.add('active');
         modal.classList.add('modal-enter');
         
-        // Remove enter animation class after animation completes
         setTimeout(() => {
             modal.classList.remove('modal-enter');
         }, 300);
@@ -2055,7 +2096,7 @@ function showModal(content, options = {}) {
     // Setup close listeners
     setupModalCloseListeners(modalContainer, settings);
     
-    // Focus management - focus first focusable element
+    // Focus management
     setTimeout(() => {
         const focusableElements = modal.querySelectorAll(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -2076,19 +2117,30 @@ function showModal(content, options = {}) {
     return modal;
 }
 
-// Hide the currently active modal
+// Hide the currently active modal - FIXED VERSION
 function hideModal(modalContainer = null) {
     if (!modalContainer && activeModal) {
         modalContainer = activeModal.container;
     }
     
-    if (!modalContainer) {
-        console.error('No modal to hide');
+    if (!modalContainer || !modalContainer.classList.contains('active')) {
+        console.log('No active modal to hide');
         return;
     }
     
     const modal = modalContainer.querySelector('.modal');
     const settings = activeModal ? activeModal.settings : {};
+    
+    // Remove event listeners
+    if (modalContainer._backdropHandler) {
+        modalContainer.removeEventListener('click', modalContainer._backdropHandler);
+        modalContainer._backdropHandler = null;
+    }
+    
+    if (settings._escapeHandler) {
+        document.removeEventListener('keydown', settings._escapeHandler);
+        settings._escapeHandler = null;
+    }
     
     // Add exit animation
     modal.classList.add('modal-exit');
@@ -2121,36 +2173,53 @@ function hideModal(modalContainer = null) {
     }, 300);
 }
 
-// Setup modal close event listeners
+// Setup modal close event listeners - FIXED VERSION
 function setupModalCloseListeners(modalContainer, settings) {
-    // Close button click
+    // Close button click - use addEventListener instead of onclick
     const closeBtn = modalContainer.querySelector('.modal-close');
     if (closeBtn) {
-        closeBtn.onclick = (e) => {
+        // Remove any existing listener first
+        if (closeBtn._closeHandler) {
+            closeBtn.removeEventListener('click', closeBtn._closeHandler);
+        }
+        
+        closeBtn._closeHandler = (e) => {
             e.preventDefault();
+            e.stopPropagation();
             hideModal(modalContainer);
         };
+        
+        closeBtn.addEventListener('click', closeBtn._closeHandler);
     }
     
-    // Backdrop click
+    // Backdrop click - remove old handler first
+    if (modalContainer._backdropHandler) {
+        modalContainer.removeEventListener('click', modalContainer._backdropHandler);
+    }
+    
     if (settings.closeOnBackdrop) {
-        modalContainer.onclick = (e) => {
+        modalContainer._backdropHandler = (e) => {
             if (e.target === modalContainer) {
+                e.stopPropagation();
                 hideModal(modalContainer);
             }
         };
+        modalContainer.addEventListener('click', modalContainer._backdropHandler);
     }
     
-    // Escape key press
+    // Escape key press - remove old handler first
+    if (settings._escapeHandler) {
+        document.removeEventListener('keydown', settings._escapeHandler);
+    }
+    
     if (settings.closeOnEscape) {
-        const escapeHandler = (e) => {
+        settings._escapeHandler = (e) => {
             if (e.key === 'Escape' && activeModal && activeModal.container === modalContainer) {
                 e.preventDefault();
                 hideModal(modalContainer);
-                document.removeEventListener('keydown', escapeHandler);
             }
         };
-        document.addEventListener('keydown', escapeHandler);
+        document.addEventListener('keydown', settings._escapeHandler);
     }
 }
 
@@ -2199,6 +2268,7 @@ function showConfirmModal(message, options = {}) {
         cancelClass: 'btn btn-secondary',
         onConfirm: null,
         onCancel: null,
+        onClose: null,
         closeOnBackdrop: true,
         closeOnEscape: true,
         ...options
@@ -2223,6 +2293,7 @@ function showConfirmModal(message, options = {}) {
         size: 'small',
         closeOnBackdrop: settings.closeOnBackdrop,
         closeOnEscape: settings.closeOnEscape,
+        onClose: settings.onClose,
         onOpen: (modal) => {
             // Setup button handlers
             const confirmBtn = modal.querySelector('#modalConfirmBtn');
@@ -2531,3 +2602,5 @@ function clearAllNotifications() {
     const notifications = document.querySelectorAll('.notification');
     notifications.forEach(notification => removeNotification(notification));
 }
+
+// ===== END OF NOTIFICATION SYSTEM SECTION =====
