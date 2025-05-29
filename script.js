@@ -1427,8 +1427,6 @@ for (let i = 3; i >= -2; i--) {  // Changed from 5 to 3, and 0 to -2
     ctx.textAlign = 'center';
     ctx.fillText('Applications Over Time', width / 2, 20);
 }
-// Add this code to your script.js file after the existing dashboard functions
-
 // ===== KANBAN BOARD SECTION =====
 // Complete Kanban Board implementation with fixed drag-and-drop
 
@@ -1471,9 +1469,6 @@ const dragHandlers = {
     },
     
     end: function(e) {
-        // Don't clear the global variables here - let drop handler do it
-        // This prevents race conditions with async operations
-        
         // Clean up all cards
         document.querySelectorAll('.kanban-card').forEach(c => {
             c.classList.remove('dragging');
@@ -1517,23 +1512,38 @@ const dragHandlers = {
         e.preventDefault();
         e.stopPropagation();
         
+        // CRITICAL: Capture all necessary data immediately
+        const currentCard = draggedCard;
+        const currentApplicationId = draggedApplicationId;
+        const currentOriginalStatus = originalStatus;
+        
         const dropZone = e.target.closest('.kanban-cards-container') || 
                         e.target.closest('.kanban-column')?.querySelector('.kanban-cards-container');
         
-        if (!dropZone || !draggedCard || !draggedApplicationId || !originalStatus) {
+        if (!dropZone || !currentCard || !currentApplicationId || !currentOriginalStatus) {
             document.querySelectorAll('.kanban-column').forEach(col => {
                 col.classList.remove('drag-over');
             });
+            // Reset globals
+            draggedCard = null;
+            draggedApplicationId = null;
+            originalStatus = null;
             return;
         }
         
         const newStatus = dropZone.dataset.status;
         
-        if (originalStatus !== newStatus) {
-            draggedCard.classList.add('updating');
+        // Clean up columns immediately
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+        
+        if (currentOriginalStatus !== newStatus) {
+            // Add updating class
+            currentCard.classList.add('updating');
             
             try {
-                const application = await getApplicationFromDB(draggedApplicationId);
+                const application = await getApplicationFromDB(currentApplicationId);
                 
                 application.status = newStatus;
                 application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
@@ -1543,7 +1553,7 @@ const dragHandlers = {
                     application.statusHistory = [];
                 }
                 application.statusHistory.push({
-                    from: originalStatus,
+                    from: currentOriginalStatus,
                     to: newStatus,
                     date: new Date().toISOString(),
                     action: 'kanban-drag'
@@ -1551,37 +1561,43 @@ const dragHandlers = {
                 
                 await updateApplicationInDB(application);
                 
-                console.log(`Moved "${application.jobTitle}" from ${originalStatus} to ${newStatus}`);
+                console.log(`Moved "${application.jobTitle}" from ${currentOriginalStatus} to ${newStatus}`);
                 
-                draggedCard.classList.remove('updating');
-                draggedCard.classList.add('drop-success');
-                
-                setTimeout(() => {
-                    if (draggedCard && draggedCard.classList) {
-                        draggedCard.classList.remove('drop-success');
-                    }
-                }, 500);
+                // Remove updating class and add success
+                if (currentCard.parentNode) {
+                    currentCard.classList.remove('updating');
+                    currentCard.classList.add('drop-success');
+                    
+                    // Remove success class after animation
+                    setTimeout(() => {
+                        // Double check the card still exists
+                        if (currentCard && currentCard.parentNode && currentCard.classList) {
+                            currentCard.classList.remove('drop-success');
+                        }
+                    }, 500);
+                }
                 
                 updateKanbanUI();
                 
             } catch (error) {
                 console.error('Error updating status:', error);
-                draggedCard.classList.remove('updating');
                 
-                const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${originalStatus}"]`);
-                if (originalColumn && draggedCard) {
-                    originalColumn.appendChild(draggedCard);
+                // Remove updating class
+                if (currentCard && currentCard.parentNode) {
+                    currentCard.classList.remove('updating');
+                }
+                
+                // Move card back to original column
+                const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${currentOriginalStatus}"]`);
+                if (originalColumn && currentCard && currentCard.parentNode) {
+                    originalColumn.appendChild(currentCard);
                 }
                 
                 alert('Failed to update status. Please try again.');
             }
         }
         
-        // Clean up
-        document.querySelectorAll('.kanban-column').forEach(col => {
-            col.classList.remove('drag-over');
-        });
-        
+        // Reset globals after everything is done
         draggedCard = null;
         draggedApplicationId = null;
         originalStatus = null;
@@ -1819,19 +1835,22 @@ function handleDragStartDelegated(e) {
     }
 }
 
-// Delegated drag end handler
+// Delegated drag end handler  
 function handleDragEndDelegated(e) {
     const card = e.target.closest('.kanban-card');
     if (card) {
-        // Call the handler but delay the state reset
         dragHandlers.end(e);
         
-        // Reset state variables after a small delay to ensure drop completes
+        // Only reset globals if drop hasn't occurred yet
+        // This gives drop handler time to execute
         setTimeout(() => {
-            draggedCard = null;
-            draggedApplicationId = null;
-            originalStatus = null;
-        }, 100);
+            // Only reset if drop handler hasn't already reset them
+            if (draggedCard !== null) {
+                draggedCard = null;
+                draggedApplicationId = null;
+                originalStatus = null;
+            }
+        }, 200);
     }
 }
 
