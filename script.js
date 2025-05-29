@@ -689,33 +689,42 @@ function setupActionButtonsListeners() {
     listContainer.addEventListener('click', handleActionButtonClick);
 }
 
-// Handle action button clicks - COMPLETE UPDATED VERSION
+// Handle action button clicks - FIXED VERSION
 async function handleActionButtonClick(e) {
+    // Prevent any bubbling that might cause double triggers
+    e.preventDefault();
+    e.stopPropagation();
+    
     const deleteBtn = e.target.closest('.delete-btn');
     const editBtn = e.target.closest('.edit-btn');
     
     if (deleteBtn) {
-        e.stopPropagation();
-        const applicationId = deleteBtn.dataset.id;
+        // Check if button is already disabled (prevents double-click)
+        if (deleteBtn.disabled) {
+            return;
+        }
         
+        const applicationId = deleteBtn.dataset.id;
         const applicationCard = deleteBtn.closest('.application-card');
         const jobTitle = applicationCard.querySelector('.job-title').textContent;
         const companyName = applicationCard.querySelector('.company-info strong').textContent;
         
-        // REMOVE THIS LINE:
-        // const confirmDelete = confirm(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`);
+        // Temporarily disable the button to prevent double-clicks
+        deleteBtn.disabled = true;
         
-        // USE THE MODAL SYSTEM INSTEAD:
+        // Show confirmation modal
         showConfirmModal(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`, {
             title: 'Delete Application',
             confirmText: 'Delete',
             cancelText: 'Cancel',
-            confirmClass: 'btn-danger',
+            confirmClass: 'btn btn-danger', // Make sure to include 'btn' class
+            cancelClass: 'btn btn-secondary',
+            closeOnBackdrop: true,
+            closeOnEscape: true,
             onConfirm: async () => {
                 try {
                     // Store original button content
                     const originalContent = deleteBtn.innerHTML;
-                    deleteBtn.disabled = true;
                     deleteBtn.innerHTML = '⏳';
                     
                     // Delete from database
@@ -727,7 +736,7 @@ async function handleActionButtonClick(e) {
                     applicationCard.style.transform = 'translateX(-100%)';
                     
                     // Show success notification
-                    notifySuccess(`Application for ${jobTitle} at ${companyName} deleted successfully.`);
+                    notifySuccess(`Application for "${jobTitle}" at ${companyName} deleted successfully.`);
                     
                     // Remove card and refresh list after animation
                     setTimeout(() => {
@@ -748,13 +757,13 @@ async function handleActionButtonClick(e) {
                 }
             },
             onCancel: () => {
-                // User cancelled - no action needed
+                // Re-enable the delete button when cancelled
+                deleteBtn.disabled = false;
                 console.log('Delete cancelled by user');
             }
         });
         
     } else if (editBtn) {
-        e.stopPropagation();
         const applicationId = editBtn.dataset.id;
         console.log('Edit button clicked for ID:', applicationId);
         await loadApplicationForEdit(applicationId);
@@ -2172,16 +2181,18 @@ function trapFocus(modal) {
     modal._trapHandler = trapHandler;
 }
 
-// Utility function to create a confirmation modal
+// Utility function to create a confirmation modal - FIXED VERSION
 function showConfirmModal(message, options = {}) {
     const settings = {
         title: 'Confirm',
         confirmText: 'Confirm',
         cancelText: 'Cancel',
-        confirmClass: 'btn-primary',
-        cancelClass: 'btn-secondary',
+        confirmClass: 'btn btn-primary',
+        cancelClass: 'btn btn-secondary',
         onConfirm: null,
         onCancel: null,
+        closeOnBackdrop: true,
+        closeOnEscape: true,
         ...options
     };
     
@@ -2190,10 +2201,10 @@ function showConfirmModal(message, options = {}) {
             <p>${message}</p>
         </div>
         <div class="modal-actions">
-            <button class="btn ${settings.cancelClass}" id="modalCancelBtn">
+            <button type="button" class="${settings.cancelClass}" id="modalCancelBtn">
                 ${settings.cancelText}
             </button>
-            <button class="btn ${settings.confirmClass}" id="modalConfirmBtn">
+            <button type="button" class="${settings.confirmClass}" id="modalConfirmBtn">
                 ${settings.confirmText}
             </button>
         </div>
@@ -2202,22 +2213,40 @@ function showConfirmModal(message, options = {}) {
     const modal = showModal(content, {
         title: settings.title,
         size: 'small',
-        closeOnBackdrop: false,
-        closeOnEscape: true,
+        closeOnBackdrop: settings.closeOnBackdrop,
+        closeOnEscape: settings.closeOnEscape,
         onOpen: (modal) => {
             // Setup button handlers
             const confirmBtn = modal.querySelector('#modalConfirmBtn');
             const cancelBtn = modal.querySelector('#modalCancelBtn');
             
-            confirmBtn.onclick = () => {
-                hideModal();
-                if (settings.onConfirm) settings.onConfirm();
-            };
+            // Ensure we remove any existing event listeners
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
             
-            cancelBtn.onclick = () => {
+            // Add click handlers
+            newConfirmBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 hideModal();
-                if (settings.onCancel) settings.onCancel();
-            };
+                if (settings.onConfirm) {
+                    settings.onConfirm();
+                }
+            });
+            
+            newCancelBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                hideModal();
+                if (settings.onCancel) {
+                    settings.onCancel();
+                }
+            });
+            
+            // Focus the cancel button by default (safer option)
+            newCancelBtn.focus();
         }
     });
     
