@@ -2032,10 +2032,6 @@ function stopKanbanAutoRefresh() {
 // ===== MODAL SYSTEM SECTION =====
 // Generic modal handling for the application
 
-// Modal state management
-let activeModal = null;
-let modalStack = [];
-
 // Show modal with dynamic content - COMPLETELY FIXED VERSION
 function showModal(content, options = {}) {
     const modalContainer = document.getElementById('modalContainer');
