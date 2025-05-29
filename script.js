@@ -253,7 +253,7 @@ async function handleFormSubmit(e) {
         
     } catch (error) {
         console.error('Error saving application:', error);
-        alert('Failed to save application. Please try again.');
+        notifyError('Failed to save application. Please try again.');
     }
 }
 
@@ -1980,8 +1980,19 @@ function stopKanbanAutoRefresh() {
 let activeModal = null;
 let modalStack = [];
 
-// Show modal with dynamic content
+// Update the showModal function to add a safeguard
 function showModal(content, options = {}) {
+    // Check if a modal is already open
+    if (activeModal && activeModal.container && activeModal.container.style.display === 'flex') {
+        console.warn('A modal is already open. Closing it first.');
+        hideModal();
+        // Wait for the hide animation to complete
+        setTimeout(() => {
+            showModal(content, options);
+        }, 350);
+        return;
+    }
+    
     const modalContainer = document.getElementById('modalContainer');
     const modal = modalContainer.querySelector('.modal');
     const modalContent = modal.querySelector('.modal-content') || modal;
