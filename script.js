@@ -1565,6 +1565,7 @@ const dragHandlers = {
                 await updateApplicationInDB(application);
                 
                 console.log(`Moved "${application.jobTitle}" from ${currentOriginalStatus} to ${newStatus}`);
+                notifySuccess(`Moved "${application.jobTitle}" to ${newStatus}`);
                 
                 // Remove updating class and add success
                 if (currentCard.parentNode) {
@@ -1583,7 +1584,7 @@ const dragHandlers = {
                 updateKanbanUI();
                 
             } catch (error) {
-                console.error('Error updating status:', error);
+                notifyError('Failed to update application status. Please try again.');
                 
                 // Remove updating class
                 if (currentCard && currentCard.parentNode) {
