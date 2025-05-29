@@ -1,3 +1,4 @@
+
 console.log('Script.js is loading!');
 
 // IndexedDB Configuration
@@ -2167,9 +2168,6 @@ const modalDefaults = {
     zIndex: 9999
 };
 
-// Track active confirm modals to prevent duplicates - DECLARE BEFORE USE
-let activeConfirmModal = null;
-
 // Initialize modal system
 function initializeModalSystem() {
     console.log('Initializing modal system...');
@@ -2197,6 +2195,11 @@ function initializeModalSystem() {
     console.log('Modal system initialized successfully');
     return true;
 }
+
+// ===== COMPLETE MODAL CLASS WITH ALL UPDATES =====
+
+// Add static property for rate limiting
+Modal.lastOpenTime = 0;
 
 // Create modal instance
 class Modal {
@@ -2517,9 +2520,6 @@ class Modal {
     }
 }
 
-// Add static property for rate limiting - AFTER CLASS DEFINITION
-Modal.lastOpenTime = 0;
-
 // Public API functions
 
 // Update showModal to handle rate limit errors:
@@ -2536,7 +2536,6 @@ function showModal(content, options = {}) {
         throw error;
     }
 }
-
 // Hide active modal
 function hideModal() {
     const activeModal = modalState.activeModals[modalState.activeModals.length - 1];
@@ -2573,20 +2572,23 @@ function showAlertModal(message, options = {}) {
     const modal = showModal(content, { ...defaultOptions, ...options });
     
     // Auto-focus OK button after modal opens
-    if (modal) {
-        modal.options.onOpen = (modalElement) => {
-            const okBtn = modalElement.querySelector('.modal-ok-btn');
-            if (okBtn) {
-                okBtn.addEventListener('click', () => modal.close(), { once: true });
-                okBtn.focus();
-            }
-        };
-    }
+    modal.options.onOpen = (modalElement) => {
+        const okBtn = modalElement.querySelector('.modal-ok-btn');
+        if (okBtn) {
+            okBtn.addEventListener('click', () => modal.close(), { once: true });
+            okBtn.focus();
+        }
+    };
     
     return modal;
 }
 
-// Show confirmation modal
+
+// Replace the showConfirmModal function with this singleton pattern version:
+
+// Track active confirm modals to prevent duplicates
+let activeConfirmModal = null;
+
 function showConfirmModal(message, options = {}) {
     // If a confirm modal is already active, ignore the request
     if (activeConfirmModal && activeConfirmModal.isOpen) {
@@ -2714,35 +2716,33 @@ function showFormModal(formHtml, options = {}) {
     
     const modal = showModal(formHtml, settings);
     
-    if (modal) {
-        modal.options.onOpen = (modalElement) => {
-            const form = modalElement.querySelector('form');
-            if (!form) return;
+    modal.options.onOpen = (modalElement) => {
+        const form = modalElement.querySelector('form');
+        if (!form) return;
+        
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            // Handle form submission
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            if (settings.onSubmit) {
+                const result = await settings.onSubmit(data, form, modal);
                 
-                const formData = new FormData(form);
-                const data = Object.fromEntries(formData.entries());
-                
-                if (settings.onSubmit) {
-                    const result = await settings.onSubmit(data, form, modal);
-                    
-                    // Close modal if onSubmit returns true or nothing
-                    if (result !== false) {
-                        modal.close();
-                    }
+                // Close modal if onSubmit returns true or nothing
+                if (result !== false) {
+                    modal.close();
                 }
-            });
-            
-            // Focus first form field
-            const firstInput = form.querySelector('input, textarea, select');
-            if (firstInput) {
-                firstInput.focus();
             }
-        };
-    }
+        });
+        
+        // Focus first form field
+        const firstInput = form.querySelector('input, textarea, select');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    };
     
     return modal;
 }
