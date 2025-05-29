@@ -673,7 +673,7 @@ async function renderApplicationsList(applications = null) {
     }
 }
 
-// Setup action buttons event listeners using event delegation
+// Also update setupActionButtonsListeners to be more robust
 function setupActionButtonsListeners() {
     const listContainer = document.getElementById('listContainer');
     
@@ -682,49 +682,82 @@ function setupActionButtonsListeners() {
         return;
     }
     
-    // Remove any existing listeners to avoid duplicates
-    listContainer.removeEventListener('click', handleActionButtonClick);
+    // Remove the old event listener before adding a new one
+    // Store the handler reference so we can remove it properly
+    if (listContainer._actionHandler) {
+        listContainer.removeEventListener('click', listContainer._actionHandler);
+    }
+    
+    // Create and store the handler
+    listContainer._actionHandler = handleActionButtonClick;
     
     // Add event delegation listener
-    listContainer.addEventListener('click', handleActionButtonClick);
+    listContainer.addEventListener('click', listContainer._actionHandler);
+    
+    console.log('Action button listeners setup complete');
 }
 
-// Handle action button clicks - FIXED VERSION
+// Handle action button clicks - FIXED VERSION WITH SAFEGUARDS
 async function handleActionButtonClick(e) {
     // Prevent any bubbling that might cause double triggers
     e.preventDefault();
     e.stopPropagation();
+    e.stopImmediatePropagation(); // This is crucial - stops ALL propagation
     
     const deleteBtn = e.target.closest('.delete-btn');
     const editBtn = e.target.closest('.edit-btn');
     
     if (deleteBtn) {
         // Check if button is already disabled (prevents double-click)
-        if (deleteBtn.disabled) {
+        if (deleteBtn.disabled || deleteBtn.dataset.processing === 'true') {
+            console.log('Delete button already processing, ignoring click');
+            return;
+        }
+        
+        // Check if a modal is already open
+        if (activeModal) {
+            console.log('Modal already open, ignoring delete click');
             return;
         }
         
         const applicationId = deleteBtn.dataset.id;
         const applicationCard = deleteBtn.closest('.application-card');
-        const jobTitle = applicationCard.querySelector('.job-title').textContent;
-        const companyName = applicationCard.querySelector('.company-info strong').textContent;
         
-        // Temporarily disable the button to prevent double-clicks
+        if (!applicationCard) {
+            console.error('Application card not found');
+            return;
+        }
+        
+        const jobTitleElement = applicationCard.querySelector('.job-title');
+        const companyNameElement = applicationCard.querySelector('.company-info strong');
+        
+        if (!jobTitleElement || !companyNameElement) {
+            console.error('Required elements not found in card');
+            return;
+        }
+        
+        const jobTitle = jobTitleElement.textContent;
+        const companyName = companyNameElement.textContent;
+        
+        // Mark button as processing and disable it
         deleteBtn.disabled = true;
+        deleteBtn.dataset.processing = 'true';
+        
+        // Store original content
+        const originalContent = deleteBtn.innerHTML;
         
         // Show confirmation modal
         showConfirmModal(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`, {
             title: 'Delete Application',
             confirmText: 'Delete',
             cancelText: 'Cancel',
-            confirmClass: 'btn btn-danger', // Make sure to include 'btn' class
+            confirmClass: 'btn btn-danger',
             cancelClass: 'btn btn-secondary',
             closeOnBackdrop: true,
             closeOnEscape: true,
             onConfirm: async () => {
                 try {
-                    // Store original button content
-                    const originalContent = deleteBtn.innerHTML;
+                    // Update button to show loading
                     deleteBtn.innerHTML = '⏳';
                     
                     // Delete from database
@@ -750,7 +783,8 @@ async function handleActionButtonClick(e) {
                     
                     // Restore button state
                     deleteBtn.disabled = false;
-                    deleteBtn.innerHTML = '🗑️';
+                    deleteBtn.dataset.processing = 'false';
+                    deleteBtn.innerHTML = originalContent;
                     
                     // Show error notification
                     notifyError('Failed to delete application. Please try again.');
@@ -759,7 +793,15 @@ async function handleActionButtonClick(e) {
             onCancel: () => {
                 // Re-enable the delete button when cancelled
                 deleteBtn.disabled = false;
+                deleteBtn.dataset.processing = 'false';
+                deleteBtn.innerHTML = originalContent;
                 console.log('Delete cancelled by user');
+            },
+            onClose: () => {
+                // Ensure button is re-enabled if modal is closed any other way
+                deleteBtn.disabled = false;
+                deleteBtn.dataset.processing = 'false';
+                deleteBtn.innerHTML = originalContent;
             }
         });
         
@@ -767,51 +809,6 @@ async function handleActionButtonClick(e) {
         const applicationId = editBtn.dataset.id;
         console.log('Edit button clicked for ID:', applicationId);
         await loadApplicationForEdit(applicationId);
-    }
-}
-// Load application data into form for editing
-async function loadApplicationForEdit(applicationId) {
-    try {
-        // Fetch the application data
-        const application = await getApplicationFromDB(applicationId);
-        console.log('Loading application for edit:', application);
-        
-        // Update form title
-        const formTitle = document.getElementById('formTitle');
-        if (formTitle) {
-            formTitle.textContent = 'Edit Application';
-        }
-        
-        // Populate form fields
-        document.getElementById('applicationId').value = application.id;
-        document.getElementById('jobTitle').value = application.jobTitle || '';
-        document.getElementById('companyName').value = application.companyName || '';
-        document.getElementById('applicationDate').value = application.applicationDate || '';
-        document.getElementById('status').value = application.status || '';
-        document.getElementById('deadline').value = application.deadline || '';
-        document.getElementById('url').value = application.url || '';
-        document.getElementById('salary').value = application.salary || '';
-        document.getElementById('location').value = application.location || '';
-        document.getElementById('progressStage').value = application.progressStage || 'to-apply';
-        document.getElementById('notes').value = application.notes || '';
-        
-        // Switch to home view
-        switchView('home');
-        
-        // Update navigation active state
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.view === 'home') {
-                btn.classList.add('active');
-            }
-        });
-        
-        // Focus on the job title field
-        document.getElementById('jobTitle').focus();
-        
-    } catch (error) {
-        console.error('Error loading application for edit:', error);
-        alert('Failed to load application for editing');
     }
 }
 
