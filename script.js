@@ -2167,56 +2167,6 @@ const modalDefaults = {
     zIndex: 9999
 };
 
-// Initialize modal system
-function initializeModalSystem() {
-    console.log('Initializing modal system...');
-    
-    // Ensure modal container exists
-    const modalContainer = document.getElementById('modalContainer');
-    if (!modalContainer) {
-        console.error('Modal container not found in DOM');
-        return false;
-    }
-    
-    // Ensure modal structure
-    let modal = modalContainer.querySelector('.modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.className = 'modal modal-medium';
-        modal.innerHTML = '<div class="modal-content"></div>';
-        modalContainer.appendChild(modal);
-    }
-    
-    // Set initial state
-    modalContainer.style.display = 'none';
-    modalContainer.classList.remove('active');
-    
-    console.log('Modal system initialized successfully');
-    return true;
-}
-
-// ===== MODAL SYSTEM SECTION =====
-// Complete modal system implementation with robust state management
-
-// Modal state management
-const modalState = {
-    activeModals: [],
-    isAnimating: false,
-    focusStack: [],
-    scrollPosition: 0
-};
-
-// Modal configuration defaults
-const modalDefaults = {
-    size: 'medium', // small, medium, large
-    closeOnBackdrop: true,
-    closeOnEscape: true,
-    animate: true,
-    focusTrap: true,
-    scrollLock: true,
-    zIndex: 9999
-};
-
 // Track active confirm modals to prevent duplicates - DECLARE BEFORE USE
 let activeConfirmModal = null;
 
