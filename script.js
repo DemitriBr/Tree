@@ -208,6 +208,9 @@ async function handleFormSubmit(e) {
             
             await updateApplicationInDB(applicationData);
             console.log('Application updated successfully');
+
+            // Show success notification
+            notifySuccess(`Application for ${applicationData.jobTitle} at ${applicationData.companyName} updated successfully!`);
             
         } else {
             // Add mode - create new application
@@ -232,6 +235,8 @@ async function handleFormSubmit(e) {
             
             await addApplicationToDB(applicationData);
             console.log('Application saved successfully');
+             // Show success notification
+            notifySuccess(`New application for ${applicationData.jobTitle} at ${applicationData.companyName} added successfully!`);
         }
         
         // Reset form and switch to list view
@@ -684,7 +689,7 @@ function setupActionButtonsListeners() {
     listContainer.addEventListener('click', handleActionButtonClick);
 }
 
-// Handle action button clicks
+// Handle action button clicks - COMPLETE UPDATED VERSION
 async function handleActionButtonClick(e) {
     const deleteBtn = e.target.closest('.delete-btn');
     const editBtn = e.target.closest('.edit-btn');
@@ -697,32 +702,57 @@ async function handleActionButtonClick(e) {
         const jobTitle = applicationCard.querySelector('.job-title').textContent;
         const companyName = applicationCard.querySelector('.company-info strong').textContent;
         
-        const confirmDelete = confirm(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`);
+        // REMOVE THIS LINE:
+        // const confirmDelete = confirm(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`);
         
-        if (confirmDelete) {
-            try {
-                deleteBtn.disabled = true;
-                deleteBtn.textContent = '⏳';
-                
-                await deleteApplicationFromDB(applicationId);
-                
-                applicationCard.style.opacity = '0';
-                applicationCard.style.transform = 'translateX(-100%)';
-                
-                setTimeout(() => {
-                    // Use filterSortAndRender to maintain current filters after deletion
-                    filterSortAndRender();
-                }, 300);
-                
-                console.log('Application deleted successfully');
-                
-            } catch (error) {
-                console.error('Error deleting application:', error);
-                deleteBtn.disabled = false;
-                deleteBtn.textContent = '🗑️';
-                alert('Failed to delete application. Please try again.');
+        // USE THE MODAL SYSTEM INSTEAD:
+        showConfirmModal(`Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`, {
+            title: 'Delete Application',
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            confirmClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    // Store original button content
+                    const originalContent = deleteBtn.innerHTML;
+                    deleteBtn.disabled = true;
+                    deleteBtn.innerHTML = '⏳';
+                    
+                    // Delete from database
+                    await deleteApplicationFromDB(applicationId);
+                    
+                    // Animate card removal
+                    applicationCard.style.transition = 'all 0.3s ease';
+                    applicationCard.style.opacity = '0';
+                    applicationCard.style.transform = 'translateX(-100%)';
+                    
+                    // Show success notification
+                    notifySuccess(`Application for ${jobTitle} at ${companyName} deleted successfully.`);
+                    
+                    // Remove card and refresh list after animation
+                    setTimeout(() => {
+                        filterSortAndRender();
+                    }, 300);
+                    
+                    console.log('Application deleted successfully');
+                    
+                } catch (error) {
+                    console.error('Error deleting application:', error);
+                    
+                    // Restore button state
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = '🗑️';
+                    
+                    // Show error notification
+                    notifyError('Failed to delete application. Please try again.');
+                }
+            },
+            onCancel: () => {
+                // User cancelled - no action needed
+                console.log('Delete cancelled by user');
             }
-        }
+        });
+        
     } else if (editBtn) {
         e.stopPropagation();
         const applicationId = editBtn.dataset.id;
@@ -730,7 +760,6 @@ async function handleActionButtonClick(e) {
         await loadApplicationForEdit(applicationId);
     }
 }
-
 // Load application data into form for editing
 async function loadApplicationForEdit(applicationId) {
     try {
