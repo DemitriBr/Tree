@@ -2670,7 +2670,8 @@ canvas {
     cursor: grabbing;
 }
 
-/* ===== MODAL SYSTEM STYLES ===== */
+/* ===== ENHANCED MODAL SYSTEM STYLES ===== */
+/* Replace the existing modal styles with these */
 
 /* Modal Container - Full screen overlay */
 #modalContainer {
@@ -2687,7 +2688,8 @@ canvas {
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    isolation: isolate; /* Prevent z-index issues */
 }
 
 #modalContainer.active {
@@ -2712,9 +2714,9 @@ canvas {
     display: flex;
     flex-direction: column;
     position: relative;
-    transform: scale(0.9);
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(1);
+    opacity: 1;
+    transition: none; /* Controlled by classes */
 }
 
 /* Modal sizes */
@@ -2731,17 +2733,17 @@ canvas {
 }
 
 /* Modal animations */
-.modal-enter {
-    animation: modalEnter 0.3s ease forwards;
+.modal.modal-enter {
+    animation: modalEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.modal-exit {
-    animation: modalExit 0.3s ease forwards;
+.modal.modal-exit {
+    animation: modalExit 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 @keyframes modalEnter {
     from {
-        transform: scale(0.9) translateY(20px);
+        transform: scale(0.95) translateY(20px);
         opacity: 0;
     }
     to {
@@ -2756,7 +2758,7 @@ canvas {
         opacity: 1;
     }
     to {
-        transform: scale(0.9) translateY(20px);
+        transform: scale(0.95) translateY(20px);
         opacity: 0;
     }
 }
@@ -2768,6 +2770,7 @@ canvas {
     align-items: center;
     padding: 1.5rem 2rem;
     border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -2785,24 +2788,29 @@ canvas {
 .modal-close {
     background: none;
     border: none;
-    font-size: 2rem;
+    font-size: 1.5rem;
     line-height: 1;
     color: var(--text-secondary);
     cursor: pointer;
     padding: 0;
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .modal-close:hover {
     background: rgba(0, 0, 0, 0.1);
     color: var(--text-primary);
     transform: rotate(90deg);
+}
+
+.modal-close:active {
+    transform: rotate(90deg) scale(0.9);
 }
 
 [data-theme="dark"] .modal-close:hover {
@@ -2815,18 +2823,39 @@ canvas {
     padding: 2rem;
     overflow-y: auto;
     flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.5);
 }
 
 /* Modal Content (when no header) */
 .modal-content {
     padding: 2rem;
     overflow-y: auto;
+    flex: 1;
 }
 
 /* Modal Message */
 .modal-message {
     text-align: center;
     margin-bottom: 2rem;
+    padding: 0 1rem;
 }
 
 .modal-message p {
@@ -2846,13 +2875,16 @@ canvas {
     gap: 1rem;
     justify-content: center;
     margin-top: 2rem;
+    flex-wrap: wrap;
 }
 
 .modal-actions .btn {
     min-width: 120px;
+    flex: 1;
+    max-width: 200px;
 }
 
-/* Modal Form */
+/* Modal Form Styles */
 .modal-form {
     display: flex;
     flex-direction: column;
@@ -2866,62 +2898,65 @@ canvas {
     margin-bottom: 2rem;
 }
 
-/* Stacked modals z-index management */
-#modalContainer:nth-of-type(2) {
-    z-index: 10000;
+/* Danger themed modal */
+.modal-danger .modal-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    margin: -2rem -2rem 0 -2rem;
+    padding: 1.5rem 2rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border-bottom: none;
 }
 
-#modalContainer:nth-of-type(3) {
-    z-index: 10001;
+.modal-danger .modal-header h3 {
+    color: white;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    #modalContainer {
-        padding: 0.5rem;
-    }
-    
-    .modal {
-        max-width: 100%;
-        max-height: 100%;
-        margin: 0;
-    }
-    
-    .modal-header {
-        padding: 1rem 1.5rem;
-    }
-    
-    .modal-body,
-    .modal-content {
-        padding: 1.5rem;
-    }
-    
-    .modal-actions {
-        flex-direction: column-reverse;
-    }
-    
-    .modal-actions .btn {
-        width: 100%;
-    }
+.modal-danger .modal-close {
+    color: rgba(255, 255, 255, 0.9);
 }
 
-/* Accessibility - Focus styles */
-.modal *:focus {
-    outline: 2px solid #667eea;
-    outline-offset: 2px;
-    border-radius: 4px;
+.modal-danger .modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
 }
 
-.modal-close:focus {
-    outline-offset: -2px;
+/* Modal specific content styles */
+.application-details h4 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
 }
 
-/* Loading state for modal content */
+.application-details p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.application-details strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.notes-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.notes-section h5 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+/* Loading state for modal */
 .modal-loading {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 200px;
+    position: relative;
 }
 
 .modal-loading::after {
@@ -2970,7 +3005,98 @@ canvas {
     font-weight: 500;
 }
 
-/* ===== END OF MODAL SYSTEM STYLES ===== */
+/* Responsive Modal Styles */
+@media (max-width: 768px) {
+    #modalContainer {
+        padding: 0;
+    }
+    
+    .modal {
+        max-width: 100%;
+        max-height: 100%;
+        margin: 0;
+        border-radius: 0;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .modal-small,
+    .modal-medium,
+    .modal-large {
+        max-width: 100%;
+    }
+    
+    .modal-header {
+        padding: 1rem 1.5rem;
+        position: sticky;
+        top: 0;
+        background: var(--glass-bg-solid);
+        z-index: 10;
+    }
+    
+    .modal-body,
+    .modal-content {
+        padding: 1.5rem;
+    }
+    
+    .modal-actions {
+        flex-direction: column-reverse;
+        padding: 0 1.5rem 1.5rem;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* Small screens */
+@media (max-width: 480px) {
+    .modal-header h3 {
+        font-size: 1.25rem;
+    }
+    
+    .modal-message p {
+        font-size: 1rem;
+    }
+}
+
+/* Accessibility - Focus styles */
+.modal *:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.modal-close:focus {
+    outline-offset: -2px;
+}
+
+/* Print styles */
+@media print {
+    #modalContainer {
+        display: none !important;
+    }
+}
+
+/* Performance optimizations */
+.modal * {
+    will-change: auto;
+}
+
+.modal.modal-enter,
+.modal.modal-exit {
+    will-change: transform, opacity;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+/* ===== END OF ENHANCED MODAL SYSTEM STYLES ===== */
 
 /* ===== ENHANCED NOTIFICATION STYLES ===== */
 
