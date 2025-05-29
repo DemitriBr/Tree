@@ -1471,7 +1471,8 @@ const dragHandlers = {
     },
     
     end: function(e) {
-        const card = e.target.closest('.kanban-card');
+        // Don't clear the global variables here - let drop handler do it
+        // This prevents race conditions with async operations
         
         // Clean up all cards
         document.querySelectorAll('.kanban-card').forEach(c => {
@@ -1485,11 +1486,6 @@ const dragHandlers = {
         document.querySelectorAll('.kanban-column').forEach(col => {
             col.classList.remove('drag-over');
         });
-        
-        // Reset state
-        draggedCard = null;
-        draggedApplicationId = null;
-        originalStatus = null;
         
         console.log('Drag ended');
     },
@@ -1827,7 +1823,15 @@ function handleDragStartDelegated(e) {
 function handleDragEndDelegated(e) {
     const card = e.target.closest('.kanban-card');
     if (card) {
+        // Call the handler but delay the state reset
         dragHandlers.end(e);
+        
+        // Reset state variables after a small delay to ensure drop completes
+        setTimeout(() => {
+            draggedCard = null;
+            draggedApplicationId = null;
+            originalStatus = null;
+        }, 100);
     }
 }
 
