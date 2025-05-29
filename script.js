@@ -1934,3 +1934,396 @@ function stopKanbanAutoRefresh() {
 }
 
 // ===== END OF KANBAN BOARD SECTION =====
+// ===== MODAL SYSTEM SECTION =====
+// Generic modal handling for the application
+
+// Modal state management
+let activeModal = null;
+let modalStack = [];
+
+// Show modal with dynamic content
+function showModal(content, options = {}) {
+    const modalContainer = document.getElementById('modalContainer');
+    const modal = modalContainer.querySelector('.modal');
+    const modalContent = modal.querySelector('.modal-content') || modal;
+    
+    if (!modalContainer || !modal) {
+        console.error('Modal container not found');
+        return;
+    }
+    
+    // Default options
+    const settings = {
+        title: '',
+        size: 'medium', // small, medium, large
+        closeOnBackdrop: true,
+        closeOnEscape: true,
+        onClose: null,
+        onOpen: null,
+        ...options
+    };
+    
+    // Set modal content
+    if (settings.title) {
+        modalContent.innerHTML = `
+            <div class="modal-header">
+                <h3>${settings.title}</h3>
+                <button class="modal-close" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                ${content}
+            </div>
+        `;
+    } else {
+        modalContent.innerHTML = content;
+    }
+    
+    // Apply size class
+    modal.className = `modal modal-${settings.size}`;
+    
+    // Store modal reference and settings
+    activeModal = {
+        container: modalContainer,
+        settings: settings
+    };
+    
+    // Push to modal stack for nested modals support
+    modalStack.push(activeModal);
+    
+    // Show modal with animation
+    modalContainer.style.display = 'flex';
+    requestAnimationFrame(() => {
+        modalContainer.classList.add('active');
+        modal.classList.add('modal-enter');
+        
+        // Remove enter animation class after animation completes
+        setTimeout(() => {
+            modal.classList.remove('modal-enter');
+        }, 300);
+    });
+    
+    // Setup close listeners
+    setupModalCloseListeners(modalContainer, settings);
+    
+    // Focus management - focus first focusable element
+    setTimeout(() => {
+        const focusableElements = modal.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length > 0) {
+            focusableElements[0].focus();
+        }
+    }, 100);
+    
+    // Call onOpen callback if provided
+    if (settings.onOpen && typeof settings.onOpen === 'function') {
+        settings.onOpen(modal);
+    }
+    
+    // Trap focus within modal
+    trapFocus(modal);
+    
+    return modal;
+}
+
+// Hide the currently active modal
+function hideModal(modalContainer = null) {
+    if (!modalContainer && activeModal) {
+        modalContainer = activeModal.container;
+    }
+    
+    if (!modalContainer) {
+        console.error('No modal to hide');
+        return;
+    }
+    
+    const modal = modalContainer.querySelector('.modal');
+    const settings = activeModal ? activeModal.settings : {};
+    
+    // Add exit animation
+    modal.classList.add('modal-exit');
+    modalContainer.classList.remove('active');
+    
+    // Call onClose callback if provided
+    if (settings.onClose && typeof settings.onClose === 'function') {
+        settings.onClose(modal);
+    }
+    
+    // Hide after animation completes
+    setTimeout(() => {
+        modalContainer.style.display = 'none';
+        modal.classList.remove('modal-exit');
+        
+        // Clear modal content
+        const modalContent = modal.querySelector('.modal-content') || modal;
+        modalContent.innerHTML = '';
+        
+        // Remove from modal stack
+        modalStack.pop();
+        
+        // Update active modal reference
+        activeModal = modalStack.length > 0 ? modalStack[modalStack.length - 1] : null;
+        
+        // Restore focus to the element that triggered the modal
+        if (settings.triggerElement) {
+            settings.triggerElement.focus();
+        }
+    }, 300);
+}
+
+// Setup modal close event listeners
+function setupModalCloseListeners(modalContainer, settings) {
+    // Close button click
+    const closeBtn = modalContainer.querySelector('.modal-close');
+    if (closeBtn) {
+        closeBtn.onclick = (e) => {
+            e.preventDefault();
+            hideModal(modalContainer);
+        };
+    }
+    
+    // Backdrop click
+    if (settings.closeOnBackdrop) {
+        modalContainer.onclick = (e) => {
+            if (e.target === modalContainer) {
+                hideModal(modalContainer);
+            }
+        };
+    }
+    
+    // Escape key press
+    if (settings.closeOnEscape) {
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape' && activeModal && activeModal.container === modalContainer) {
+                e.preventDefault();
+                hideModal(modalContainer);
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+    }
+}
+
+// Trap focus within modal for accessibility
+function trapFocus(modal) {
+    const focusableElements = modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    if (focusableElements.length === 0) return;
+    
+    const firstFocusable = focusableElements[0];
+    const lastFocusable = focusableElements[focusableElements.length - 1];
+    
+    const trapHandler = (e) => {
+        if (e.key !== 'Tab') return;
+        
+        if (e.shiftKey) {
+            // Shift + Tab
+            if (document.activeElement === firstFocusable) {
+                e.preventDefault();
+                lastFocusable.focus();
+            }
+        } else {
+            // Tab
+            if (document.activeElement === lastFocusable) {
+                e.preventDefault();
+                firstFocusable.focus();
+            }
+        }
+    };
+    
+    modal.addEventListener('keydown', trapHandler);
+    
+    // Store handler for cleanup
+    modal._trapHandler = trapHandler;
+}
+
+// Utility function to create a confirmation modal
+function showConfirmModal(message, options = {}) {
+    const settings = {
+        title: 'Confirm',
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        confirmClass: 'btn-primary',
+        cancelClass: 'btn-secondary',
+        onConfirm: null,
+        onCancel: null,
+        ...options
+    };
+    
+    const content = `
+        <div class="modal-message">
+            <p>${message}</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn ${settings.cancelClass}" id="modalCancelBtn">
+                ${settings.cancelText}
+            </button>
+            <button class="btn ${settings.confirmClass}" id="modalConfirmBtn">
+                ${settings.confirmText}
+            </button>
+        </div>
+    `;
+    
+    const modal = showModal(content, {
+        title: settings.title,
+        size: 'small',
+        closeOnBackdrop: false,
+        closeOnEscape: true,
+        onOpen: (modal) => {
+            // Setup button handlers
+            const confirmBtn = modal.querySelector('#modalConfirmBtn');
+            const cancelBtn = modal.querySelector('#modalCancelBtn');
+            
+            confirmBtn.onclick = () => {
+                hideModal();
+                if (settings.onConfirm) settings.onConfirm();
+            };
+            
+            cancelBtn.onclick = () => {
+                hideModal();
+                if (settings.onCancel) settings.onCancel();
+            };
+        }
+    });
+    
+    return modal;
+}
+
+// Utility function to create an alert modal
+function showAlertModal(message, options = {}) {
+    const settings = {
+        title: 'Alert',
+        okText: 'OK',
+        okClass: 'btn-primary',
+        onOk: null,
+        ...options
+    };
+    
+    const content = `
+        <div class="modal-message">
+            <p>${message}</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn ${settings.okClass}" id="modalOkBtn">
+                ${settings.okText}
+            </button>
+        </div>
+    `;
+    
+    const modal = showModal(content, {
+        title: settings.title,
+        size: 'small',
+        closeOnBackdrop: true,
+        closeOnEscape: true,
+        onOpen: (modal) => {
+            const okBtn = modal.querySelector('#modalOkBtn');
+            okBtn.onclick = () => {
+                hideModal();
+                if (settings.onOk) settings.onOk();
+            };
+            
+            // Auto-focus OK button
+            okBtn.focus();
+        }
+    });
+    
+    return modal;
+}
+
+// Utility function to create a form modal
+function showFormModal(formHtml, options = {}) {
+    const settings = {
+        title: 'Form',
+        submitText: 'Submit',
+        cancelText: 'Cancel',
+        submitClass: 'btn-primary',
+        cancelClass: 'btn-secondary',
+        onSubmit: null,
+        onCancel: null,
+        validateForm: null,
+        ...options
+    };
+    
+    const content = `
+        <form id="modalForm" class="modal-form">
+            ${formHtml}
+            <div class="modal-actions">
+                <button type="button" class="btn ${settings.cancelClass}" id="modalFormCancelBtn">
+                    ${settings.cancelText}
+                </button>
+                <button type="submit" class="btn ${settings.submitClass}" id="modalFormSubmitBtn">
+                    ${settings.submitText}
+                </button>
+            </div>
+        </form>
+    `;
+    
+    const modal = showModal(content, {
+        title: settings.title,
+        size: settings.size || 'medium',
+        closeOnBackdrop: false,
+        closeOnEscape: true,
+        onOpen: (modal) => {
+            const form = modal.querySelector('#modalForm');
+            const cancelBtn = modal.querySelector('#modalFormCancelBtn');
+            
+            // Handle form submission
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                
+                // Run validation if provided
+                if (settings.validateForm) {
+                    const isValid = settings.validateForm(form);
+                    if (!isValid) return;
+                }
+                
+                // Get form data
+                const formData = new FormData(form);
+                
+                // Call onSubmit callback
+                if (settings.onSubmit) {
+                    try {
+                        await settings.onSubmit(formData, form);
+                        hideModal();
+                    } catch (error) {
+                        console.error('Form submission error:', error);
+                        // Keep modal open on error
+                    }
+                }
+            };
+            
+            // Handle cancel
+            cancelBtn.onclick = () => {
+                hideModal();
+                if (settings.onCancel) settings.onCancel();
+            };
+        }
+    });
+    
+    return modal;
+}
+
+// Initialize modal system when DOM is ready
+function initializeModalSystem() {
+    // Ensure modal container exists
+    const modalContainer = document.getElementById('modalContainer');
+    if (!modalContainer) {
+        console.error('Modal container not found in DOM');
+        return;
+    }
+    
+    // Ensure modal structure exists
+    let modal = modalContainer.querySelector('.modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.innerHTML = '<div class="modal-content"></div>';
+        modalContainer.appendChild(modal);
+    }
+    
+    console.log('Modal system initialized');
+}
+
+// ===== END OF MODAL SYSTEM SECTION =====
