@@ -953,6 +953,9 @@ async function init() {
         
         // Set up dark mode toggle
         setupDarkModeToggle();
+
+        // Initialize modal system - ADD THIS LINE
+        initializeModalSystem();
         
         console.log('Application initialized successfully');
     } catch (error) {
