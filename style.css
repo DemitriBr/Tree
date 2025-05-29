@@ -3222,7 +3222,9 @@ canvas {
         transform: scale(1);
     }
 }
-/* Add these styles to your existing button styles in style.css */
+
+/* ===== DANGER BUTTON STYLES ===== */
+/* These should be with your other button styles */
 
 /* Danger Button Style */
 .btn-danger {
@@ -3262,4 +3264,5 @@ canvas {
     opacity: 1;
     background: rgba(255, 255, 255, 0.2);
 }
+
 /* ===== END OF ENHANCED NOTIFICATION STYLES ===== */
