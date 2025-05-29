@@ -462,10 +462,12 @@ function applyFilters(applications) {
     return filtered;
 }
 
-// Apply sorting to applications array
+// And update the applySorting function to add better logging:
 function applySorting(applications) {
     const sorted = [...applications]; // Create a copy
     const { sortBy, sortDirection } = searchFilterState;
+    
+    console.log('Applying sort - By:', sortBy, 'Direction:', sortDirection);
     
     sorted.sort((a, b) => {
         let compareValue = 0;
@@ -492,7 +494,22 @@ function applySorting(applications) {
         }
         
         // Apply sort direction
-        return sortDirection === 'asc' ? compareValue : -compareValue;
+        const result = sortDirection === 'asc' ? compareValue : -compareValue;
+        
+        // Log first comparison for debugging
+        if (sorted.indexOf(a) === 0 && sorted.indexOf(b) === 1) {
+            console.log('First comparison:', {
+                a: sortBy === 'date' ? a.applicationDate : 
+                   sortBy === 'company' ? a.companyName : a.status,
+                b: sortBy === 'date' ? b.applicationDate : 
+                   sortBy === 'company' ? b.companyName : b.status,
+                compareValue,
+                direction: sortDirection,
+                result
+            });
+        }
+        
+        return result;
     });
     
     return sorted;
@@ -911,36 +928,72 @@ function setupSearchFilterSort() {
     }
     
     // Setup sort buttons
-    sortButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            const sortBy = button.dataset.sort;
-            let sortDirection = button.dataset.direction;
+sortButtons.forEach(button => {
+    // Remove any existing listeners first
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    
+    newButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const sortBy = newButton.dataset.sort;
+        let sortDirection = newButton.dataset.direction || 'asc';
+        
+        // If clicking the already active button, toggle direction
+        if (newButton.classList.contains('active')) {
+            // Toggle direction
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            newButton.dataset.direction = sortDirection;
             
-            // If clicking the already active button, toggle direction
-            if (button.classList.contains('active')) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                button.dataset.direction = sortDirection;
-                
-                // Update arrow
-                const arrow = button.querySelector('.sort-arrow');
-                if (arrow) {
-                    arrow.textContent = sortDirection === 'asc' ? '↑' : '↓';
-                }
-            } else {
-                // Remove active class from all buttons
-                sortButtons.forEach(btn => btn.classList.remove('active'));
-                // Add active class to clicked button
-                button.classList.add('active');
+            // Update arrow immediately
+            const arrow = newButton.querySelector('.sort-arrow');
+            if (arrow) {
+                arrow.textContent = sortDirection === 'asc' ? '↑' : '↓';
             }
             
-            // Update state
-            searchFilterState.sortBy = sortBy;
-            searchFilterState.sortDirection = sortDirection;
+            console.log('Toggling sort direction to:', sortDirection);
+        } else {
+            // Remove active class from all buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
             
-            console.log('Sort by:', sortBy, 'Direction:', sortDirection);
-            filterSortAndRender();
-        });
+            // Add active class to clicked button
+            newButton.classList.add('active');
+            
+            // Set initial direction based on button's data attribute
+            sortDirection = newButton.dataset.direction || 'asc';
+            
+            console.log('Activating sort button with direction:', sortDirection);
+        }
+        
+        // Update global state
+        searchFilterState.sortBy = sortBy;
+        searchFilterState.sortDirection = sortDirection;
+        
+        console.log('Sort state updated - By:', sortBy, 'Direction:', sortDirection);
+        
+        // Apply the sort
+        filterSortAndRender();
     });
+});
+
+    // Also, let's add a helper function to debug the sort state
+function debugSortState() {
+    console.log('Current sort state:', {
+        sortBy: searchFilterState.sortBy,
+        sortDirection: searchFilterState.sortDirection
+    });
+    
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        console.log('Button:', btn.dataset.sort, 
+                    'Active:', btn.classList.contains('active'),
+                    'Direction:', btn.dataset.direction,
+                    'Arrow:', btn.querySelector('.sort-arrow')?.textContent);
+    });
+}
+
     
     // Setup reset button
     if (resetButton) {
