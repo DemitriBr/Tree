@@ -1,3519 +1,2896 @@
 
-/* Import Inter font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+console.log('Script.js is loading!');
 
-/* CSS Variables for Theme */
-:root {
-    /* Gradients */
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    --neutral-gradient: linear-gradient(135deg, #bdbdbd 0%, #757575 100%);
-    --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+// IndexedDB Configuration
+const DB_NAME = 'JobApplicationTrackerDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'applications';
+
+let db = null;
+// Global modal state management
+let activeModal = null;
+let modalStack = [];
+let isModalTransitioning = false; // Single flag for all transitions
+
+
+
+// Initialize IndexedDB
+function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onerror = () => {
+            console.error('Database failed to open');
+            reject('Database failed to open');
+        };
+
+        request.onsuccess = () => {
+            db = request.result;
+            console.log('Database opened successfully');
+            resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                const objectStore = db.createObjectStore(STORE_NAME, {
+                    keyPath: 'id',
+                    autoIncrement: false
+                });
+
+                objectStore.createIndex('status', 'status', { unique: false });
+                objectStore.createIndex('companyName', 'companyName', { unique: false });
+                objectStore.createIndex('applicationDate', 'applicationDate', { unique: false });
+                objectStore.createIndex('deadline', 'deadline', { unique: false });
+                objectStore.createIndex('progressStage', 'progressStage', { unique: false });
+
+                console.log('Object store created with indexes');
+            }
+        };
+    });
+}
+
+// Generate unique ID for applications
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// Search, Filter, Sort State Management
+let searchFilterState = {
+    searchTerm: '',
+    statusFilter: '',
+    dateRangeFilter: '',
+    sortBy: 'date',
+    sortDirection: 'desc'
+};
+
+// Debounce function for search input
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// View Management
+function setupNavButtons() {
+    console.log('Setting up navigation buttons...');
+    const navButtons = document.querySelectorAll('.nav-btn');
+    console.log('Found nav buttons:', navButtons.length);
     
-    /* Glass effect */
-    --glass-bg: rgba(255, 255, 255, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.18);
-    --glass-bg-solid: rgba(255, 255, 255, 0.9);
-    --shadow-color: rgba(31, 38, 135, 0.37);
-    --shadow-color-light: rgba(31, 38, 135, 0.15);
+    navButtons.forEach((button, index) => {
+        console.log(`Button ${index}:`, button.textContent, 'data-view:', button.dataset.view);
+        
+        button.addEventListener('click', (e) => {
+            console.log('Nav button clicked:', e.target.textContent);
+            const targetView = e.target.dataset.view;
+            console.log('Target view:', targetView);
+            
+            if (targetView) {
+                switchView(targetView);
+                
+                // Update active state of navigation buttons
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+            }
+        });
+    });
+}
+
+// 3. Update your switchView function to manage auto-refresh:
+function switchView(viewName) {
+    console.log('Switching to view:', viewName);
     
-    /* Text colors */
-    --text-primary: #2d3561;
-    --text-secondary: #525f7f;
-    --text-light: #8898aa;
-    --text-white: #ffffff;
+    // Stop any kanban auto-refresh when switching views
+    stopKanbanAutoRefresh();
     
-    /* Status colors */
-    --status-applied: #667eea;
-    --status-screening: #64b5f6;
-    --status-interview: #4facfe;
-    --status-offer: #66bb6a;
-    --status-rejected: #f5576c;
-    --status-withdrawn: #757575;
+    // Hide all views
+    const allViews = document.querySelectorAll('.view');
+    allViews.forEach(view => {
+        view.classList.remove('active');
+    });
     
-    /* Spacing */
-    --border-radius: 20px;
-    --border-radius-sm: 12px;
-    --border-radius-xs: 8px;
-    
-    /* Transitions */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Dark Theme Variables */
-[data-theme="dark"] {
-    --bg-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-    --glass-bg: rgba(0, 0, 0, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-bg-solid: rgba(0, 0, 0, 0.9);
-    --shadow-color: rgba(0, 0, 0, 0.5);
-    --shadow-color-light: rgba(0, 0, 0, 0.25);
-    --text-primary: #ffffff;
-    --text-secondary: #e0e0e0;
-    --text-light: #b0b0b0;
-}
-
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.6;
-    color: var(--text-primary);
-    background: var(--bg-gradient);
-    min-height: 100vh;
-    background-attachment: fixed;
-    overflow-x: hidden;
-    position: relative;
-}
-
-/* Animated Background Pattern */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-        radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 40% 20%, rgba(255, 219, 98, 0.3) 0%, transparent 50%);
-    z-index: -1;
-    animation: floatingGradient 20s ease infinite;
-    pointer-events: none;
-}
-
-@keyframes floatingGradient {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(-20px, -20px) rotate(120deg); }
-    66% { transform: translate(20px, -10px) rotate(240deg); }
-}
-
-/* Floating particles effect */
-.particles {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: -1;
-}
-
-.particle {
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
-    animation: float 15s infinite;
-}
-
-@keyframes float {
-    0%, 100% {
-        transform: translateY(100vh) translateX(0);
-        opacity: 0;
-    }
-    10% {
-        opacity: 1;
-    }
-    90% {
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(-100vh) translateX(100px);
-    }
-}
-
-/* Main App Container */
-#app {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-/* Header Styles - Glassmorphism with Glow */
-#header {
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    padding: 1.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 
-        0 8px 32px 0 var(--shadow-color),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    position: relative;
-    overflow: hidden;
-    z-index: 100;
-}
-
-#header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-    100% { left: 100%; }
-}
-
-#header h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-fill-color: transparent;
-    letter-spacing: -0.5px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-}
-
-#themeToggle {
-    background: var(--primary-gradient);
-    border: none;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: var(--transition);
-    box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.4);
-    position: relative;
-    overflow: hidden;
-}
-
-#themeToggle::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-#themeToggle:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-#themeToggle:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.5);
-}
-
-/* Navigation Styles - Floating Pills with Glow */
-#navigation {
-    padding: 1rem 2rem;
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    position: relative;
-    z-index: 99;
-}
-
-.nav-btn {
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    color: var(--text-primary);
-    padding: 0.75rem 2rem;
-    cursor: pointer;
-    border-radius: 50px;
-    transition: var(--transition);
-    font-size: 1rem;
-    font-weight: 600;
-    position: relative;
-    overflow: hidden;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.nav-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--primary-gradient);
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: -1;
-}
-
-.nav-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    color: white;
-    border-color: transparent;
-}
-
-.nav-btn:hover::before {
-    opacity: 1;
-}
-
-.nav-btn.active {
-    background: var(--primary-gradient);
-    color: white;
-    border-color: transparent;
-    box-shadow: 
-        0 4px 15px 0 rgba(102, 126, 234, 0.4),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-
-/* View Container and Views */
-#viewContainer {
-    flex: 1;
-    padding: 2rem;
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-    position: relative;
-}
-
-.view {
-    display: none;
-    animation: fadeInUp 0.5s ease;
-}
-
-.view.active {
-    display: block;
-}
-
-.view h2 {
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-fill-color: transparent;
-    text-align: center;
-    font-weight: 800;
-    position: relative;
-    padding-bottom: 1rem;
-}
-
-.view h2::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 4px;
-    background: var(--primary-gradient);
-    border-radius: 2px;
-}
-
-/* Enhanced Animations */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Glass Card Style */
-.glass-card {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    box-shadow: 
-        0 8px 32px 0 var(--shadow-color-light),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.glass-card::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-    transform: rotate(45deg);
-    pointer-events: none;
-}
-
-.glass-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 
-        0 12px 40px 0 var(--shadow-color),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-
-/* Form Styles - Modern Glass Design */
-#applicationForm {
-    max-width: 600px;
-    margin: 0 auto;
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    padding: 2.5rem;
-    box-shadow: 0 8px 32px 0 var(--shadow-color-light);
-}
-
-.form-group {
-    margin-bottom: 1.75rem;
-    position: relative;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 0.85rem 1.2rem;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius-sm);
-    font-size: 1rem;
-    color: var(--text-primary);
-    transition: var(--transition);
-}
-
-[data-theme="dark"] .form-group input,
-[data-theme="dark"] .form-group select,
-[data-theme="dark"] .form-group textarea {
-    background: rgba(0, 0, 0, 0.3);
-    color: var(--text-primary);
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 
-        0 0 0 3px rgba(102, 126, 234, 0.1),
-        0 4px 12px rgba(102, 126, 234, 0.2);
-    transform: translateY(-2px);
-}
-
-/* Custom select dropdown arrow */
-.form-group select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23667eea' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    padding-right: 2.5rem;
-}
-
-.error-message {
-    display: block;
-    color: #f5576c;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-    min-height: 1.2em;
-    font-weight: 500;
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
-}
-
-.btn {
-    padding: 0.85rem 2rem;
-    border: none;
-    border-radius: 50px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.btn:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.btn-primary {
-    background: var(--primary-gradient);
-    color: white;
-    box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.5);
-}
-
-.btn-secondary {
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: var(--text-primary);
-    border: 1px solid var(--glass-border);
-}
-
-.btn-secondary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.4);
-}
-
-/* Application Cards - Premium Design */
-.application-card {
-    margin-bottom: 1.5rem;
-    padding: 1.75rem;
-    transition: var(--transition);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-
-.application-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 100px;
-    height: 100px;
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
-    transform: translate(30px, -30px);
-}
-
-.application-card:hover {
-    transform: translateY(-3px) scale(1.01);
-    box-shadow: 
-        0 12px 40px 0 var(--shadow-color),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
-.job-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    line-height: 1.2;
-}
-
-.status-badge {
-    padding: 0.4rem 1rem;
-    border-radius: 50px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.status-applied {
-    background: var(--primary-gradient);
-    color: white;
-}
-
-.status-screening {
-    background: linear-gradient(135deg, #667eea 0%, #64b5f6 100%);
-    color: white;
-}
-
-.status-interview {
-    background: var(--success-gradient);
-    color: white;
-}
-
-.status-offer {
-    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
-    color: white;
-}
-
-.status-rejected {
-    background: var(--secondary-gradient);
-    color: white;
-}
-
-.status-withdrawn {
-    background: var(--neutral-gradient);
-    color: white;
-}
-
-.company-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-}
-
-.location {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-}
-
-.card-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.detail-label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.detail-value {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.deadline-indicator.deadline-passed .detail-value {
-    color: #e74c3c;
-    font-weight: 700;
-}
-
-.deadline-indicator.deadline-urgent .detail-value {
-    color: #f39c12;
-    font-weight: 700;
-}
-
-.deadline-indicator.deadline-soon .detail-value {
-    color: #3498db;
-}
-
-.progress-container {
-    margin: 1.5rem 0;
-}
-
-.progress-bar {
-    height: 8px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
-    position: relative;
-}
-
-[data-theme="dark"] .progress-bar {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.progress-fill {
-    height: 100%;
-    background: var(--primary-gradient);
-    transition: width 0.6s ease;
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
-}
-
-.progress-fill::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.3) 50%,
-        transparent 100%
-    );
-    animation: shimmerProgress 2s infinite;
-}
-
-@keyframes shimmerProgress {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-.progress-label {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    text-transform: capitalize;
-    font-weight: 600;
-}
-
-.notes-preview {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: var(--border-radius-sm);
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-[data-theme="dark"] .notes-preview {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.card-actions {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--glass-border);
-}
-
-.btn-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 1px solid var(--glass-border);
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition);
-    font-size: 1.2rem;
-    text-decoration: none;
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-icon::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.3s, height 0.3s;
-}
-
-.btn-icon:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.btn-icon:active {
-    transform: scale(0.95);
-}
-
-.edit-btn::before {
-    background: var(--primary-gradient);
-}
-
-.edit-btn:hover {
-    border-color: transparent;
-    color: white;
-}
-
-.edit-btn:hover::before {
-    width: 100%;
-    height: 100%;
-}
-
-.delete-btn::before {
-    background: var(--danger-gradient);
-}
-
-.delete-btn:hover {
-    border-color: transparent;
-    color: white;
-}
-
-.delete-btn:hover::before {
-    width: 100%;
-    height: 100%;
-}
-
-.btn-icon:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Empty State - Beautiful Design */
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-secondary);
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    border-radius: var(--border-radius);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 var(--shadow-color-light);
-}
-
-.empty-state-icon {
-    font-size: 5rem;
-    margin-bottom: 1rem;
-    filter: grayscale(50%);
-    opacity: 0.7;
-}
-
-.empty-state h3 {
-    font-size: 1.75rem;
-    margin-bottom: 0.75rem;
-    color: var(--text-primary);
-    font-weight: 700;
-}
-
-.empty-state p {
-    font-size: 1.1rem;
-    opacity: 0.8;
-}
-
-/* List Container */
-#listContainer {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-/* Modal Styles - Premium Glass */
-.modal-container {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-container.active {
-    display: flex;
-    animation: fadeIn 0.3s ease;
-}
-
-.modal {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    padding: 2.5rem;
-    max-width: 500px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 
-        0 24px 48px 0 rgba(0, 0, 0, 0.4),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    animation: slideInScale 0.3s ease;
-}
-
-@keyframes slideInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.9) translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-/* Notification Styles - Premium Toast */
-.notification-container {
-    position: fixed;
-    top: 2rem;
-    right: 2rem;
-    z-index: 1001;
-    pointer-events: none;
-}
-
-.notification {
-    background: var(--success-gradient);
-    color: white;
-    padding: 1.25rem 2rem;
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
-    box-shadow: 
-        0 10px 40px 0 rgba(0, 0, 0, 0.3),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    animation: slideInRight 0.5s ease;
-    min-width: 320px;
-    font-weight: 600;
-    position: relative;
-    overflow: hidden;
-    pointer-events: auto;
-}
-
-.notification::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.2);
-    animation: notificationShimmer 2s infinite;
-}
-
-@keyframes notificationShimmer {
-    100% { left: 100%; }
-}
-
-.notification.error {
-    background: var(--danger-gradient);
-}
-
-.notification.warning {
-    background: var(--warning-gradient);
-}
-
-.notification.info {
-    background: var(--primary-gradient);
-}
-
-@keyframes slideInRight {
-    from {
-        transform: translateX(120%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-/* Loading States */
-.loading {
-    position: relative;
-    overflow: hidden;
-}
-
-.loading::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.2) 50%,
-        transparent 100%
-    );
-    animation: shimmer 1.5s infinite;
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
-}
-
-::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--primary-gradient);
-    border-radius: 10px;
-    border: 2px solid transparent;
-    background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--secondary-gradient);
-    background-clip: padding-box;
-}
-
-/* Selection Styling */
-::selection {
-    background: rgba(102, 126, 234, 0.3);
-    color: var(--text-primary);
-}
-
-/* Focus Visible for Accessibility */
-:focus-visible {
-    outline: 2px solid #667eea;
-    outline-offset: 3px;
-    border-radius: 4px;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    #header {
-        padding: 1rem;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    #header h1 {
-        font-size: 1.5rem;
-    }
-    
-    #navigation {
-        padding: 1rem;
-        gap: 0.5rem;
-    }
-    
-    .nav-btn {
-        padding: 0.6rem 1.2rem;
-        font-size: 0.85rem;
-    }
-    
-    #viewContainer {
-        padding: 1rem;
-    }
-    
-    .view h2 {
-        font-size: 1.75rem;
-    }
-    
-    #applicationForm {
-        padding: 1.5rem;
-    }
-    
-    .application-card {
-        padding: 1.25rem;
-    }
-    
-    .job-title {
-        font-size: 1.2rem;
-    }
-    
-    .card-details {
-        grid-template-columns: 1fr;
-    }
-    
-    .notification-container {
-        top: 1rem;
-        right: 1rem;
-        left: 1rem;
-    }
-    
-    .notification {
-        min-width: auto;
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .form-actions {
-        flex-direction: column;
-    }
-    
-    .btn {
-        width: 100%;
-    }
-    
-    .card-header {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-}
-
-/* Print Styles */
-@media print {
-    body {
-        background: white;
-    }
-    
-    body::before,
-    .particles {
-        display: none;
-    }
-    
-    #header,
-    #navigation,
-    .card-actions,
-    .btn-icon {
-        display: none;
-    }
-    
-    .application-card {
-        page-break-inside: avoid;
-        border: 1px solid #ddd;
-        box-shadow: none;
-    }
-}
-
-/* Utility Classes */
-.hidden {
-    display: none !important;
-}
-
-.text-center {
-    text-align: center;
-}
-
-.mt-1 { margin-top: 0.5rem; }
-.mt-2 { margin-top: 1rem; }
-.mt-3 { margin-top: 1.5rem; }
-.mt-4 { margin-top: 2rem; }
-
-.mb-1 { margin-bottom: 0.5rem; }
-.mb-2 { margin-bottom: 1rem; }
-.mb-3 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 2rem; }
-
-/* Animations Library */
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-@keyframes scaleIn {
-    from { transform: scale(0); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-/* Performance Mode - Add to the end of your CSS */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-    
-    body::before,
-    .particle,
-    .progress-fill::after,
-    .notification::before,
-    #header::before {
-        animation: none !important;
-    }
-}
-
-/* Optional: Reduce blur for better performance */
-.performance-mode .glass-card,
-.performance-mode #applicationForm,
-.performance-mode .modal {
-    backdrop-filter: blur(5px); /* Reduced from 10-20px */
-}
-/* Theme Transition - Add to the end of your CSS */
-body[data-theme] {
-    transition: background 0.3s ease, color 0.3s ease;
-}
-
-body[data-theme] * {
-    transition: background-color 0.3s ease, 
-                color 0.3s ease, 
-                border-color 0.3s ease,
-                box-shadow 0.3s ease;
-}
-
-/* Dark mode specific enhancements */
-[data-theme="dark"] .glass-card {
-    background: rgba(30, 30, 30, 0.8);
-}
-
-[data-theme="dark"] #applicationForm {
-    background: rgba(30, 30, 30, 0.9);
-}
-
-[data-theme="dark"] .application-card::after {
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
-}
-
-[data-theme="dark"] .empty-state {
-    background: rgba(30, 30, 30, 0.6);
-}
-
-/* Theme toggle button enhancement */
-#themeToggle {
-    font-size: 1.5rem;
-    width: 50px;
-    height: 50px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-[data-theme="dark"] #themeToggle {
-    background: var(--warning-gradient);
-}
-
-#themeToggle:active {
-    transform: scale(0.9);
-}
-/* Dark Mode Text Contrast Improvements */
-[data-theme="dark"] {
-    /* Enhance text colors for better contrast */
-    --text-primary: #f0f0f0;
-    --text-secondary: #d0d0d0;
-    --text-light: #a0a0a0;
-}
-
-/* Header text improvements */
-[data-theme="dark"] #header h1 {
-    background: linear-gradient(135deg, #a8c0ff 0%, #d195f7 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: brightness(1.2) drop-shadow(0 2px 4px rgba(255, 255, 255, 0.1));
-}
-
-/* View headings in dark mode */
-[data-theme="dark"] .view h2 {
-    background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: brightness(1.1);
-}
-
-/* Form labels in dark mode */
-[data-theme="dark"] .form-group label {
-    color: #e0e0e0;
-    font-weight: 600;
-}
-
-/* Card titles in dark mode */
-[data-theme="dark"] .job-title {
-    color: #ffffff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-/* Company info in dark mode */
-[data-theme="dark"] .company-info strong {
-    color: #f0f0f0;
-}
-
-/* Detail labels with better contrast */
-[data-theme="dark"] .detail-label {
-    color: #b0b0b0;
-    font-weight: 500;
-}
-
-[data-theme="dark"] .detail-value {
-    color: #e0e0e0;
-}
-
-/* Navigation buttons in dark mode */
-[data-theme="dark"] .nav-btn {
-    color: #f0f0f0;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-[data-theme="dark"] .nav-btn:hover {
-    color: white;
-}
-
-/* Empty state text */
-[data-theme="dark"] .empty-state h3 {
-    color: #ffffff;
-}
-
-[data-theme="dark"] .empty-state p {
-    color: #d0d0d0;
-}
-
-/* Form inputs text color */
-[data-theme="dark"] .form-group input,
-[data-theme="dark"] .form-group select,
-[data-theme="dark"] .form-group textarea {
-    color: #f0f0f0;
-}
-
-[data-theme="dark"] .form-group input::placeholder,
-[data-theme="dark"] .form-group textarea::placeholder {
-    color: #808080;
-}
-
-/* Progress label in dark mode */
-[data-theme="dark"] .progress-label {
-    color: #c0c0c0;
-}
-
-/* Notes preview in dark mode */
-[data-theme="dark"] .notes-preview {
-    color: #d0d0d0;
-    background: rgba(255, 255, 255, 0.08);
-}
-
-/* Location text in dark mode */
-[data-theme="dark"] .location {
-    color: #b0b0b0;
-}
-
-/* Form title in dark mode */
-[data-theme="dark"] #formTitle {
-    color: #ffffff;
-}
-
-/* Button text contrast */
-[data-theme="dark"] .btn-secondary {
-    color: #f0f0f0;
-}
-
-[data-theme="dark"] .btn-secondary:hover {
-    color: #ffffff;
-}
-
-/* Select dropdown arrow in dark mode */
-[data-theme="dark"] .form-group select {
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23a8c0ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-}
-/* Dark Mode Text Contrast - STRONG FIX */
-[data-theme="dark"] {
-    /* Force white/light text colors */
-    --text-primary: #ffffff !important;
-    --text-secondary: #e0e0e0 !important;
-    --text-light: #b0b0b0 !important;
-}
-
-/* Target specific elements instead of using * */
-[data-theme="dark"] body,
-[data-theme="dark"] .form-group label,
-[data-theme="dark"] .job-title,
-[data-theme="dark"] .company-info,
-[data-theme="dark"] .detail-value,
-[data-theme="dark"] .empty-state h3,
-[data-theme="dark"] .empty-state p,
-[data-theme="dark"] #formTitle,
-[data-theme="dark"] .nav-btn,
-[data-theme="dark"] input,
-[data-theme="dark"] select,
-[data-theme="dark"] textarea {
-    color: #ffffff;
-}
-
-/* Keep the important flag only where truly needed */
-[data-theme="dark"] .form-group label {
-    color: #ffffff !important;
-}
-
-[data-theme="dark"] input,
-[data-theme="dark"] select,
-[data-theme="dark"] textarea {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Specific overrides for better hierarchy */
-[data-theme="dark"] .form-group label {
-    color: #ffffff !important;
-    opacity: 0.95;
-}
-
-[data-theme="dark"] .view h2 {
-    background: linear-gradient(135deg, #a8e6ff 0%, #c3a6ff 100%) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    filter: brightness(1.3) !important;
-}
-
-[data-theme="dark"] #header h1 {
-    background: linear-gradient(135deg, #b8d0ff 0%, #e1a5f7 100%) !important;
-    -webkit-background-clip: text !important;
-    -webkit-text-fill-color: transparent !important;
-    filter: brightness(1.4) !important;
-}
-
-/* Form inputs with light text */
-[data-theme="dark"] input,
-[data-theme="dark"] select,
-[data-theme="dark"] textarea {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-[data-theme="dark"] input::placeholder,
-[data-theme="dark"] textarea::placeholder {
-    color: #a0a0a0 !important;
-}
-
-/* Select dropdown text */
-[data-theme="dark"] select option {
-    background: #2a2a2a !important;
-    color: #ffffff !important;
-}
-
-/* Secondary text elements */
-[data-theme="dark"] .detail-label,
-[data-theme="dark"] .location,
-[data-theme="dark"] .progress-label,
-[data-theme="dark"] .notes-preview {
-    color: #c0c0c0 !important;
-}
-
-/* Navigation buttons */
-[data-theme="dark"] .nav-btn {
-    color: #ffffff !important;
-}
-
-/* Error messages should remain red but visible */
-[data-theme="dark"] .error-message {
-    color: #ff6b6b !important;
-}
-/* List Controls Styling */
-.list-controls {
-    margin-bottom: 2rem;
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-/* Search Container */
-.search-container {
-    position: relative;
-    width: 100%;
-}
-
-.search-input {
-    width: 100%;
-    padding: 1rem 3rem 1rem 1.5rem;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: 50px;
-    font-size: 1rem;
-    color: var(--text-primary);
-    transition: var(--transition);
-}
-
-[data-theme="dark"] .search-input {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-
-.search-input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    transform: translateY(-2px);
-}
-
-.search-icon {
-    position: absolute;
-    right: 1.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.2rem;
-    pointer-events: none;
-    opacity: 0.6;
-}
-
-/* Filter Container */
-.filter-container {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    flex: 1;
-    min-width: 200px;
-}
-
-.filter-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-[data-theme="dark"] .filter-group label {
-    color: #ffffff;
-}
-
-.filter-select {
-    width: 100%;
-    padding: 0.75rem 2.5rem 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius-sm);
-    font-size: 0.95rem;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: var(--transition);
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23667eea' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-}
-
-[data-theme="dark"] .filter-select {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23a8c0ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-}
-
-.filter-select:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-/* Sort Container */
-.sort-container {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.sort-label {
-    font-weight: 600;
-    color: var(--text-primary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-size: 0.9rem;
-}
-
-[data-theme="dark"] .sort-label {
-    color: #ffffff;
-}
-
-.sort-btn {
-    padding: 0.6rem 1.5rem;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: 50px;
-    color: var(--text-primary);
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-[data-theme="dark"] .sort-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-
-.sort-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.sort-btn.active {
-    background: var(--primary-gradient);
-    color: white;
-    border-color: transparent;
-    box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.4);
-}
-
-.sort-arrow {
-    font-size: 0.8rem;
-    transition: transform 0.3s ease;
-}
-
-/* Reset Button */
-#resetFilters {
-    align-self: flex-start;
-}
-
-/* Results Summary */
-.results-summary {
-    margin-bottom: 1.5rem;
-    padding: 0.75rem 1.5rem;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: 50px;
-    text-align: center;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .results-summary {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-
-/* Responsive Design for Controls */
-@media (max-width: 768px) {
-    .filter-container {
-        flex-direction: column;
-    }
-    
-    .filter-group {
-        width: 100%;
-    }
-    
-    .sort-container {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .sort-btn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
-/* Dashboard Styles */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-}
-
-.stat-card {
-    padding: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    transition: var(--transition);
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-}
-
-.stat-icon {
-    font-size: 3rem;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-}
-
-.stat-content {
-    flex: 1;
-}
-
-.stat-value {
-    font-size: 2.5rem;
-    font-weight: 800;
-    background: var(--primary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin: 0;
-    line-height: 1;
-}
-
-.stat-label {
-    color: var(--text-secondary);
-    margin: 0.5rem 0 0 0;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
-}
-
-[data-theme="dark"] .stat-label {
-    color: var(--text-secondary);
-}
-
-/* Status Breakdown */
-.status-breakdown {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    box-shadow: 0 8px 32px 0 var(--shadow-color-light);
-}
-
-.status-breakdown h3 {
-    margin-bottom: 1.5rem;
-    font-size: 1.5rem;
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .status-breakdown h3 {
-    color: #ffffff;
-}
-
-.status-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.status-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background: var(--glass-bg);
-    border-radius: var(--border-radius-sm);
-    border: 1px solid var(--glass-border);
-}
-
-.status-label {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .status-label {
-    color: #ffffff;
-}
-
-.status-count {
-    font-weight: 800;
-    font-size: 1.25rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 50px;
-    color: white;
-}
-
-/* Chart Placeholder */
-.chart-placeholder {
-    padding: 3rem;
-    text-align: center;
-    margin-top: 2rem;
-}
-
-.chart-placeholder h3 {
-    margin-bottom: 1rem;
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .chart-placeholder h3 {
-    color: #ffffff;
-}
-
-.chart-placeholder p {
-    color: var(--text-secondary);
-}
-
-/* Loading and Error States */
-.loading {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-}
-
-.error {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-    color: #e74c3c;
-}
-
-/* Responsive Dashboard */
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
-    }
-    
-    .stat-card {
-        flex-direction: column;
-        text-align: center;
-        padding: 1.5rem;
-    }
-    
-    .stat-icon {
-        font-size: 2.5rem;
-    }
-    
-    .stat-value {
-        font-size: 2rem;
-    }
-}
-/* Charts Styles */
-.charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
-}
-
-.chart-container {
-    padding: 2rem;
-    position: relative;
-}
-
-.chart-container h3 {
-    margin-bottom: 1.5rem;
-    font-size: 1.25rem;
-    color: var(--text-primary);
-    text-align: center;
-}
-
-[data-theme="dark"] .chart-container h3 {
-    color: #ffffff;
-}
-
-canvas {
-    width: 100%;
-    height: auto;
-    max-width: 100%;
-    display: block;
-    margin: 0 auto;
-}
-
-/* Responsive Charts */
-@media (max-width: 768px) {
-    .charts-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-    
-    .chart-container {
-        padding: 1.5rem;
-    }
-    
-    canvas {
-        max-height: 250px;
-    }
-}
-
-/* Chart Animation */
-.chart-container {
-    animation: fadeInUp 0.5s ease 0.3s both;
-}
-/* Add these styles to your style.css file at the end */
-
-/* Kanban Board Styles */
-.kanban-board {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    padding: 1rem 0;
-    overflow-x: auto;
-    min-height: 600px;
-}
-
-/* Ensure minimum width for better mobile experience */
-@media (max-width: 1200px) {
-    .kanban-board {
-        grid-template-columns: repeat(3, minmax(280px, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .kanban-board {
-        grid-template-columns: repeat(2, minmax(280px, 1fr));
-    }
-}
-
-@media (max-width: 480px) {
-    .kanban-board {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-}
-
-/* Kanban Column */
-.kanban-column {
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    min-height: 500px;
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-[data-theme="dark"] .kanban-column {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.kanban-column::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-    pointer-events: none;
-}
-
-/* Column Header */
-.kanban-column-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--glass-border);
-}
-
-.kanban-column-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.kanban-column-icon {
-    font-size: 1.5rem;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-}
-
-.kanban-column-title h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-[data-theme="dark"] .kanban-column-title h3 {
-    color: #ffffff;
-}
-
-.kanban-column-count {
-    min-width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--primary-gradient);
-    color: white;
-    font-weight: 700;
-    font-size: 0.9rem;
-    border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-/* Cards Container */
-.kanban-cards-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-    margin-right: -0.5rem;
-}
-
-/* Custom scrollbar for cards container */
-.kanban-cards-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.kanban-cards-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 3px;
-}
-
-.kanban-cards-container::-webkit-scrollbar-thumb {
-    background: rgba(102, 126, 234, 0.3);
-    border-radius: 3px;
-}
-
-.kanban-cards-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(102, 126, 234, 0.5);
-}
-
-/* Empty State */
-.kanban-empty-state {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: var(--text-secondary);
-    font-style: italic;
-    opacity: 0.7;
-}
-
-[data-theme="dark"] .kanban-empty-state {
-    color: #a0a0a0;
-}
-
-/* Kanban Card */
-.kanban-card {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius-sm);
-    padding: 1.25rem;
-    cursor: grab;
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-[data-theme="dark"] .kanban-card {
-    background: rgba(30, 30, 30, 0.8);
-}
-
-.kanban-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-.kanban-card:active {
-    cursor: grabbing;
-}
-
-/* Card Header */
-.kanban-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.5rem;
-}
-
-.kanban-card-title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.3;
-    flex: 1;
-    padding-right: 0.5rem;
-}
-
-[data-theme="dark"] .kanban-card-title {
-    color: #ffffff;
-}
-
-.kanban-card-edit {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    opacity: 0;
-    transition: opacity 0.2s;
-    padding: 0.25rem;
-    margin: -0.25rem;
-}
-
-.kanban-card:hover .kanban-card-edit {
-    opacity: 0.7;
-}
-
-.kanban-card-edit:hover {
-    opacity: 1 !important;
-    transform: scale(1.1);
-}
-
-/* Card Details */
-.kanban-card-company {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-    font-size: 0.95rem;
-}
-
-[data-theme="dark"] .kanban-card-company {
-    color: #e0e0e0;
-}
-
-.kanban-card-location,
-.kanban-card-date,
-.kanban-card-salary {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
-}
-
-[data-theme="dark"] .kanban-card-location,
-[data-theme="dark"] .kanban-card-date,
-[data-theme="dark"] .kanban-card-salary {
-    color: #b0b0b0;
-}
-
-.kanban-card-deadline {
-    font-size: 0.85rem;
-    color: #f39c12;
-    font-weight: 600;
-    margin: 0.5rem 0;
-}
-
-.kanban-card-deadline.deadline-passed {
-    color: #e74c3c;
-}
-
-.kanban-card-notes {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--glass-border);
-    font-style: italic;
-    line-height: 1.4;
-}
-
-[data-theme="dark"] .kanban-card-notes {
-    color: #a0a0a0;
-}
-
-/* Drag and Drop Visual Feedback (for future implementation) */
-.kanban-card.dragging {
-    opacity: 0.5;
-    transform: rotate(5deg);
-}
-
-.kanban-column.drag-over {
-    background: rgba(102, 126, 234, 0.1);
-    border-color: #667eea;
-}
-
-.kanban-column.drag-over .kanban-cards-container {
-    background: rgba(102, 126, 234, 0.05);
-    border-radius: var(--border-radius-sm);
-}
-
-/* Column-specific color accents */
-.kanban-column[data-status="applied"] .kanban-column-count {
-    background: var(--status-applied);
-}
-
-.kanban-column[data-status="screening"] .kanban-column-count {
-    background: var(--status-screening);
-}
-
-.kanban-column[data-status="interview"] .kanban-column-count {
-    background: var(--status-interview);
-}
-
-.kanban-column[data-status="offer"] .kanban-column-count {
-    background: var(--status-offer);
-}
-
-.kanban-column[data-status="rejected"] .kanban-column-count {
-    background: var(--status-rejected);
-}
-
-.kanban-column[data-status="withdrawn"] .kanban-column-count {
-    background: var(--status-withdrawn);
-}
-
-/* Subtle column borders based on status */
-.kanban-column[data-status="applied"] {
-    border-top: 3px solid var(--status-applied);
-}
-
-.kanban-column[data-status="screening"] {
-    border-top: 3px solid var(--status-screening);
-}
-
-.kanban-column[data-status="interview"] {
-    border-top: 3px solid var(--status-interview);
-}
-
-.kanban-column[data-status="offer"] {
-    border-top: 3px solid var(--status-offer);
-}
-
-.kanban-column[data-status="rejected"] {
-    border-top: 3px solid var(--status-rejected);
-}
-
-.kanban-column[data-status="withdrawn"] {
-    border-top: 3px solid var(--status-withdrawn);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .kanban-column {
-        padding: 1rem;
-        min-height: 400px;
-    }
-    
-    .kanban-card {
-        padding: 1rem;
-    }
-    
-    .kanban-card-title {
-        font-size: 0.95rem;
-    }
-}
-
-/* Loading animation for kanban */
-.kanban-board .loading {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 4rem;
-    font-size: 1.2rem;
-    color: var(--text-secondary);
-}
-
-/* Error state for kanban */
-.kanban-board .error {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 4rem;
-    font-size: 1.2rem;
-    color: #e74c3c;
-}
-/* Add these styles to your style.css file after the existing kanban styles */
-
-/* Drag and Drop Visual Feedback */
-.kanban-card {
-    transition: all 0.2s ease;
-}
-
-.kanban-card.dragging {
-    opacity: 0.4;
-    transform: rotate(3deg) scale(0.95);
-    cursor: grabbing !important;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-/* Highlight the column being dragged over */
-.kanban-column.drag-over {
-    background: rgba(102, 126, 234, 0.08);
-    border-color: #667eea;
-    transform: scale(1.02);
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-}
-
-.kanban-column.drag-over .kanban-cards-container {
-    background: rgba(102, 126, 234, 0.05);
-    border: 2px dashed #667eea;
-    border-radius: var(--border-radius-sm);
-    padding: 0.5rem;
-    margin: -0.5rem;
-}
-
-/* Smooth transitions for cards when reordering */
-.kanban-cards-container {
-    position: relative;
-}
-
-.kanban-card:not(.dragging) {
-    transition: transform 0.2s ease;
-}
-
-/* Visual indicator for drop zone */
-.kanban-column.drag-over .kanban-column-header {
-    color: #667eea;
-}
-
-.kanban-column.drag-over .kanban-column-icon {
-    animation: bounce 0.5s ease infinite;
-}
-
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-5px);
-    }
-}
-
-/* Cursor styles for better UX */
-.kanban-card {
-    cursor: grab;
-}
-
-.kanban-card:active {
-    cursor: grabbing;
-}
-
-/* Prevent text selection during drag */
-.kanban-board {
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-}
-
-/* Ghost image styling (what follows the cursor) */
-.kanban-card.dragging::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(102, 126, 234, 0.1);
-    border-radius: var(--border-radius-sm);
-    pointer-events: none;
-}
-
-/* Smooth animation when cards shift position */
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.kanban-card:not(.dragging) {
-    animation: slideIn 0.3s ease;
-}
-
-/* Visual feedback for successful drop */
-@keyframes dropSuccess {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
-    }
-    50% {
-        transform: scale(1.05);
-        box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
-    }
-}
-
-.kanban-card.drop-success {
-    animation: dropSuccess 0.5s ease;
-}
-
-/* Dark mode adjustments */
-[data-theme="dark"] .kanban-column.drag-over {
-    background: rgba(102, 126, 234, 0.15);
-}
-
-[data-theme="dark"] .kanban-column.drag-over .kanban-cards-container {
-    background: rgba(102, 126, 234, 0.1);
-    border-color: #8b9fee;
-}
-
-/* Mobile touch support styles */
-@media (max-width: 768px) {
-    .kanban-card {
-        cursor: default;
-        -webkit-touch-callout: none;
-    }
-    
-    /* Larger touch targets on mobile */
-    .kanban-card {
-        min-height: 120px;
-    }
-}
-
-/* Accessibility - Focus styles for keyboard navigation */
-.kanban-card:focus {
-    outline: 2px solid #667eea;
-    outline-offset: 2px;
-}
-
-.kanban-column:focus-within {
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-/* Add these styles to your style.css file for enhanced UI refresh animations */
-
-/* Count update animation */
-@keyframes countPulse {
-    0% {
-        transform: scale(1);
-        background: var(--primary-gradient);
-    }
-    50% {
-        transform: scale(1.2);
-        background: var(--success-gradient);
-        box-shadow: 0 0 15px rgba(79, 172, 254, 0.6);
-    }
-    100% {
-        transform: scale(1);
-        background: var(--primary-gradient);
-    }
-}
-
-.kanban-column-count.count-updated {
-    animation: countPulse 0.3s ease;
-}
-
-/* Fade animations for empty states */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-}
-
-.kanban-empty-state.fade-in {
-    animation: fadeIn 0.3s ease forwards;
-}
-
-.kanban-empty-state.fade-out {
-    animation: fadeOut 0.3s ease forwards;
-}
-
-/* Enhanced drop success animation */
-@keyframes dropSuccess {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    50% {
-        transform: scale(1.02);
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4),
-                    0 0 0 0 rgba(102, 126, 234, 0.7);
-    }
-    100% {
-        transform: scale(1);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1),
-                    0 0 0 10px rgba(102, 126, 234, 0);
-    }
-}
-
-.kanban-card.drop-success {
-    animation: dropSuccess 0.5s ease;
-}
-
-/* Progress stage indicator */
-.kanban-card-progress {
-    font-size: 1rem;
-    padding: 0.25rem;
-    margin: -0.25rem;
-    cursor: help;
-    transition: transform 0.2s ease;
-}
-
-.kanban-card-progress:hover {
-    transform: scale(1.2);
-}
-
-/* Enhanced card actions layout */
-.kanban-card-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Loading state for cards during update */
-.kanban-card.updating {
-    position: relative;
-    overflow: hidden;
-}
-
-.kanban-card.updating::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.3) 50%,
-        transparent 100%
-    );
-    animation: loadingShimmer 1s infinite;
-}
-
-@keyframes loadingShimmer {
-    0% {
-        left: -100%;
-    }
-    100% {
-        left: 100%;
-    }
-}
-
-/* Status change animation */
-@keyframes statusChange {
-    0% {
-        background-color: rgba(102, 126, 234, 0.1);
-    }
-    50% {
-        background-color: rgba(102, 126, 234, 0.3);
-    }
-    100% {
-        background-color: transparent;
-    }
-}
-
-.kanban-card.status-changed {
-    animation: statusChange 1s ease;
-}
-
-/* Smooth card reordering */
-.kanban-cards-container {
-    transition: min-height 0.3s ease;
-}
-
-.kanban-card {
-    transition: all 0.3s ease;
-}
-
-/* Visual feedback for auto-refresh */
-@keyframes refreshPulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-}
-
-.kanban-board.refreshing {
-    animation: refreshPulse 0.5s ease;
-}
-
-/* Enhanced column status indicators */
-.kanban-column[data-status="applied"] .kanban-column-icon {
-    color: var(--status-applied);
-}
-
-.kanban-column[data-status="screening"] .kanban-column-icon {
-    color: var(--status-screening);
-}
-
-.kanban-column[data-status="interview"] .kanban-column-icon {
-    color: var(--status-interview);
-}
-
-.kanban-column[data-status="offer"] .kanban-column-icon {
-    color: var(--status-offer);
-}
-
-.kanban-column[data-status="rejected"] .kanban-column-icon {
-    color: var(--status-rejected);
-}
-
-.kanban-column[data-status="withdrawn"] .kanban-column-icon {
-    color: var(--status-withdrawn);
-}
-
-/* Rollback animation for failed drops */
-@keyframes rollback {
-    0% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-    50% {
-        transform: scale(1.05);
-        background-color: rgba(245, 87, 108, 0.1);
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-        background-color: transparent;
-    }
-}
-
-.kanban-card.rollback {
-    animation: rollback 0.5s ease;
-}
-
-/* Dark mode enhancements */
-[data-theme="dark"] .kanban-card.drop-success {
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.6);
-}
-
-[data-theme="dark"] .kanban-card.updating::after {
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.1) 50%,
-        transparent 100%
-    );
-}
-
-/* Improved mobile touch feedback */
-@media (max-width: 768px) {
-    .kanban-card:active {
-        transform: scale(0.98);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    }
-    
-    .kanban-column-count {
-        font-size: 1rem;
-        min-width: 36px;
-        height: 36px;
-    }
-}
-
-/* Accessibility improvements */
-.kanban-card:focus-visible {
-    outline: 2px solid #667eea;
-    outline-offset: 2px;
-}
-
-.kanban-column:focus-within {
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
-/* Performance optimizations */
-.kanban-board * {
-    will-change: auto;
-}
-
-.kanban-card.dragging,
-.kanban-column.drag-over {
-    will-change: transform, opacity;
-}
-/* Add this CSS to your style.css file to handle the updating state */
-
-.kanban-card.updating {
-    opacity: 0.6;
-    pointer-events: none;
-    cursor: wait;
-}
-
-/* Ensure cards are always draggable when not updating */
-.kanban-card:not(.updating) {
-    cursor: grab;
-    pointer-events: auto;
-}
-
-.kanban-card:not(.updating):active {
-    cursor: grabbing;
-}
-
-/* ===== ENHANCED MODAL SYSTEM STYLES ===== */
-/* Replace the existing modal styles with these */
-
-/* Modal Container - Full screen overlay */
-#modalContainer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    z-index: 9999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    isolation: isolate; /* Prevent z-index issues */
-}
-
-#modalContainer.active {
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-}
-
-/* Modal Box */
-.modal {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    box-shadow: 
-        0 24px 48px 0 rgba(0, 0, 0, 0.4),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    width: 100%;
-    max-width: 500px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    transform: scale(1);
-    opacity: 1;
-    transition: none; /* Controlled by classes */
-}
-
-/* Modal sizes */
-.modal-small {
-    max-width: 400px;
-}
-
-.modal-medium {
-    max-width: 600px;
-}
-
-.modal-large {
-    max-width: 800px;
-}
-
-/* Modal animations */
-.modal.modal-enter {
-    animation: modalEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.modal.modal-exit {
-    animation: modalExit 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-@keyframes modalEnter {
-    from {
-        transform: scale(0.95) translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes modalExit {
-    from {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: scale(0.95) translateY(20px);
-        opacity: 0;
-    }
-}
-
-/* Modal Header */
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--glass-border);
-    flex-shrink: 0;
-}
-
-.modal-header h3 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .modal-header h3 {
-    color: #ffffff;
-}
-
-/* Modal Close Button */
-.modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    line-height: 1;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 0;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.modal-close:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: var(--text-primary);
-    transform: rotate(90deg);
-}
-
-.modal-close:active {
-    transform: rotate(90deg) scale(0.9);
-}
-
-[data-theme="dark"] .modal-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-
-/* Modal Body */
-.modal-body {
-    padding: 2rem;
-    overflow-y: auto;
-    flex: 1;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
-}
-
-.modal-body::-webkit-scrollbar {
-    width: 8px;
-}
-
-.modal-body::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.modal-body::-webkit-scrollbar-thumb {
-    background: rgba(102, 126, 234, 0.3);
-    border-radius: 4px;
-}
-
-.modal-body::-webkit-scrollbar-thumb:hover {
-    background: rgba(102, 126, 234, 0.5);
-}
-
-/* Modal Content (when no header) */
-.modal-content {
-    padding: 2rem;
-    overflow-y: auto;
-    flex: 1;
-}
-
-/* Modal Message */
-.modal-message {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 0 1rem;
-}
-
-.modal-message p {
-    font-size: 1.1rem;
-    line-height: 1.6;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-[data-theme="dark"] .modal-message p {
-    color: #ffffff;
-}
-
-/* Modal Actions */
-.modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
-    flex-wrap: wrap;
-}
-
-.modal-actions .btn {
-    min-width: 120px;
-    flex: 1;
-    max-width: 200px;
-}
-
-/* Modal Form Styles */
-.modal-form {
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-form .form-group {
-    margin-bottom: 1.5rem;
-}
-
-.modal-form .form-group:last-of-type {
-    margin-bottom: 2rem;
-}
-
-/* Danger themed modal */
-.modal-danger .modal-header {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    color: white;
-    margin: -2rem -2rem 0 -2rem;
-    padding: 1.5rem 2rem;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-    border-bottom: none;
-}
-
-.modal-danger .modal-header h3 {
-    color: white;
-}
-
-.modal-danger .modal-close {
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.modal-danger .modal-close:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-}
-
-/* Modal specific content styles */
-.application-details h4 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: var(--text-primary);
-}
-
-.application-details p {
-    margin-bottom: 0.75rem;
-    line-height: 1.6;
-}
-
-.application-details strong {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.notes-section {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--glass-border);
-}
-
-.notes-section h5 {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-}
-
-/* Loading state for modal */
-.modal-loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 200px;
-    position: relative;
-}
-
-.modal-loading::after {
-    content: '';
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--glass-border);
-    border-top-color: #667eea;
-    border-radius: 50%;
-    animation: modalSpinner 0.8s linear infinite;
-}
-
-@keyframes modalSpinner {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-/* Error state for modal */
-.modal-error {
-    background: rgba(245, 87, 108, 0.1);
-    border: 1px solid #f5576c;
-    border-radius: var(--border-radius-sm);
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
-
-.modal-error p {
-    color: #f5576c;
-    margin: 0;
-    font-weight: 500;
-}
-
-/* Success state for modal */
-.modal-success {
-    background: rgba(79, 172, 254, 0.1);
-    border: 1px solid #4facfe;
-    border-radius: var(--border-radius-sm);
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
-
-.modal-success p {
-    color: #4facfe;
-    margin: 0;
-    font-weight: 500;
-}
-
-/* Responsive Modal Styles */
-@media (max-width: 768px) {
-    #modalContainer {
-        padding: 0;
-    }
-    
-    .modal {
-        max-width: 100%;
-        max-height: 100%;
-        margin: 0;
-        border-radius: 0;
-        width: 100%;
-        height: 100%;
-    }
-    
-    .modal-small,
-    .modal-medium,
-    .modal-large {
-        max-width: 100%;
-    }
-    
-    .modal-header {
-        padding: 1rem 1.5rem;
-        position: sticky;
-        top: 0;
-        background: var(--glass-bg-solid);
-        z-index: 10;
-    }
-    
-    .modal-body,
-    .modal-content {
-        padding: 1.5rem;
-    }
-    
-    .modal-actions {
-        flex-direction: column-reverse;
-        padding: 0 1.5rem 1.5rem;
-    }
-    
-    .modal-actions .btn {
-        width: 100%;
-        max-width: none;
-    }
-}
-
-/* Small screens */
-@media (max-width: 480px) {
-    .modal-header h3 {
-        font-size: 1.25rem;
-    }
-    
-    .modal-message p {
-        font-size: 1rem;
-    }
-}
-
-/* Accessibility - Focus styles */
-.modal *:focus {
-    outline: 2px solid #667eea;
-    outline-offset: 2px;
-    border-radius: 4px;
-}
-
-.modal-close:focus {
-    outline-offset: -2px;
-}
-
-/* Print styles */
-@media print {
-    #modalContainer {
-        display: none !important;
-    }
-}
-
-/* Performance optimizations */
-.modal * {
-    will-change: auto;
-}
-
-.modal.modal-enter,
-.modal.modal-exit {
-    will-change: transform, opacity;
-}
-
-/* Prevent body scroll when modal is open */
-body.modal-open {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-}
-
-/* ===== END OF ENHANCED MODAL SYSTEM STYLES ===== */
-
-/* ===== ENHANCED NOTIFICATION STYLES ===== */
-
-/* Notification Container - Fixed position in top-right */
-.notification-container {
-    position: fixed;
-    top: 2rem;
-    right: 2rem;
-    z-index: 10001;
-    pointer-events: none;
-    max-width: 400px;
-}
-
-/* Individual Notification */
-.notification {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
-    box-shadow: 
-        0 10px 40px 0 rgba(0, 0, 0, 0.3),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    min-width: 320px;
-    max-width: 400px;
-    font-weight: 500;
-    position: relative;
-    overflow: hidden;
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-/* Notification Icons */
-.notification-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-/* Notification Message */
-.notification-message {
-    flex: 1;
-    line-height: 1.4;
-    font-size: 0.95rem;
-}
-
-/* Close Button */
-.notification-close {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.notification-close:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotate(90deg);
-}
-
-/* Progress Bar Animation */
-.notification::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 3px;
-    width: 100%;
-    background: rgba(255, 255, 255, 0.3);
-    animation: notificationProgress 4s linear forwards;
-}
-
-@keyframes notificationProgress {
-    from {
-        width: 100%;
-    }
-    to {
-        width: 0%;
-    }
-}
-
-/* Notification Types with Gradients */
-.notification.success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.notification.error {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-}
-
-.notification.error::before {
-    animation-duration: 6s;
-}
-
-.notification.warning {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.notification.warning::before {
-    animation-duration: 5s;
-}
-
-.notification.info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-/* Shimmer Effect */
-.notification::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.2) 50%,
-        transparent 100%
-    );
-    animation: notificationShimmer 2s infinite;
-}
-
-@keyframes notificationShimmer {
-    0% {
-        left: -100%;
-    }
-    100% {
-        left: 100%;
-    }
-}
-
-/* Dark Mode Adjustments */
-[data-theme="dark"] .notification {
-    background: var(--glass-bg-solid);
-    color: white;
-}
-
-[data-theme="dark"] .notification.success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-[data-theme="dark"] .notification.error {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-}
-
-[data-theme="dark"] .notification.warning {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-[data-theme="dark"] .notification.info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-/* Slide In Animation */
-@keyframes slideInRight {
-    from {
-        transform: translateX(120%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .notification-container {
-        top: 1rem;
-        right: 1rem;
-        left: 1rem;
-        max-width: none;
-    }
-    
-    .notification {
-        min-width: auto;
-        max-width: none;
-        width: 100%;
-        font-size: 0.9rem;
-    }
-    
-    .notification-icon {
-        font-size: 1.25rem;
-    }
-}
-
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-    .notification {
-        transition: opacity 0.2s ease;
-    }
-    
-    .notification::before,
-    .notification::after {
-        animation: none;
-    }
-    
-    @keyframes slideInRight {
-        from, to {
-            transform: translateX(0);
-        }
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
+    // Show the selected view
+    const targetView = document.getElementById(`${viewName}View`);
+    if (targetView) {
+        targetView.classList.add('active');
+        
+        // Perform view-specific actions
+        switch(viewName) {
+            case 'home':
+                const firstInput = document.getElementById('jobTitle');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+                break;
+                
+            case 'list':
+                console.log('Loading applications list...');
+                renderApplicationsList();
+                setupSearchFilterSort();
+                break;
+                
+            case 'dashboard':
+                console.log('Loading dashboard statistics...');
+                renderDashboard();
+                break;
+                
+            case 'kanban':
+                console.log('Loading kanban board...');
+                renderKanbanBoard();
+                // Optional: Enable auto-refresh for kanban board
+                // startKanbanAutoRefresh(30000); // Refresh every 30 seconds
+                break;
         }
     }
 }
 
-/* Stacking Offset */
-.notification:nth-child(1) { z-index: 10003; }
-.notification:nth-child(2) { z-index: 10002; }
-.notification:nth-child(3) { z-index: 10001; }
-
-/* Success State for Forms */
-.form-success {
-    animation: successPulse 0.5s ease;
-}
-
-@keyframes successPulse {
-    0% {
-        transform: scale(1);
+// Form Setup and Handling
+function setupApplicationForm() {
+    console.log('Setting up application form...');
+    const form = document.getElementById('applicationForm');
+    const cancelBtn = document.getElementById('cancelBtn');
+    
+    if (form) {
+        console.log('Form found, adding submit listener');
+        form.addEventListener('submit', handleFormSubmit);
+    } else {
+        console.error('Form not found!');
     }
-    50% {
-        transform: scale(1.02);
-        box-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* ===== DANGER BUTTON STYLES ===== */
-/* These should be with your other button styles */
-
-/* Danger Button Style */
-.btn-danger {
-    background: var(--danger-gradient);
-    color: white;
-    box-shadow: 0 4px 15px 0 rgba(245, 87, 108, 0.4);
-}
-
-.btn-danger:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px 0 rgba(245, 87, 108, 0.5);
-}
-
-.btn-danger::before {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* Modal with danger theme */
-.modal-danger .modal-header {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    color: white;
-    margin: -2rem -2rem 1.5rem -2rem;
-    padding: 1.5rem 2rem;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
-
-.modal-danger .modal-header h3 {
-    color: white;
-}
-
-.modal-danger .modal-close {
-    color: white;
-    opacity: 0.9;
-}
-
-.modal-danger .modal-close:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* ===== END OF ENHANCED NOTIFICATION STYLES ===== */
-
-
-/* Add this CSS to prevent the double flash issue */
-
-/* Modal Container - Prevent flash during initialization */
-#modalContainer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    z-index: 9999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    isolation: isolate;
-    pointer-events: none; /* Prevent interaction when hidden */
-}
-
-#modalContainer.active {
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    pointer-events: auto; /* Enable interaction when active */
-}
-
-/* Modal Box - Ensure single render */
-.modal {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    box-shadow: 
-        0 24px 48px 0 rgba(0, 0, 0, 0.4),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    width: 100%;
-    max-width: 500px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    transform: scale(0.9);
-    opacity: 0;
-    visibility: hidden; /* Hide initially */
-    transition: none;
-    pointer-events: none; /* Prevent interaction during animation */
-}
-
-/* Show modal when container is active */
-#modalContainer.active .modal {
-    visibility: visible;
-    pointer-events: auto;
-}
-
-/* Modal animations - single animation */
-.modal.modal-enter {
-    animation: modalEnterSingle 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.modal.modal-exit {
-    animation: modalExitSingle 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-@keyframes modalEnterSingle {
-    0% {
-        transform: scale(0.9) translateY(20px);
-        opacity: 0;
-        visibility: visible;
-    }
-    100% {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-        visibility: visible;
+    
+    if (cancelBtn) {
+        console.log('Cancel button found, adding click listener');
+        cancelBtn.addEventListener('click', () => {
+            console.log('Cancel button clicked');
+            resetForm();
+            switchView('list');
+            
+            // Update nav button active states
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === 'list') {
+                    btn.classList.add('active');
+                }
+            });
+        });
+    } else {
+        console.error('Cancel button not found!');
     }
 }
 
-@keyframes modalExitSingle {
-    0% {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-        visibility: visible;
+// Handle form submission
+async function handleFormSubmit(e) {
+    e.preventDefault();
+    console.log('Form submitted');
+    
+    const formData = new FormData(e.target);
+    const existingId = formData.get('id');
+    
+    try {
+        if (existingId) {
+            // Edit mode - get existing application to preserve arrays
+            const existingApplication = await getApplicationFromDB(existingId);
+            
+            const applicationData = {
+                ...existingApplication, // Preserve existing data (arrays, etc.)
+                id: existingId,
+                jobTitle: formData.get('jobTitle'),
+                companyName: formData.get('companyName'),
+                applicationDate: formData.get('applicationDate'),
+                status: formData.get('status'),
+                deadline: formData.get('deadline') || null,
+                url: formData.get('url') || '',
+                salary: formData.get('salary') || '',
+                location: formData.get('location') || '',
+                progressStage: formData.get('progressStage') || 'to-apply',
+                notes: formData.get('notes') || '',
+                updatedAt: new Date().toISOString()
+            };
+            
+            await updateApplicationInDB(applicationData);
+            console.log('Application updated successfully');
+
+            // Show success notification
+            notifySuccess(`Application for ${applicationData.jobTitle} at ${applicationData.companyName} updated successfully!`);
+            
+        } else {
+            // Add mode - create new application
+            const applicationData = {
+                id: generateId(),
+                jobTitle: formData.get('jobTitle'),
+                companyName: formData.get('companyName'),
+                applicationDate: formData.get('applicationDate'),
+                status: formData.get('status'),
+                deadline: formData.get('deadline') || null,
+                url: formData.get('url') || '',
+                salary: formData.get('salary') || '',
+                location: formData.get('location') || '',
+                progressStage: formData.get('progressStage') || 'to-apply',
+                notes: formData.get('notes') || '',
+                interviewDates: [],
+                contacts: [],
+                documents: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            await addApplicationToDB(applicationData);
+            console.log('Application saved successfully');
+             // Show success notification
+            notifySuccess(`New application for ${applicationData.jobTitle} at ${applicationData.companyName} added successfully!`);
+        }
+        
+        // Reset form and switch to list view
+        resetForm();
+        switchView('list');
+        
+        // Update nav button active states
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.view === 'list') {
+                btn.classList.add('active');
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error saving application:', error);
+        notifyError('Failed to save application. Please try again.');
     }
-    100% {
-        transform: scale(0.9) translateY(20px);
-        opacity: 0;
-        visibility: visible;
+}
+
+// Add application to IndexedDB
+function addApplicationToDB(applicationData) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.add(applicationData);
+        
+        request.onsuccess = () => {
+            resolve(applicationData);
+        };
+        
+        request.onerror = () => {
+            reject('Error adding application to database');
+        };
+    });
+}
+
+// Get a single application from IndexedDB by ID
+function getApplicationFromDB(id) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.get(id);
+        
+        request.onsuccess = () => {
+            if (request.result) {
+                resolve(request.result);
+            } else {
+                reject('Application not found');
+            }
+        };
+        
+        request.onerror = () => {
+            reject('Error fetching application from database');
+        };
+    });
+}
+
+// Update application in IndexedDB
+function updateApplicationInDB(applicationData) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        
+        // Update the timestamp
+        applicationData.updatedAt = new Date().toISOString();
+        
+        const request = objectStore.put(applicationData);
+        
+        request.onsuccess = () => {
+            console.log('Application updated successfully');
+            resolve(applicationData);
+        };
+        
+        request.onerror = () => {
+            reject('Error updating application in database');
+        };
+    });
+}
+
+// Delete application from IndexedDB
+function deleteApplicationFromDB(id) {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.delete(id);
+        
+        request.onsuccess = () => {
+            console.log('Application deleted successfully');
+            resolve();
+        };
+        
+        request.onerror = () => {
+            reject('Error deleting application from database');
+        };
+    });
+}
+
+// Reset form to initial state
+function resetForm() {
+    console.log('Resetting form');
+    const form = document.getElementById('applicationForm');
+    const formTitle = document.getElementById('formTitle');
+    
+    if (form) {
+        form.reset();
+        // Explicitly clear the hidden ID field
+        document.getElementById('applicationId').value = '';
+    }
+    
+    if (formTitle) {
+        formTitle.textContent = 'Add New Application';
     }
 }
 
-/* Prevent modal content from showing during setup */
-.modal-content {
-    opacity: 1;
-    transition: opacity 0.2s ease;
+// Fetch all applications from IndexedDB
+function getAllApplicationsFromDB() {
+    return new Promise((resolve, reject) => {
+        if (!db) {
+            reject('Database not initialized');
+            return;
+        }
+        
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.getAll();
+        
+        request.onsuccess = () => {
+            resolve(request.result || []);
+        };
+        
+        request.onerror = () => {
+            reject('Error fetching applications from database');
+        };
+    });
 }
 
-.modal:not(.modal-enter):not(.modal-exit) .modal-content {
-    opacity: 0;
+// Apply filters to applications array
+function applyFilters(applications) {
+    let filtered = [...applications]; // Create a copy to avoid mutating original
+    
+    // Apply search filter
+    if (searchFilterState.searchTerm) {
+        filtered = filtered.filter(app => {
+            const searchTerm = searchFilterState.searchTerm.toLowerCase();
+            return (
+                app.jobTitle.toLowerCase().includes(searchTerm) ||
+                app.companyName.toLowerCase().includes(searchTerm) ||
+                (app.notes && app.notes.toLowerCase().includes(searchTerm)) ||
+                (app.location && app.location.toLowerCase().includes(searchTerm))
+            );
+        });
+    }
+    
+    // Apply status filter
+    if (searchFilterState.statusFilter) {
+        filtered = filtered.filter(app => app.status === searchFilterState.statusFilter);
+    }
+    
+    // Apply date range filter
+    if (searchFilterState.dateRangeFilter) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        filtered = filtered.filter(app => {
+            const appDate = new Date(app.applicationDate);
+            
+            switch (searchFilterState.dateRangeFilter) {
+                case 'today':
+                    return appDate.toDateString() === today.toDateString();
+                    
+                case 'week':
+                    const weekAgo = new Date(today);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    return appDate >= weekAgo;
+                    
+                case 'month':
+                    const monthAgo = new Date(today);
+                    monthAgo.setMonth(monthAgo.getMonth() - 1);
+                    return appDate >= monthAgo;
+                    
+                case 'quarter':
+                    const quarterAgo = new Date(today);
+                    quarterAgo.setMonth(quarterAgo.getMonth() - 3);
+                    return appDate >= quarterAgo;
+                    
+                case 'year':
+                    const yearStart = new Date(now.getFullYear(), 0, 1);
+                    return appDate >= yearStart;
+                    
+                default:
+                    return true;
+            }
+        });
+    }
+    
+    return filtered;
 }
 
-.modal.modal-enter .modal-content,
-#modalContainer.active .modal:not(.modal-exit) .modal-content {
-    opacity: 1;
+// And update the applySorting function to add better logging:
+function applySorting(applications) {
+    const sorted = [...applications]; // Create a copy
+    const { sortBy, sortDirection } = searchFilterState;
+    
+    console.log('Applying sort - By:', sortBy, 'Direction:', sortDirection);
+    
+    sorted.sort((a, b) => {
+        let compareValue = 0;
+        
+        switch (sortBy) {
+            case 'date':
+                compareValue = new Date(a.applicationDate) - new Date(b.applicationDate);
+                break;
+                
+            case 'company':
+                compareValue = a.companyName.localeCompare(b.companyName);
+                break;
+                
+            case 'status':
+                // Define status order
+                const statusOrder = ['applied', 'screening', 'interview', 'offer', 'rejected', 'withdrawn'];
+                const aIndex = statusOrder.indexOf(a.status);
+                const bIndex = statusOrder.indexOf(b.status);
+                compareValue = aIndex - bIndex;
+                break;
+                
+            default:
+                compareValue = 0;
+        }
+        
+        // Apply sort direction
+        const result = sortDirection === 'asc' ? compareValue : -compareValue;
+        
+        // Log first comparison for debugging
+        if (sorted.indexOf(a) === 0 && sorted.indexOf(b) === 1) {
+            console.log('First comparison:', {
+                a: sortBy === 'date' ? a.applicationDate : 
+                   sortBy === 'company' ? a.companyName : a.status,
+                b: sortBy === 'date' ? b.applicationDate : 
+                   sortBy === 'company' ? b.companyName : b.status,
+                compareValue,
+                direction: sortDirection,
+                result
+            });
+        }
+        
+        return result;
+    });
+    
+    return sorted;
 }
 
-/* Ensure delete buttons can't be double-clicked */
-.delete-btn[data-processing="true"] {
-    pointer-events: none !important;
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
+// Update results count display
+function updateResultsCount(filteredCount, totalCount) {
+    const resultCountElement = document.getElementById('resultCount');
+    if (resultCountElement) {
+        if (filteredCount === totalCount) {
+            resultCountElement.textContent = `Showing all ${totalCount} applications`;
+        } else {
+            resultCountElement.textContent = `Showing ${filteredCount} of ${totalCount} applications`;
+        }
+    }
 }
 
-/* Prevent any flashing during state changes */
-#modalContainer * {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+// Main function to filter, sort, and render
+async function filterSortAndRender() {
+    try {
+        // Get all applications from database
+        const allApplications = await getAllApplicationsFromDB();
+        
+        // Apply filters
+        let filteredApplications = applyFilters(allApplications);
+        
+        // Apply sorting
+        filteredApplications = applySorting(filteredApplications);
+        
+        // Update results count
+        updateResultsCount(filteredApplications.length, allApplications.length);
+        
+        // Render the filtered and sorted applications
+        renderApplicationsList(filteredApplications);
+        
+        console.log(`Showing ${filteredApplications.length} of ${allApplications.length} applications`);
+        
+    } catch (error) {
+        console.error('Error in filterSortAndRender:', error);
+    }
 }
+
+// Create HTML for a single application card
+function createApplicationCard(application) {
+    const card = document.createElement('div');
+    card.className = 'application-card glass-card';
+    card.dataset.id = application.id;
+    
+    // Calculate days until deadline
+    const daysUntilDeadline = application.deadline ? 
+        Math.ceil((new Date(application.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null;
+    
+    // Determine deadline class
+    let deadlineClass = '';
+    if (daysUntilDeadline !== null) {
+        if (daysUntilDeadline < 0) deadlineClass = 'deadline-passed';
+        else if (daysUntilDeadline <= 3) deadlineClass = 'deadline-urgent';
+        else if (daysUntilDeadline <= 7) deadlineClass = 'deadline-soon';
+    }
+    
+    // Create progress percentage (simplified for now)
+    const progressPercentage = {
+        'to-apply': 0,
+        'applied': 25,
+        'in-progress': 50,
+        'final-stage': 75,
+        'completed': 100
+    }[application.progressStage] || 0;
+    
+    card.innerHTML = `
+        <div class="card-header">
+            <h3 class="job-title">${application.jobTitle}</h3>
+            <span class="status-badge status-${application.status}">${application.status}</span>
+        </div>
+        
+        <div class="card-body">
+            <div class="company-info">
+                <strong>${application.companyName}</strong>
+                ${application.location ? `<span class="location">📍 ${application.location}</span>` : ''}
+            </div>
+            
+            <div class="card-details">
+                <div class="detail-item">
+                    <span class="detail-label">Applied:</span>
+                    <span class="detail-value">${new Date(application.applicationDate).toLocaleDateString()}</span>
+                </div>
+                
+                ${application.salary ? `
+                    <div class="detail-item">
+                        <span class="detail-label">Salary:</span>
+                        <span class="detail-value">${application.salary}</span>
+                    </div>
+                ` : ''}
+                
+                ${application.deadline ? `
+                    <div class="detail-item deadline-indicator ${deadlineClass}">
+                        <span class="detail-label">Deadline:</span>
+                        <span class="detail-value">
+                            ${new Date(application.deadline).toLocaleDateString()}
+                            ${daysUntilDeadline !== null ? `(${daysUntilDeadline > 0 ? `${daysUntilDeadline} days` : 'Passed'})` : ''}
+                        </span>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${progressPercentage}%"></div>
+                </div>
+                <span class="progress-label">${application.progressStage.replace('-', ' ')}</span>
+            </div>
+            
+            ${application.notes ? `
+                <div class="notes-preview">
+                    <p>${application.notes.substring(0, 100)}${application.notes.length > 100 ? '...' : ''}</p>
+                </div>
+            ` : ''}
+        </div>
+        
+        <div class="card-actions">
+            <button class="btn-icon edit-btn" data-id="${application.id}" title="Edit">
+                ✏️
+            </button>
+            <button class="btn-icon delete-btn" data-id="${application.id}" title="Delete">
+                🗑️
+            </button>
+            ${application.url ? `
+                <a href="${application.url}" target="_blank" class="btn-icon" title="View posting">
+                    🔗
+                </a>
+            ` : ''}
+        </div>
+    `;
+    
+    return card;
+}
+
+// Render the applications list
+async function renderApplicationsList(applications = null) {
+    const listContainer = document.getElementById('listContainer');
+    
+    if (!listContainer) {
+        console.error('List container not found');
+        return;
+    }
+    
+    // If no applications provided, fetch them
+    if (applications === null) {
+        try {
+            applications = await getAllApplicationsFromDB();
+            // When fetching fresh, apply current filters
+            applications = applyFilters(applications);
+            applications = applySorting(applications);
+            updateResultsCount(applications.length, await getAllApplicationsFromDB().then(all => all.length));
+        } catch (error) {
+            console.error('Error fetching applications:', error);
+            applications = [];
+        }
+    }
+    
+    // Clear existing content
+    listContainer.innerHTML = '';
+    
+    // Show empty state or render applications
+    if (applications.length === 0) {
+        listContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>No applications found</h3>
+                <p>${searchFilterState.searchTerm || searchFilterState.statusFilter || searchFilterState.dateRangeFilter ? 
+                    'Try adjusting your filters' : 
+                    'Start tracking your job applications by clicking "Add Application"'}</p>
+            </div>
+        `;
+    } else {
+        // Create and append cards
+        applications.forEach(app => {
+            const card = createApplicationCard(app);
+            listContainer.appendChild(card);
+        });
+        
+        // Setup action button listeners after cards are rendered
+        setupActionButtonsListeners();
+    }
+}
+
+// Also update the setupActionButtonsListeners function to ensure single registration:
+
+function setupActionButtonsListeners() {
+    const listContainer = document.getElementById('listContainer');
+    const kanbanContainer = document.getElementById('kanbanContainer');
+    
+    // Setup for list view
+    if (listContainer) {
+        // Remove ALL existing listeners first
+        const clonedList = listContainer.cloneNode(true);
+        listContainer.parentNode.replaceChild(clonedList, listContainer);
+        const newListContainer = document.getElementById('listContainer');
+        
+        // Add single listener
+        newListContainer.addEventListener('click', handleActionButtonClick, { capture: true });
+    }
+    
+    // Setup for kanban view
+    if (kanbanContainer) {
+        // Remove ALL existing listeners first
+        const clonedKanban = kanbanContainer.cloneNode(true);
+        kanbanContainer.parentNode.replaceChild(clonedKanban, kanbanContainer);
+        const newKanbanContainer = document.getElementById('kanbanContainer');
+        
+        // Add single listener
+        newKanbanContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.kanban-card-edit') || e.target.closest('.delete-btn')) {
+                handleActionButtonClick(e);
+            }
+        }, { capture: true });
+    }
+}
+
+// Replace the handleActionButtonClick function with this updated version:
+const clickDebounce = new Map();
+async function handleActionButtonClick(e) {
+    // Don't prevent default for links
+    if (e.target.tagName !== 'A' && !e.target.closest('a')) {
+        e.preventDefault();
+    }
+    
+    const deleteBtn = e.target.closest('.delete-btn');
+    const editBtn = e.target.closest('.edit-btn') || e.target.closest('.kanban-card-edit');
+    
+    // Handle edit button click
+    if (editBtn) {
+        e.stopPropagation();
+        const applicationId = editBtn.dataset.id;
+        console.log('Edit button clicked for ID:', applicationId);
+        await loadApplicationForEdit(applicationId);
+        return;
+    }
+    
+    // Handle delete button click
+    if (deleteBtn) {
+        e.stopPropagation();
+        e.stopImmediatePropagation(); // Prevent any other handlers
+        
+        const applicationId = deleteBtn.dataset.id;
+        
+        // Check debounce - prevent multiple clicks within 500ms
+        const lastClick = clickDebounce.get(applicationId);
+        const now = Date.now();
+        
+        if (lastClick && (now - lastClick) < 500) {
+            console.log('Delete click debounced');
+            return;
+        }
+        
+        clickDebounce.set(applicationId, now);
+        
+        // Check if any modal is already open
+        if (isModalOpen()) {
+            console.log('Modal already open, ignoring delete click');
+            return;
+        }
+        
+        // Check if button is already disabled
+        if (deleteBtn.disabled || deleteBtn.dataset.processing === 'true') {
+            console.log('Delete button already processing');
+            return;
+        }
+        
+        // Mark as processing
+        deleteBtn.dataset.processing = 'true';
+        
+        const applicationCard = deleteBtn.closest('.application-card') || deleteBtn.closest('.kanban-card');
+        
+        if (!applicationCard) {
+            console.error('Card not found');
+            deleteBtn.dataset.processing = 'false';
+            return;
+        }
+        
+        // Get job title and company name
+        let jobTitle, companyName;
+        
+        if (applicationCard.classList.contains('application-card')) {
+            jobTitle = applicationCard.querySelector('.job-title')?.textContent || 'Unknown';
+            companyName = applicationCard.querySelector('.company-info strong')?.textContent || 'Unknown';
+        } else {
+            jobTitle = applicationCard.querySelector('.kanban-card-title')?.textContent || 'Unknown';
+            companyName = applicationCard.querySelector('.kanban-card-company')?.textContent || 'Unknown';
+        }
+        
+        // Store original state for button
+        const originalContent = deleteBtn.innerHTML;
+        const wasDisabled = deleteBtn.disabled;
+        
+        // Disable button while modal is open
+        deleteBtn.disabled = true;
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.cursor = 'not-allowed';
+        
+        // Show confirmation modal
+        showConfirmModal(
+            `Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`,
+            {
+                title: 'Delete Application',
+                confirmText: 'Delete',
+                cancelText: 'Cancel',
+                confirmClass: 'btn btn-danger',
+                cancelClass: 'btn btn-secondary',
+                onConfirm: async () => {
+                    try {
+                        // Show loading state
+                        deleteBtn.innerHTML = '⏳';
+                        
+                        // Delete from database
+                        await deleteApplicationFromDB(applicationId);
+                        
+                        // Animate card removal
+                        applicationCard.style.transition = 'all 0.3s ease';
+                        applicationCard.style.opacity = '0';
+                        applicationCard.style.transform = 'translateX(-100%)';
+                        
+                        // Show success notification
+                        notifySuccess(`Application for "${jobTitle}" at ${companyName} deleted successfully.`);
+                        
+                        // Clean up debounce
+                        clickDebounce.delete(applicationId);
+                        
+                        // Refresh the appropriate view
+                        setTimeout(() => {
+                            if (document.getElementById('listView').classList.contains('active')) {
+                                filterSortAndRender();
+                            } else if (document.getElementById('kanbanView').classList.contains('active')) {
+                                renderKanbanBoard();
+                            }
+                        }, 300);
+                        
+                    } catch (error) {
+                        console.error('Error deleting application:', error);
+                        
+                        // Restore button state on error
+                        deleteBtn.disabled = wasDisabled;
+                        deleteBtn.innerHTML = originalContent;
+                        deleteBtn.style.opacity = '';
+                        deleteBtn.style.cursor = '';
+                        deleteBtn.dataset.processing = 'false';
+                        
+                        notifyError('Failed to delete application. Please try again.');
+                    }
+                },
+                onCancel: () => {
+                    // Restore button state on cancel
+                    deleteBtn.disabled = wasDisabled;
+                    deleteBtn.innerHTML = originalContent;
+                    deleteBtn.style.opacity = '';
+                    deleteBtn.style.cursor = '';
+                    deleteBtn.dataset.processing = 'false';
+                },
+                onClose: () => {
+                    // Ensure button state is restored on close
+                    if (deleteBtn) {
+                        deleteBtn.disabled = wasDisabled;
+                        deleteBtn.innerHTML = originalContent;
+                        deleteBtn.style.opacity = '';
+                        deleteBtn.style.cursor = '';
+                        deleteBtn.dataset.processing = 'false';
+                    }
+                }
+            }
+        );
+    }
+}
+// Load application data into form for editing
+async function loadApplicationForEdit(applicationId) {
+    try {
+        // Fetch the application data
+        const application = await getApplicationFromDB(applicationId);
+        console.log('Loading application for edit:', application);
+        
+        // Update form title
+        const formTitle = document.getElementById('formTitle');
+        if (formTitle) {
+            formTitle.textContent = 'Edit Application';
+        }
+        
+        // Populate form fields
+        document.getElementById('applicationId').value = application.id;
+        document.getElementById('jobTitle').value = application.jobTitle || '';
+        document.getElementById('companyName').value = application.companyName || '';
+        document.getElementById('applicationDate').value = application.applicationDate || '';
+        document.getElementById('status').value = application.status || '';
+        document.getElementById('deadline').value = application.deadline || '';
+        document.getElementById('url').value = application.url || '';
+        document.getElementById('salary').value = application.salary || '';
+        document.getElementById('location').value = application.location || '';
+        document.getElementById('progressStage').value = application.progressStage || 'to-apply';
+        document.getElementById('notes').value = application.notes || '';
+        
+        // Switch to home view
+        switchView('home');
+        
+        // Update navigation active state
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.view === 'home') {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Focus on the job title field
+        document.getElementById('jobTitle').focus();
+        
+    } catch (error) {
+        console.error('Error loading application for edit:', error);
+        notifyError('Failed to load application for editing');
+    }
+}
+
+// Setup search, filter, and sort controls
+function setupSearchFilterSort() {
+    console.log('Setting up search, filter, and sort controls...');
+    
+    // Get control elements
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateRangeFilter = document.getElementById('dateRangeFilter');
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    const resetButton = document.getElementById('resetFilters');
+    
+    // Setup search input with debounce
+    if (searchInput) {
+        const debouncedSearch = debounce((e) => {
+            searchFilterState.searchTerm = e.target.value.toLowerCase();
+            console.log('Search term:', searchFilterState.searchTerm);
+            filterSortAndRender();
+        }, 300);
+        
+        searchInput.addEventListener('input', debouncedSearch);
+    }
+    
+    // Setup status filter
+    if (statusFilter) {
+        statusFilter.addEventListener('change', (e) => {
+            searchFilterState.statusFilter = e.target.value;
+            console.log('Status filter:', searchFilterState.statusFilter);
+            filterSortAndRender();
+        });
+    }
+    
+    // Setup date range filter
+    if (dateRangeFilter) {
+        dateRangeFilter.addEventListener('change', (e) => {
+            searchFilterState.dateRangeFilter = e.target.value;
+            console.log('Date range filter:', searchFilterState.dateRangeFilter);
+            filterSortAndRender();
+        });
+    }
+    
+    // Setup sort buttons
+sortButtons.forEach(button => {
+    // Remove any existing listeners first
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    
+    newButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const sortBy = newButton.dataset.sort;
+        let sortDirection = newButton.dataset.direction || 'asc';
+        
+        // If clicking the already active button, toggle direction
+        if (newButton.classList.contains('active')) {
+            // Toggle direction
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            newButton.dataset.direction = sortDirection;
+            
+            // Update arrow immediately
+            const arrow = newButton.querySelector('.sort-arrow');
+            if (arrow) {
+                arrow.textContent = sortDirection === 'asc' ? '↑' : '↓';
+            }
+            
+            console.log('Toggling sort direction to:', sortDirection);
+        } else {
+            // Remove active class from all buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            newButton.classList.add('active');
+            
+            // Set initial direction based on button's data attribute
+            sortDirection = newButton.dataset.direction || 'asc';
+            
+            console.log('Activating sort button with direction:', sortDirection);
+        }
+        
+        // Update global state
+        searchFilterState.sortBy = sortBy;
+        searchFilterState.sortDirection = sortDirection;
+        
+        console.log('Sort state updated - By:', sortBy, 'Direction:', sortDirection);
+        
+        // Apply the sort
+        filterSortAndRender();
+    });
+});
+
+    // Also, let's add a helper function to debug the sort state
+function debugSortState() {
+    console.log('Current sort state:', {
+        sortBy: searchFilterState.sortBy,
+        sortDirection: searchFilterState.sortDirection
+    });
+    
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        console.log('Button:', btn.dataset.sort, 
+                    'Active:', btn.classList.contains('active'),
+                    'Direction:', btn.dataset.direction,
+                    'Arrow:', btn.querySelector('.sort-arrow')?.textContent);
+    });
+}
+
+    
+    // Setup reset button
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            // Reset state
+            searchFilterState = {
+                searchTerm: '',
+                statusFilter: '',
+                dateRangeFilter: '',
+                sortBy: 'date',
+                sortDirection: 'desc'
+            };
+            
+            // Reset UI elements
+            if (searchInput) searchInput.value = '';
+            if (statusFilter) statusFilter.value = '';
+            if (dateRangeFilter) dateRangeFilter.value = '';
+            
+            // Reset sort buttons
+            sortButtons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.sort === 'date') {
+                    btn.classList.add('active');
+                    btn.dataset.direction = 'desc';
+                    const arrow = btn.querySelector('.sort-arrow');
+                    if (arrow) arrow.textContent = '↓';
+                } else {
+                    btn.dataset.direction = 'asc';
+                    const arrow = btn.querySelector('.sort-arrow');
+                    if (arrow) arrow.textContent = '↑';
+                }
+            });
+            
+            console.log('Filters reset');
+            filterSortAndRender();
+        });
+    }
+}
+
+// Redraw charts when theme changes
+function setupDarkModeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    
+    // Check for saved theme preference or default to light
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', currentTheme);
+    updateThemeToggleButton(currentTheme);
+    
+    // Add click listener to theme toggle
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            // Update theme
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleButton(newTheme);
+            
+            // Add transition class for smooth theme change
+            body.style.transition = 'background 0.3s ease';
+            setTimeout(() => {
+                body.style.transition = '';
+            }, 300);
+            
+            // Redraw charts if on dashboard
+            const dashboardView = document.getElementById('dashboardView');
+            if (dashboardView && dashboardView.classList.contains('active')) {
+                setTimeout(async () => {
+                    const stats = await calculateDashboardStats();
+                    const applications = await getAllApplicationsFromDB();
+                    createStatusChart(stats, 'statusChart');
+                    createTimelineChart(applications, 'timelineChart');
+                }, 100);
+            }
+        });
+    }
+}
+
+// Update theme toggle button appearance
+function updateThemeToggleButton(theme) {
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+        themeToggle.setAttribute('aria-label', 
+            theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
+        );
+    }
+}
+
+// Initialize the application
+async function init() {
+    try {
+        await initDB();
+        console.log('Database initialized');
+        
+        // Set up form handling
+        setupApplicationForm();
+        
+        // Set up navigation
+        setupNavButtons();
+        
+        // Set up dark mode toggle
+        setupDarkModeToggle();
+
+        // Initialize modal system
+        initializeModalSystem();
+        
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize application:', error);
+    }
+}
+
+
+// Keep your existing DOMContentLoaded but modify it to include modal reset:
+
+// Run initialization when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, running init...');
+    
+    // Reset modal state before initialization
+    modalState.activeModals = [];
+    modalState.isAnimating = false;
+    activeConfirmModal = null;
+    
+    // Ensure modal container is hidden
+    const modalContainer = document.getElementById('modalContainer');
+    if (modalContainer) {
+        modalContainer.style.display = 'none';
+        modalContainer.classList.remove('active');
+        
+        const modal = modalContainer.querySelector('.modal');
+        if (modal) {
+            modal.classList.remove('modal-enter', 'modal-exit');
+        }
+    }
+    
+    // Run main initialization
+    init();
+});
+
+// Dashboard Statistics Calculation
+async function calculateDashboardStats() {
+    try {
+        const applications = await getAllApplicationsFromDB();
+        
+        // Initialize statistics
+        const stats = {
+            total: applications.length,
+            statusCounts: {
+                applied: 0,
+                screening: 0,
+                interview: 0,
+                offer: 0,
+                rejected: 0,
+                withdrawn: 0
+            },
+            activeApplications: 0,
+            responseRate: 0,
+            averageResponseTime: 0,
+            upcomingDeadlines: 0,
+            thisMonthApplications: 0
+        };
+        
+        // Calculate status counts and other metrics
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        let totalResponseTime = 0;
+        let responsesReceived = 0;
+        
+        applications.forEach(app => {
+            // Count by status
+            if (stats.statusCounts.hasOwnProperty(app.status)) {
+                stats.statusCounts[app.status]++;
+            }
+            
+            // Count active applications (not rejected or withdrawn)
+            if (app.status !== 'rejected' && app.status !== 'withdrawn') {
+                stats.activeApplications++;
+            }
+            
+            // Calculate response metrics
+            if (app.status !== 'applied') {
+                responsesReceived++;
+                const appDate = new Date(app.applicationDate);
+                const responseTime = Math.ceil((currentDate - appDate) / (1000 * 60 * 60 * 24));
+                totalResponseTime += responseTime;
+            }
+            
+            // Count upcoming deadlines (within 7 days)
+            if (app.deadline) {
+                const deadline = new Date(app.deadline);
+                const daysUntilDeadline = Math.ceil((deadline - currentDate) / (1000 * 60 * 60 * 24));
+                if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) {
+                    stats.upcomingDeadlines++;
+                }
+            }
+            
+            // Count applications from this month
+            const appDate = new Date(app.applicationDate);
+            if (appDate.getMonth() === currentMonth && appDate.getFullYear() === currentYear) {
+                stats.thisMonthApplications++;
+            }
+        });
+        
+        // Calculate response rate percentage
+        stats.responseRate = stats.total > 0 
+            ? Math.round((responsesReceived / stats.total) * 100) 
+            : 0;
+        
+        // Calculate average response time in days
+        stats.averageResponseTime = responsesReceived > 0 
+            ? Math.round(totalResponseTime / responsesReceived) 
+            : 0;
+        
+        return stats;
+        
+    } catch (error) {
+        console.error('Error calculating dashboard stats:', error);
+        return null;
+    }
+}
+
+// Update renderDashboard to include charts
+async function renderDashboard() {
+    const statsContainer = document.getElementById('statsContainer');
+    const chartsContainer = document.getElementById('chartsContainer');
+    
+    if (!statsContainer) {
+        console.error('Stats container not found');
+        return;
+    }
+    
+    // Show loading state
+    statsContainer.innerHTML = '<div class="loading">Loading statistics...</div>';
+    
+    // Calculate statistics
+    const stats = await calculateDashboardStats();
+    const applications = await getAllApplicationsFromDB();
+    
+    if (!stats) {
+        statsContainer.innerHTML = '<div class="error">Failed to load statistics</div>';
+        return;
+    }
+    
+    // Render statistics cards (same as before)
+    statsContainer.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-card glass-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.total}</h3>
+                    <p class="stat-label">Total Applications</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.activeApplications}</h3>
+                    <p class="stat-label">Active Applications</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.responseRate}%</h3>
+                    <p class="stat-label">Response Rate</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.averageResponseTime}</h3>
+                    <p class="stat-label">Avg Response (Days)</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">⏰</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.upcomingDeadlines}</h3>
+                    <p class="stat-label">Upcoming Deadlines</p>
+                </div>
+            </div>
+            
+            <div class="stat-card glass-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.thisMonthApplications}</h3>
+                    <p class="stat-label">This Month</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-breakdown">
+            <h3>Application Status Breakdown</h3>
+            <div class="status-grid">
+                ${Object.entries(stats.statusCounts).map(([status, count]) => `
+                    <div class="status-item">
+                        <span class="status-label">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                        <span class="status-count status-${status}">${count}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    // Render charts
+    if (chartsContainer) {
+        chartsContainer.innerHTML = `
+            <div class="charts-grid">
+                <div class="chart-container glass-card">
+                    <h3>Status Distribution</h3>
+                    <canvas id="statusChart" width="400" height="300"></canvas>
+                </div>
+                
+                <div class="chart-container glass-card">
+                    <h3>Application Timeline</h3>
+                    <canvas id="timelineChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        `;
+        
+        // Draw charts after DOM updates
+        setTimeout(() => {
+            createStatusChart(stats, 'statusChart');
+            createTimelineChart(applications, 'timelineChart');
+        }, 100);
+    }
+}
+
+
+// Create status distribution chart using Canvas (with slice percentages and side legend)
+function createStatusChart(stats, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Get status data
+    const statusData = Object.entries(stats.statusCounts)
+        .filter(([_, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1]);
+    
+    if (statusData.length === 0) {
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+        ctx.font = '16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data to display', width / 2, height / 2);
+        return;
+    }
+    
+    // Colors for each status
+    const statusColors = {
+        applied: '#667eea',
+        screening: '#64b5f6',
+        interview: '#4facfe',
+        offer: '#66bb6a',
+        rejected: '#f5576c',
+        withdrawn: '#757575'
+    };
+    
+    // Calculate dimensions - reserve space for legend on the right
+    const legendWidth = 180;
+    const chartArea = width - legendWidth - 20; // 20px gap between chart and legend
+    const centerX = chartArea / 2;
+    const centerY = height / 2;
+    const radius = Math.min(chartArea, height) / 2 - 30; // Padding from edges
+    
+    // Calculate angles and total
+    const total = statusData.reduce((sum, [_, count]) => sum + count, 0);
+    let currentAngle = -Math.PI / 2; // Start at top
+    
+    // First pass: Draw pie slices
+    statusData.forEach(([status, count]) => {
+        const sliceAngle = (count / total) * 2 * Math.PI;
+        
+        // Draw slice
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+        ctx.closePath();
+        ctx.fillStyle = statusColors[status] || '#999';
+        ctx.fill();
+        
+        // Draw slice border
+        ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        currentAngle += sliceAngle;
+    });
+
+    // Draw center circle for donut effect
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.35, 0, 2 * Math.PI);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--glass-bg-solid');
+    ctx.fill();
+    
+    // Add subtle border to center circle
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-border');
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Second pass: Draw percentage labels on slices
+    currentAngle = -Math.PI / 2; // Reset angle
+    
+    statusData.forEach(([status, count]) => {
+        const sliceAngle = (count / total) * 2 * Math.PI;
+        const percentage = Math.round((count / total) * 100);
+        
+        // Only show percentage if slice is large enough (at least 5%)
+        if (percentage >= 5) {
+            // Calculate middle angle of slice
+            const middleAngle = currentAngle + sliceAngle / 2;
+            
+            // Calculate text position (70% of radius from center)
+            const textRadius = radius * 0.7;
+            const textX = centerX + Math.cos(middleAngle) * textRadius;
+            const textY = centerY + Math.sin(middleAngle) * textRadius;
+            
+            // Set text style
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Add text shadow for better readability
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 3;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            
+            // Draw percentage
+            ctx.fillText(`${percentage}%`, textX, textY);
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        }
+        
+        currentAngle += sliceAngle;
+    });
+
+    // Draw legend on the right side
+    const legendX = chartArea + 20; // Start legend after chart area + gap
+    let legendY = 40;
+
+    // Legend title
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+    ctx.font = 'bold 14px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Status Breakdown', legendX, legendY);
+
+    legendY += 25;
+
+    // Legend items
+    statusData.forEach(([status, count]) => {
+        const percentage = Math.round((count / total) * 100);
+        
+        // Color box
+        ctx.fillStyle = statusColors[status] || '#999';
+        ctx.fillRect(legendX, legendY - 8, 14, 14);
+        
+        // Add border to color box
+        ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--glass-border');
+        ctx.lineWidth = 1;
+        ctx.strokeRect(legendX, legendY - 8, 14, 14);
+        
+        // Label with count and percentage
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        
+        // Capitalize first letter of status
+        const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+        const label = `${statusLabel}: ${count} (${percentage}%)`;
+        ctx.fillText(label, legendX + 22, legendY);
+        
+        legendY += 22;
+    });
+
+    // Add total at the bottom of legend
+    legendY += 10;
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.fillText(`Total: ${total}`, legendX, legendY);
+}
+
+function createTimelineChart(applications, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    if (applications.length === 0) {
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+        ctx.font = '16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('No data to display', width / 2, height / 2);
+        return;
+    }
+    
+    // Group applications by month
+    const monthlyData = {};
+    applications.forEach(app => {
+        const date = new Date(app.applicationDate);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+    });
+    
+    // Get last 6 months INCLUDING future months
+    const months = [];
+    const counts = [];
+    const now = new Date();
+
+    // Start from 3 months ago to include future applications
+    for (let i = 3; i >= -2; i--) {  // Changed from 5 to 3, and 0 to -2
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+        
+        months.push(monthName);
+        counts.push(monthlyData[monthKey] || 0);
+    }
+    
+    // Calculate dimensions
+    const padding = 40;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+    const maxCount = Math.max(...counts, 1);
+    
+    // Draw axes
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--text-secondary');
+    ctx.lineWidth = 1;
+    
+    // Y-axis
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+    
+    // X-axis
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Draw bars
+    const barWidth = chartWidth / months.length * 0.6;
+    const barSpacing = chartWidth / months.length;
+    
+    months.forEach((month, index) => {
+        const count = counts[index];
+        const barHeight = (count / maxCount) * chartHeight;
+        const x = padding + (index * barSpacing) + (barSpacing - barWidth) / 2;
+        const y = height - padding - barHeight;
+        
+        // Draw bar with gradient effect
+        const gradient = ctx.createLinearGradient(0, y, 0, height - padding);
+        gradient.addColorStop(0, '#667eea');
+        gradient.addColorStop(1, '#764ba2');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y, barWidth, barHeight);
+        
+        // Draw value on top of bar
+        if (count > 0) {
+            ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(count, x + barWidth / 2, y - 5);
+        }
+        
+        // Draw month label
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(month, x + barWidth / 2, height - padding + 20);
+    });
+    
+    // Draw title
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-primary');
+    ctx.font = 'bold 16px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Applications Over Time', width / 2, 20);
+}
+
+// ===== KANBAN BOARD SECTION =====
+// Complete Kanban Board implementation with fixed drag-and-drop
+
+// Kanban Board Variables
+let draggedCard = null;
+let draggedApplicationId = null;
+let originalStatus = null;
+let kanbanRefreshInterval = null;
+
+// Status to progress stage mapping
+const statusToProgressStageMap = {
+    'applied': 'applied',
+    'screening': 'in-progress',
+    'interview': 'in-progress',
+    'offer': 'final-stage',
+    'rejected': 'completed',
+    'withdrawn': 'completed'
+};
+
+// Unified drag and drop handlers object for better organization
+const dragHandlers = {
+    start: function(e) {
+        const card = e.target.closest('.kanban-card');
+        if (!card || card.classList.contains('updating')) {
+            e.preventDefault();
+            return;
+        }
+        
+        draggedCard = card;
+        draggedApplicationId = card.dataset.id;
+        
+        const parentColumn = card.closest('.kanban-column');
+        originalStatus = parentColumn ? parentColumn.dataset.status : null;
+        
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedApplicationId);
+        
+        console.log('Drag started:', draggedApplicationId);
+    },
+    
+    end: function(e) {
+        // Clean up all cards
+        document.querySelectorAll('.kanban-card').forEach(c => {
+            c.classList.remove('dragging');
+            c.style.opacity = '';
+            c.style.pointerEvents = '';
+            c.style.cursor = '';
+        });
+        
+        // Clean up columns
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+        
+        console.log('Drag ended');
+    },
+    
+    over: function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const column = e.target.closest('.kanban-column');
+        if (column && !column.classList.contains('drag-over')) {
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+            column.classList.add('drag-over');
+        }
+        
+        const container = e.target.closest('.kanban-cards-container');
+        if (container && draggedCard) {
+            const afterElement = getDragAfterElement(container, e.clientY);
+            if (afterElement == null) {
+                container.appendChild(draggedCard);
+            } else {
+                container.insertBefore(draggedCard, afterElement);
+            }
+        }
+    },
+    
+    drop: async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // CRITICAL: Capture all necessary data immediately
+        const currentCard = draggedCard;
+        const currentApplicationId = draggedApplicationId;
+        const currentOriginalStatus = originalStatus;
+        
+        const dropZone = e.target.closest('.kanban-cards-container') || 
+                        e.target.closest('.kanban-column')?.querySelector('.kanban-cards-container');
+        
+        if (!dropZone || !currentCard || !currentApplicationId || !currentOriginalStatus) {
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+            // Reset globals
+            draggedCard = null;
+            draggedApplicationId = null;
+            originalStatus = null;
+            return;
+        }
+        
+        const newStatus = dropZone.dataset.status;
+        
+        // Clean up columns immediately
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+        
+        if (currentOriginalStatus !== newStatus) {
+            // Add updating class
+            currentCard.classList.add('updating');
+            
+            try {
+                const application = await getApplicationFromDB(currentApplicationId);
+                
+                application.status = newStatus;
+                application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
+                application.updatedAt = new Date().toISOString();
+                
+                if (!application.statusHistory) {
+                    application.statusHistory = [];
+                }
+                application.statusHistory.push({
+                    from: currentOriginalStatus,
+                    to: newStatus,
+                    date: new Date().toISOString(),
+                    action: 'kanban-drag'
+                });
+                
+                await updateApplicationInDB(application);
+                
+                console.log(`Moved "${application.jobTitle}" from ${currentOriginalStatus} to ${newStatus}`);
+                notifySuccess(`Moved "${application.jobTitle}" to ${newStatus}`);
+                
+                // Remove updating class and add success
+                if (currentCard.parentNode) {
+                    currentCard.classList.remove('updating');
+                    currentCard.classList.add('drop-success');
+                    
+                    // Remove success class after animation
+                    setTimeout(() => {
+                        // Double check the card still exists
+                        if (currentCard && currentCard.parentNode && currentCard.classList) {
+                            currentCard.classList.remove('drop-success');
+                        }
+                    }, 500);
+                }
+                
+                updateKanbanUI();
+                
+            } catch (error) {
+                console.error('Error updating status:', error);
+                notifyError('Failed to update application status. Please try again.');
+                
+                // Remove updating class
+                if (currentCard && currentCard.parentNode) {
+                    currentCard.classList.remove('updating');
+                }
+                
+                // Move card back to original column
+                const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${currentOriginalStatus}"]`);
+                if (originalColumn && currentCard && currentCard.parentNode) {
+                    originalColumn.appendChild(currentCard);
+                }
+            }
+        }
+        
+        // Reset globals after everything is done
+        draggedCard = null;
+        draggedApplicationId = null;
+        originalStatus = null;
+    },
+    
+    enter: function(e) {
+        const column = e.target.closest('.kanban-column');
+        if (column) {
+            column.classList.add('drag-over');
+        }
+    },
+    
+    leave: function(e) {
+        const column = e.target.closest('.kanban-column');
+        if (column && !column.contains(e.relatedTarget)) {
+            column.classList.remove('drag-over');
+        }
+    }
+};
+
+// Main function to render the Kanban Board
+async function renderKanbanBoard() {
+    const kanbanContainer = document.getElementById('kanbanContainer');
+    
+    if (!kanbanContainer) {
+        console.error('Kanban container not found');
+        return;
+    }
+    
+    // Show loading state
+    kanbanContainer.innerHTML = '<div class="loading">Loading kanban board...</div>';
+    
+    try {
+        // Fetch all applications
+        const applications = await getAllApplicationsFromDB();
+        
+        // Define kanban columns based on status
+        const kanbanColumns = [
+            { id: 'applied', title: 'Applied', icon: '📤' },
+            { id: 'screening', title: 'Screening', icon: '👀' },
+            { id: 'interview', title: 'Interview', icon: '🎤' },
+            { id: 'offer', title: 'Offer', icon: '🎉' },
+            { id: 'rejected', title: 'Rejected', icon: '❌' },
+            { id: 'withdrawn', title: 'Withdrawn', icon: '🚪' }
+        ];
+        
+        // Group applications by status
+        const groupedApplications = groupApplicationsByStatus(applications);
+        
+        // Clear container and create columns
+        kanbanContainer.innerHTML = '';
+        kanbanContainer.className = 'kanban-board';
+        
+        // Create each column
+        kanbanColumns.forEach(column => {
+            const columnElement = createKanbanColumn(column, groupedApplications[column.id] || []);
+            kanbanContainer.appendChild(columnElement);
+        });
+        
+        console.log('Kanban board rendered successfully');
+        
+        // Setup drag and drop after rendering
+        setTimeout(() => {
+            setupDragAndDrop();
+            setupActionButtonsListeners(); // Add this line
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error rendering kanban board:', error);
+        kanbanContainer.innerHTML = '<div class="error">Failed to load kanban board</div>';
+    }
+}
+
+// Group applications by status
+function groupApplicationsByStatus(applications) {
+    return applications.reduce((groups, app) => {
+        const status = app.status || 'applied';
+        if (!groups[status]) {
+            groups[status] = [];
+        }
+        groups[status].push(app);
+        return groups;
+    }, {});
+}
+
+// Create a kanban column
+function createKanbanColumn(column, applications) {
+    const columnDiv = document.createElement('div');
+    columnDiv.className = 'kanban-column';
+    columnDiv.dataset.status = column.id;
+    
+    // Column header
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'kanban-column-header';
+    headerDiv.innerHTML = `
+        <div class="kanban-column-title">
+            <span class="kanban-column-icon">${column.icon}</span>
+            <h3>${column.title}</h3>
+        </div>
+        <span class="kanban-column-count">${applications.length}</span>
+    `;
+    
+    // Cards container
+    const cardsContainer = document.createElement('div');
+    cardsContainer.className = 'kanban-cards-container';
+    cardsContainer.dataset.status = column.id;
+    
+    // Add empty state or cards
+    if (applications.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'kanban-empty-state';
+        emptyState.innerHTML = '<p>No applications</p>';
+        cardsContainer.appendChild(emptyState);
+    } else {
+        // Sort applications by date (newest first)
+        applications.sort((a, b) => new Date(b.applicationDate) - new Date(a.applicationDate));
+        
+        // Create cards
+        applications.forEach(app => {
+            const card = createKanbanCard(app);
+            cardsContainer.appendChild(card);
+        });
+    }
+    
+    columnDiv.appendChild(headerDiv);
+    columnDiv.appendChild(cardsContainer);
+    
+    return columnDiv;
+}
+
+// Create a kanban card - FIXED VERSION
+function createKanbanCard(application) {
+    const card = document.createElement('div');
+    card.className = 'kanban-card';
+    card.dataset.id = application.id;
+    card.dataset.applicationDate = application.applicationDate;
+    card.draggable = true;
+    card.setAttribute('draggable', 'true');
+    
+    // Calculate days since application
+    const daysAgo = Math.floor((new Date() - new Date(application.applicationDate)) / (1000 * 60 * 60 * 24));
+    const daysAgoText = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
+    
+    // Check for upcoming deadline
+    let deadlineHtml = '';
+    if (application.deadline) {
+        const daysUntilDeadline = Math.ceil((new Date(application.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+        if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) {
+            deadlineHtml = `<div class="kanban-card-deadline">⏰ ${daysUntilDeadline} days left</div>`;
+        } else if (daysUntilDeadline < 0) {
+            deadlineHtml = `<div class="kanban-card-deadline deadline-passed">⏰ Deadline passed</div>`;
+        }
+    }
+    
+    // Progress indicator based on progress stage
+    const progressStageIcons = {
+        'to-apply': '📝',
+        'applied': '✅',
+        'in-progress': '🔄',
+        'final-stage': '🎯',
+        'completed': '🏁'
+    };
+    const progressIcon = progressStageIcons[application.progressStage] || '📋';
+    
+    card.innerHTML = `
+        <div class="kanban-card-header">
+            <h4 class="kanban-card-title">${application.jobTitle}</h4>
+            <div class="kanban-card-actions">
+                <span class="kanban-card-progress" title="Progress: ${application.progressStage}">${progressIcon}</span>
+                <button class="kanban-card-edit" data-id="${application.id}" title="Edit">
+                    ✏️
+                </button>
+            </div>
+        </div>
+        
+        <div class="kanban-card-company">${application.companyName}</div>
+        
+        ${application.location ? `<div class="kanban-card-location">📍 ${application.location}</div>` : ''}
+        
+        <div class="kanban-card-date">${daysAgoText}</div>
+        
+        ${deadlineHtml}
+        
+        ${application.salary ? `<div class="kanban-card-salary">💰 ${application.salary}</div>` : ''}
+        
+        ${application.notes ? `
+            <div class="kanban-card-notes">
+                ${application.notes.substring(0, 60)}${application.notes.length > 60 ? '...' : ''}
+            </div>
+        ` : ''}
+    `;
+    
+    // Note: We're NOT adding individual event listeners here anymore
+    // Event delegation will handle clicks on edit buttons
+    
+    return card;
+}
+
+// Setup drag and drop event listeners using event delegation
+function setupDragAndDrop() {
+    console.log('Setting up drag and drop...');
+    
+    // Use event delegation on the kanban container instead of individual cards
+    const kanbanContainer = document.getElementById('kanbanContainer');
+    if (!kanbanContainer) return;
+    
+    // Remove any existing listeners
+    kanbanContainer.removeEventListener('dragstart', handleDragStartDelegated);
+    kanbanContainer.removeEventListener('dragend', handleDragEndDelegated);
+    kanbanContainer.removeEventListener('dragover', dragHandlers.over);
+    kanbanContainer.removeEventListener('drop', dragHandlers.drop);
+    kanbanContainer.removeEventListener('dragenter', dragHandlers.enter);
+    kanbanContainer.removeEventListener('dragleave', dragHandlers.leave);
+    
+    // Add delegated event listeners
+    kanbanContainer.addEventListener('dragstart', handleDragStartDelegated);
+    kanbanContainer.addEventListener('dragend', handleDragEndDelegated);
+    kanbanContainer.addEventListener('dragover', dragHandlers.over);
+    kanbanContainer.addEventListener('drop', dragHandlers.drop);
+    kanbanContainer.addEventListener('dragenter', dragHandlers.enter);
+    kanbanContainer.addEventListener('dragleave', dragHandlers.leave);
+    
+    console.log('Drag and drop setup complete with event delegation');
+}
+
+// Delegated drag start handler
+function handleDragStartDelegated(e) {
+    const card = e.target.closest('.kanban-card');
+    if (card && card.draggable) {
+        dragHandlers.start(e);
+    }
+}
+
+// Delegated drag end handler  
+function handleDragEndDelegated(e) {
+    const card = e.target.closest('.kanban-card');
+    if (card) {
+        dragHandlers.end(e);
+        
+        // Only reset globals if drop hasn't occurred yet
+        // This gives drop handler time to execute
+        setTimeout(() => {
+            // Only reset if drop handler hasn't already reset them
+            if (draggedCard !== null) {
+                draggedCard = null;
+                draggedApplicationId = null;
+                originalStatus = null;
+            }
+        }, 200);
+    }
+}
+
+// Get the element after which the dragged element should be inserted
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.kanban-card:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Update the Kanban UI (counts, empty states, etc.)
+function updateKanbanUI() {
+    const columns = document.querySelectorAll('.kanban-column');
+    
+    columns.forEach(column => {
+        const cardsContainer = column.querySelector('.kanban-cards-container');
+        const countElement = column.querySelector('.kanban-column-count');
+        const cards = cardsContainer.querySelectorAll('.kanban-card');
+        const cardCount = cards.length;
+        
+        // Update count
+        if (countElement) {
+            countElement.textContent = cardCount;
+            countElement.classList.add('count-updated');
+            setTimeout(() => {
+                countElement.classList.remove('count-updated');
+            }, 300);
+        }
+        
+        // Handle empty state
+        const emptyState = cardsContainer.querySelector('.kanban-empty-state');
+        
+        if (cardCount === 0) {
+            if (!emptyState) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'kanban-empty-state fade-in';
+                emptyDiv.innerHTML = '<p>No applications</p>';
+                cardsContainer.appendChild(emptyDiv);
+            }
+        } else if (emptyState) {
+            emptyState.classList.add('fade-out');
+            setTimeout(() => {
+                emptyState.remove();
+            }, 300);
+        }
+    });
+    
+    // No need to reattach listeners since we're using event delegation
+    console.log('Kanban UI updated');
+}
+
+// Optional: Auto-refresh functionality
+function startKanbanAutoRefresh(intervalMs = 30000) {
+    // Clear any existing interval
+    stopKanbanAutoRefresh();
+    
+    // Set up new interval
+    kanbanRefreshInterval = setInterval(() => {
+        const kanbanView = document.getElementById('kanbanView');
+        if (kanbanView && kanbanView.classList.contains('active')) {
+            console.log('Auto-refreshing kanban board...');
+            renderKanbanBoard();
+        }
+    }, intervalMs);
+}
+
+function stopKanbanAutoRefresh() {
+    if (kanbanRefreshInterval) {
+        clearInterval(kanbanRefreshInterval);
+        kanbanRefreshInterval = null;
+    }
+}
+
+// ===== END OF KANBAN BOARD SECTION =====
+
+// ===== MODAL SYSTEM SECTION =====
+// Complete modal system implementation with robust state management
+
+// Modal state management
+const modalState = {
+    activeModals: [],
+    isAnimating: false,
+    focusStack: [],
+    scrollPosition: 0
+};
+
+// Modal configuration defaults
+const modalDefaults = {
+    size: 'medium', // small, medium, large
+    closeOnBackdrop: true,
+    closeOnEscape: true,
+    animate: true,
+    focusTrap: true,
+    scrollLock: true,
+    zIndex: 9999
+};
+
+// Initialize modal system
+function initializeModalSystem() {
+    console.log('Initializing modal system...');
+    
+    // Ensure modal container exists
+    const modalContainer = document.getElementById('modalContainer');
+    if (!modalContainer) {
+        console.error('Modal container not found in DOM');
+        return false;
+    }
+    
+    // Ensure modal structure
+    let modal = modalContainer.querySelector('.modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'modal modal-medium';
+        modal.innerHTML = '<div class="modal-content"></div>';
+        modalContainer.appendChild(modal);
+    }
+    
+    // Set initial state
+    modalContainer.style.display = 'none';
+    modalContainer.classList.remove('active');
+    
+    console.log('Modal system initialized successfully');
+    return true;
+}
+
+// ===== COMPLETE MODAL CLASS WITH ALL UPDATES =====
+
+// Add static property for rate limiting
+Modal.lastOpenTime = 0;
+
+// Create modal instance
+class Modal {
+    constructor(content, options = {}) {
+        // Check if modal was recently opened (within 300ms)
+        const now = Date.now();
+        if (Modal.lastOpenTime && (now - Modal.lastOpenTime) < 300) {
+            console.warn('Modal open request too soon after previous');
+            throw new Error('Modal rate limited');
+        }
+        
+        this.id = `modal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        this.content = content;
+        this.options = { ...modalDefaults, ...options };
+        this.container = document.getElementById('modalContainer');
+        this.modal = this.container.querySelector('.modal');
+        this.isOpen = false;
+        this.listeners = new Map();
+        
+        // Bind methods
+        this.handleBackdropClick = this.handleBackdropClick.bind(this);
+        this.handleEscapeKey = this.handleEscapeKey.bind(this);
+        this.handleCloseClick = this.handleCloseClick.bind(this);
+    }
+    
+    // Open modal
+    async open() {
+        // Update last open time
+        Modal.lastOpenTime = Date.now();
+        
+        if (this.isOpen || modalState.isAnimating) {
+            console.warn('Modal is already open or animating');
+            return false;
+        }
+        
+        // Check if another modal is active
+        if (modalState.activeModals.length > 0 && !this.options.allowMultiple) {
+            console.warn('Another modal is already active');
+            return false;
+        }
+        
+        modalState.isAnimating = true;
+        
+        try {
+            // Store current focus
+            modalState.focusStack.push(document.activeElement);
+            
+            // Scroll lock
+            if (this.options.scrollLock) {
+                modalState.scrollPosition = window.scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = `-${modalState.scrollPosition}px`;
+                document.body.style.width = '100%';
+            }
+            
+            // Set content
+            this.setContent();
+            
+            // Apply size class
+            this.modal.className = `modal modal-${this.options.size}`;
+            
+            // Show container
+            this.container.style.display = 'flex';
+            
+            // Wait for next frame to ensure display change is applied
+            await this.nextFrame();
+            
+            // Add active class for animation
+            this.container.classList.add('active');
+            
+            if (this.options.animate) {
+                this.modal.classList.add('modal-enter');
+                await this.waitForAnimation(300);
+                this.modal.classList.remove('modal-enter');
+            }
+            
+            // Setup event listeners
+            this.setupListeners();
+            
+            // Focus management
+            if (this.options.focusTrap) {
+                this.setupFocusTrap();
+                this.focusFirstElement();
+            }
+            
+            // Update state
+            this.isOpen = true;
+            modalState.activeModals.push(this);
+            modalState.isAnimating = false;
+            
+            // Call onOpen callback
+            if (this.options.onOpen) {
+                this.options.onOpen(this.modal, this);
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Error opening modal:', error);
+            modalState.isAnimating = false;
+            Modal.lastOpenTime = 0; // Reset on error
+            return false;
+        }
+    }
+    
+    // Close modal
+    async close() {
+        if (!this.isOpen || modalState.isAnimating) {
+            return false;
+        }
+        
+        modalState.isAnimating = true;
+        
+        try {
+            // Call onBeforeClose callback
+            if (this.options.onBeforeClose) {
+                const shouldClose = await this.options.onBeforeClose(this.modal, this);
+                if (shouldClose === false) {
+                    modalState.isAnimating = false;
+                    return false;
+                }
+            }
+            
+            // Remove event listeners
+            this.removeListeners();
+            
+            // Animate out
+            if (this.options.animate) {
+                this.modal.classList.add('modal-exit');
+                this.container.classList.remove('active');
+                await this.waitForAnimation(300);
+            } else {
+                this.container.classList.remove('active');
+            }
+            
+            // Hide container
+            this.container.style.display = 'none';
+            this.modal.classList.remove('modal-exit');
+            
+            // Clear content
+            const modalContent = this.modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.innerHTML = '';
+            }
+            
+            // Restore scroll
+            if (this.options.scrollLock && modalState.activeModals.length === 1) {
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                window.scrollTo(0, modalState.scrollPosition);
+            }
+            
+            // Restore focus
+            const previousFocus = modalState.focusStack.pop();
+            if (previousFocus && previousFocus.focus) {
+                previousFocus.focus();
+            }
+            
+            // Update state
+            this.isOpen = false;
+            modalState.activeModals = modalState.activeModals.filter(m => m !== this);
+            modalState.isAnimating = false;
+            
+            // Call onClose callback
+            if (this.options.onClose) {
+                this.options.onClose(this.modal, this);
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Error closing modal:', error);
+            modalState.isAnimating = false;
+            return false;
+        }
+    }
+    
+    // Set modal content
+    setContent() {
+        const modalContent = this.modal.querySelector('.modal-content');
+        
+        if (this.options.title) {
+            modalContent.innerHTML = `
+                <div class="modal-header">
+                    <h3>${this.options.title}</h3>
+                    <button class="modal-close" aria-label="Close modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    ${this.content}
+                </div>
+            `;
+        } else {
+            modalContent.innerHTML = this.content;
+        }
+    }
+    
+    // Setup event listeners
+    setupListeners() {
+        // Close button
+        const closeBtn = this.modal.querySelector('.modal-close');
+        if (closeBtn) {
+            this.listeners.set('closeBtn', this.handleCloseClick);
+            closeBtn.addEventListener('click', this.handleCloseClick);
+        }
+        
+        // Backdrop click
+        if (this.options.closeOnBackdrop) {
+            this.listeners.set('backdrop', this.handleBackdropClick);
+            this.container.addEventListener('click', this.handleBackdropClick);
+        }
+        
+        // Escape key
+        if (this.options.closeOnEscape) {
+            this.listeners.set('escape', this.handleEscapeKey);
+            document.addEventListener('keydown', this.handleEscapeKey);
+        }
+    }
+    
+    // Remove event listeners
+    removeListeners() {
+        const closeBtn = this.modal.querySelector('.modal-close');
+        if (closeBtn && this.listeners.has('closeBtn')) {
+            closeBtn.removeEventListener('click', this.listeners.get('closeBtn'));
+        }
+        
+        if (this.listeners.has('backdrop')) {
+            this.container.removeEventListener('click', this.listeners.get('backdrop'));
+        }
+        
+        if (this.listeners.has('escape')) {
+            document.removeEventListener('keydown', this.listeners.get('escape'));
+        }
+        
+        this.listeners.clear();
+    }
+    
+    // Event handlers
+    handleBackdropClick(e) {
+        if (e.target === this.container) {
+            e.stopPropagation();
+            this.close();
+        }
+    }
+    
+    handleEscapeKey(e) {
+        if (e.key === 'Escape' && modalState.activeModals[modalState.activeModals.length - 1] === this) {
+            e.preventDefault();
+            this.close();
+        }
+    }
+    
+    handleCloseClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.close();
+    }
+    
+    // Focus management
+    setupFocusTrap() {
+        const focusableElements = this.modal.querySelectorAll(
+            'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select, [tabindex]:not([tabindex="-1"])'
+        );
+        
+        this.focusableElements = Array.from(focusableElements);
+        
+        if (this.focusableElements.length === 0) return;
+        
+        this.firstFocusable = this.focusableElements[0];
+        this.lastFocusable = this.focusableElements[this.focusableElements.length - 1];
+        
+        this.handleTabKey = (e) => {
+            if (e.key !== 'Tab') return;
+            
+            if (e.shiftKey) {
+                if (document.activeElement === this.firstFocusable) {
+                    e.preventDefault();
+                    this.lastFocusable.focus();
+                }
+            } else {
+                if (document.activeElement === this.lastFocusable) {
+                    e.preventDefault();
+                    this.firstFocusable.focus();
+                }
+            }
+        };
+        
+        this.modal.addEventListener('keydown', this.handleTabKey);
+    }
+    
+    focusFirstElement() {
+        if (this.focusableElements && this.focusableElements.length > 0) {
+            // Prefer focusing on the first input or button that's not the close button
+            const preferredElement = this.focusableElements.find(el => 
+                (el.tagName === 'INPUT' || el.tagName === 'BUTTON') && 
+                !el.classList.contains('modal-close')
+            );
+            
+            if (preferredElement) {
+                preferredElement.focus();
+            } else {
+                this.firstFocusable.focus();
+            }
+        }
+    }
+    
+    // Utility methods
+    nextFrame() {
+        return new Promise(resolve => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+            });
+        });
+    }
+    
+    waitForAnimation(duration) {
+        return new Promise(resolve => setTimeout(resolve, duration));
+    }
+}
+
+// Public API functions
+
+// Update showModal to handle rate limit errors:
+function showModal(content, options = {}) {
+    try {
+        const modal = new Modal(content, options);
+        modal.open();
+        return modal;
+    } catch (error) {
+        if (error.message === 'Modal rate limited') {
+            console.log('Modal rate limited, ignoring request');
+            return null;
+        }
+        throw error;
+    }
+}
+// Hide active modal
+function hideModal() {
+    const activeModal = modalState.activeModals[modalState.activeModals.length - 1];
+    if (activeModal) {
+        return activeModal.close();
+    }
+    return false;
+}
+
+// Hide all modals
+function hideAllModals() {
+    const promises = modalState.activeModals.map(modal => modal.close());
+    return Promise.all(promises);
+}
+
+// Show alert modal
+function showAlertModal(message, options = {}) {
+    const defaultOptions = {
+        title: 'Alert',
+        size: 'small',
+        closeOnBackdrop: true,
+        closeOnEscape: true
+    };
+    
+    const content = `
+        <div class="modal-message">
+            <p>${message}</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-primary modal-ok-btn">OK</button>
+        </div>
+    `;
+    
+    const modal = showModal(content, { ...defaultOptions, ...options });
+    
+    // Auto-focus OK button after modal opens
+    modal.options.onOpen = (modalElement) => {
+        const okBtn = modalElement.querySelector('.modal-ok-btn');
+        if (okBtn) {
+            okBtn.addEventListener('click', () => modal.close(), { once: true });
+            okBtn.focus();
+        }
+    };
+    
+    return modal;
+}
+
+
+// Replace the showConfirmModal function with this singleton pattern version:
+
+// Track active confirm modals to prevent duplicates
+let activeConfirmModal = null;
+
+function showConfirmModal(message, options = {}) {
+    // If a confirm modal is already active, ignore the request
+    if (activeConfirmModal && activeConfirmModal.isOpen) {
+        console.warn('Confirm modal already active, ignoring duplicate request');
+        return activeConfirmModal;
+    }
+    
+    const defaultOptions = {
+        title: 'Confirm',
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        confirmClass: 'btn btn-primary',
+        cancelClass: 'btn btn-secondary',
+        size: 'small',
+        closeOnBackdrop: false,
+        closeOnEscape: true
+    };
+    
+    const settings = { ...defaultOptions, ...options };
+    
+    const content = `
+        <div class="modal-message">
+            <p>${message}</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="${settings.cancelClass} modal-cancel-btn">
+                ${settings.cancelText}
+            </button>
+            <button type="button" class="${settings.confirmClass} modal-confirm-btn">
+                ${settings.confirmText}
+            </button>
+        </div>
+    `;
+    
+    // Clear any stale reference
+    if (activeConfirmModal && !activeConfirmModal.isOpen) {
+        activeConfirmModal = null;
+    }
+    
+    // Create modal with singleton check
+    const modal = showModal(content, {
+        ...settings,
+        onOpen: (modalElement) => {
+            // Set as active confirm modal
+            activeConfirmModal = modal;
+            
+            const confirmBtn = modalElement.querySelector('.modal-confirm-btn');
+            const cancelBtn = modalElement.querySelector('.modal-cancel-btn');
+            
+            if (!confirmBtn || !cancelBtn) {
+                console.error('Modal buttons not found');
+                return;
+            }
+            
+            // Prevent double-click on buttons
+            let isProcessing = false;
+            
+            // Confirm handler
+            const handleConfirm = async () => {
+                if (isProcessing) return;
+                isProcessing = true;
+                
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                await modal.close();
+                activeConfirmModal = null;
+                
+                // Execute callback after modal is hidden
+                if (settings.onConfirm && typeof settings.onConfirm === 'function') {
+                    setTimeout(() => settings.onConfirm(), 100);
+                }
+            };
+            
+            // Cancel handler
+            const handleCancel = async () => {
+                if (isProcessing) return;
+                isProcessing = true;
+                
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+                
+                await modal.close();
+                activeConfirmModal = null;
+                
+                // Execute callback after modal is hidden
+                if (settings.onCancel && typeof settings.onCancel === 'function') {
+                    setTimeout(() => settings.onCancel(), 100);
+                }
+            };
+            
+            // Add listeners with once option
+            confirmBtn.addEventListener('click', handleConfirm, { once: true });
+            cancelBtn.addEventListener('click', handleCancel, { once: true });
+            
+            // Focus cancel button (safer default)
+            cancelBtn.focus();
+        },
+        onClose: () => {
+            // Clear active reference
+            activeConfirmModal = null;
+            
+            // Call original onClose if provided
+            if (settings.onClose && typeof settings.onClose === 'function') {
+                settings.onClose();
+            }
+        }
+    });
+    
+    return modal;
+}
+
+// Show form modal
+function showFormModal(formHtml, options = {}) {
+    const defaultOptions = {
+        title: 'Form',
+        size: 'medium',
+        closeOnBackdrop: false,
+        closeOnEscape: true,
+        submitText: 'Submit',
+        cancelText: 'Cancel'
+    };
+    
+    const settings = { ...defaultOptions, ...options };
+    
+    const modal = showModal(formHtml, settings);
+    
+    modal.options.onOpen = (modalElement) => {
+        const form = modalElement.querySelector('form');
+        if (!form) return;
+        
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            if (settings.onSubmit) {
+                const result = await settings.onSubmit(data, form, modal);
+                
+                // Close modal if onSubmit returns true or nothing
+                if (result !== false) {
+                    modal.close();
+                }
+            }
+        });
+        
+        // Focus first form field
+        const firstInput = form.querySelector('input, textarea, select');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    };
+    
+    return modal;
+}
+
+// Check if any modal is open
+function isModalOpen() {
+    return modalState.activeModals.length > 0;
+}
+
+// Get active modal
+function getActiveModal() {
+    return modalState.activeModals[modalState.activeModals.length - 1] || null;
+}
+
+// ===== END OF MODAL SYSTEM SECTION =====
+
+// ===== NOTIFICATION SYSTEM SECTION =====
+// Toast-style notifications for user feedback
+
+// Notification queue to manage multiple notifications
+const notificationQueue = [];
+let activeNotifications = 0;
+const MAX_VISIBLE_NOTIFICATIONS = 3;
+
+// Create and show a notification
+function showNotification(message, type = 'info', duration = 4000) {
+    const notificationContainer = document.getElementById('notificationContainer');
+    
+    if (!notificationContainer) {
+        console.error('Notification container not found');
+        return;
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.style.transform = 'translateX(120%)';
+    notification.style.opacity = '0';
+    
+    // Add icon based on type
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    // Create notification content
+    notification.innerHTML = `
+        <span class="notification-icon">${icons[type] || icons.info}</span>
+        <span class="notification-message">${message}</span>
+        <button class="notification-close" aria-label="Close notification">&times;</button>
+    `;
+    
+    // Add to container
+    notificationContainer.appendChild(notification);
+    
+    // Setup close button
+    const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.onclick = () => removeNotification(notification);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        notification.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        notification.style.transform = 'translateX(0)';
+        notification.style.opacity = '1';
+    });
+    
+    // Track active notifications
+    activeNotifications++;
+    
+    // Auto-remove after duration
+    const timeoutId = setTimeout(() => {
+        removeNotification(notification);
+    }, duration);
+    
+    // Store reference for potential early removal
+    notification._timeoutId = timeoutId;
+    
+    // Manage notification stacking
+    updateNotificationPositions();
+    
+    return notification;
+}
+
+// Remove a notification
+function removeNotification(notification) {
+    if (!notification || notification._removing) return;
+    
+    notification._removing = true;
+    
+    // Clear timeout if exists
+    if (notification._timeoutId) {
+        clearTimeout(notification._timeoutId);
+    }
+    
+    // Animate out
+    notification.style.transform = 'translateX(120%)';
+    notification.style.opacity = '0';
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+            activeNotifications--;
+            updateNotificationPositions();
+        }
+    }, 300);
+}
+
+// Update positions of all notifications for stacking
+function updateNotificationPositions() {
+    const notifications = document.querySelectorAll('.notification');
+    const spacing = 10; // Space between notifications
+    let offset = 0;
+    
+    notifications.forEach((notification, index) => {
+        if (!notification._removing) {
+            notification.style.top = `${offset}px`;
+            offset += notification.offsetHeight + spacing;
+        }
+    });
+}
+
+// Show success notification
+function notifySuccess(message, duration = 4000) {
+    return showNotification(message, 'success', duration);
+}
+
+// Show error notification
+function notifyError(message, duration = 6000) {
+    return showNotification(message, 'error', duration);
+}
+
+// Show warning notification
+function notifyWarning(message, duration = 5000) {
+    return showNotification(message, 'warning', duration);
+}
+
+// Show info notification
+function notifyInfo(message, duration = 4000) {
+    return showNotification(message, 'info', duration);
+}
+
+// Clear all notifications
+function clearAllNotifications() {
+    const notifications = document.querySelectorAll('.notification');
+    notifications.forEach(notification => removeNotification(notification));
+}
+
+// ===== END OF NOTIFICATION SYSTEM SECTION =====
