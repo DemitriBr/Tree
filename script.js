@@ -2330,3 +2330,137 @@ function initializeModalSystem() {
 }
 
 // ===== END OF MODAL SYSTEM SECTION =====
+
+// ===== NOTIFICATION SYSTEM SECTION =====
+// Toast-style notifications for user feedback
+
+// Notification queue to manage multiple notifications
+const notificationQueue = [];
+let activeNotifications = 0;
+const MAX_VISIBLE_NOTIFICATIONS = 3;
+
+// Create and show a notification
+function showNotification(message, type = 'info', duration = 4000) {
+    const notificationContainer = document.getElementById('notificationContainer');
+    
+    if (!notificationContainer) {
+        console.error('Notification container not found');
+        return;
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.style.transform = 'translateX(120%)';
+    notification.style.opacity = '0';
+    
+    // Add icon based on type
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    // Create notification content
+    notification.innerHTML = `
+        <span class="notification-icon">${icons[type] || icons.info}</span>
+        <span class="notification-message">${message}</span>
+        <button class="notification-close" aria-label="Close notification">&times;</button>
+    `;
+    
+    // Add to container
+    notificationContainer.appendChild(notification);
+    
+    // Setup close button
+    const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.onclick = () => removeNotification(notification);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        notification.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        notification.style.transform = 'translateX(0)';
+        notification.style.opacity = '1';
+    });
+    
+    // Track active notifications
+    activeNotifications++;
+    
+    // Auto-remove after duration
+    const timeoutId = setTimeout(() => {
+        removeNotification(notification);
+    }, duration);
+    
+    // Store reference for potential early removal
+    notification._timeoutId = timeoutId;
+    
+    // Manage notification stacking
+    updateNotificationPositions();
+    
+    return notification;
+}
+
+// Remove a notification
+function removeNotification(notification) {
+    if (!notification || notification._removing) return;
+    
+    notification._removing = true;
+    
+    // Clear timeout if exists
+    if (notification._timeoutId) {
+        clearTimeout(notification._timeoutId);
+    }
+    
+    // Animate out
+    notification.style.transform = 'translateX(120%)';
+    notification.style.opacity = '0';
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+            activeNotifications--;
+            updateNotificationPositions();
+        }
+    }, 300);
+}
+
+// Update positions of all notifications for stacking
+function updateNotificationPositions() {
+    const notifications = document.querySelectorAll('.notification');
+    const spacing = 10; // Space between notifications
+    let offset = 0;
+    
+    notifications.forEach((notification, index) => {
+        if (!notification._removing) {
+            notification.style.top = `${offset}px`;
+            offset += notification.offsetHeight + spacing;
+        }
+    });
+}
+
+// Show success notification
+function notifySuccess(message, duration = 4000) {
+    return showNotification(message, 'success', duration);
+}
+
+// Show error notification
+function notifyError(message, duration = 6000) {
+    return showNotification(message, 'error', duration);
+}
+
+// Show warning notification
+function notifyWarning(message, duration = 5000) {
+    return showNotification(message, 'warning', duration);
+}
+
+// Show info notification
+function notifyInfo(message, duration = 4000) {
+    return showNotification(message, 'info', duration);
+}
+
+// Clear all notifications
+function clearAllNotifications() {
+    const notifications = document.querySelectorAll('.notification');
+    notifications.forEach(notification => removeNotification(notification));
+}
