@@ -4478,27 +4478,6 @@ async function handleExport() {
         notifyError('Failed to export data. Please try again.');
     }
 }
-
-// Add export button to navigation
-function addExportButton() {
-    const navigation = document.getElementById('navigation');
-    if (navigation && !document.getElementById('exportBtn')) {
-        const exportBtn = document.createElement('button');
-        exportBtn.id = 'exportBtn';
-        exportBtn.className = 'export-btn';
-        exportBtn.innerHTML = '📥 Export Data';
-        exportBtn.onclick = showExportModal;
-        
-        navigation.appendChild(exportBtn);
-    }
-}
-
-// Initialize export functionality
-document.addEventListener('DOMContentLoaded', () => {
-    // Add export button after a small delay to ensure navigation is ready
-    setTimeout(addExportButton, 100);
-});
-
 console.log('✅ Step 25: Data export functionality added successfully!');
 
 // ===== END OF DATA EXPORT FUNCTIONALITY =====
