@@ -3130,7 +3130,6 @@ function confirmDeleteInterview(applicationId, interviewId) {
         }
     );
 }
-}
 
 // Helper function to enhance application cards with interview information
 function enhanceCardWithInterviews(card, application) {
