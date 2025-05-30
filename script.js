@@ -1124,7 +1124,7 @@ function updateThemeToggleButton(theme) {
     }
 }
 
-// Initialize the application
+// 1. REPLACE your entire init() function with this:
 async function init() {
     try {
         await initDB();
@@ -1141,6 +1141,9 @@ async function init() {
 
         // Initialize modal system
         initializeModalSystem();
+        
+        // STEP 27 ADDITION: Initialize enhanced validation
+        initializeFormValidation();
         
         console.log('Application initialized successfully');
     } catch (error) {
@@ -2919,7 +2922,7 @@ async function deleteInterview(applicationId, interviewId) {
     }
 }
 
-// Show interview scheduling modal
+// 2. REPLACE your entire showInterviewModal function with this:
 function showInterviewModal(applicationId, existingInterview = null) {
     const isEdit = existingInterview !== null;
     const title = isEdit ? 'Edit Interview' : 'Schedule Interview';
@@ -3008,6 +3011,24 @@ function showInterviewModal(applicationId, existingInterview = null) {
         size: 'medium',
         onSubmit: async (data) => {
             try {
+                // STEP 27: Validate interview data
+                if (!data.date || !data.time || !data.type) {
+                    notifyError('Please fill in all required fields');
+                    return false;
+                }
+                
+                // Validate date is not in the past
+                const interviewDate = new Date(`${data.date} ${data.time}`);
+                if (interviewDate < new Date() && !isEdit) {
+                    notifyError('Interview date cannot be in the past');
+                    return false;
+                }
+                
+                // Sanitize data
+                data.location = dataSanitizer.sanitizeString(data.location || '', 200);
+                data.interviewer = dataSanitizer.sanitizeString(data.interviewer || '', 100);
+                data.notes = dataSanitizer.sanitizeString(data.notes || '', 500);
+                
                 if (isEdit) {
                     await updateInterview(applicationId, existingInterview.id, data);
                 } else {
@@ -3029,7 +3050,6 @@ function showInterviewModal(applicationId, existingInterview = null) {
         }
     });
 }
-
 // ===== FIX FOR INTERVIEW DELETE FUNCTIONALITY =====
 // Replace your existing showInterviewsModal function with this fixed version:
 
@@ -3356,7 +3376,7 @@ async function deleteContact(applicationId, contactId) {
     }
 }
 
-// 3. REPLACE the showContactModal function (removed primary contact checkbox):
+// 3. REPLACE your entire showContactModal function with this:
 function showContactModal(applicationId, existingContact = null) {
     const isEdit = existingContact !== null;
     const title = isEdit ? 'Edit Contact' : 'Add Contact';
@@ -3441,6 +3461,38 @@ function showContactModal(applicationId, existingContact = null) {
         size: 'medium',
         onSubmit: async (data) => {
             try {
+                // STEP 27: Validate contact data
+                if (!data.name || !data.type) {
+                    notifyError('Please fill in all required fields');
+                    return false;
+                }
+                
+                // Validate email format if provided
+                if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+                    notifyError('Please enter a valid email address');
+                    return false;
+                }
+                
+                // Validate phone format if provided
+                if (data.phone && !/^[\d\s\-\+\(\)]+$/.test(data.phone)) {
+                    notifyError('Please enter a valid phone number');
+                    return false;
+                }
+                
+                // Validate LinkedIn URL if provided
+                if (data.linkedin && data.linkedin.trim() && !data.linkedin.includes('linkedin.com')) {
+                    notifyError('Please enter a valid LinkedIn URL');
+                    return false;
+                }
+                
+                // Sanitize data
+                data.name = dataSanitizer.sanitizeString(data.name, 100);
+                data.title = dataSanitizer.sanitizeString(data.title || '', 100);
+                data.email = dataSanitizer.sanitizeString(data.email || '', 100);
+                data.phone = dataSanitizer.sanitizeString(data.phone || '', 50);
+                data.linkedin = dataSanitizer.sanitizeUrl(data.linkedin || '');
+                data.notes = dataSanitizer.sanitizeString(data.notes || '', 500);
+                
                 if (isEdit) {
                     await updateContact(applicationId, existingContact.id, data);
                 } else {
@@ -3462,6 +3514,7 @@ function showContactModal(applicationId, existingContact = null) {
         }
     });
 }
+
 
 // 4. REPLACE the showContactsModal function (removed primary badge and fixed delete):
 async function showContactsModal(applicationId) {
@@ -3764,7 +3817,7 @@ async function deleteDocument(applicationId, documentId) {
     }
 }
 
-// Show document form modal
+// 4. REPLACE your entire showDocumentModal function with this:
 function showDocumentModal(applicationId, existingDocument = null) {
     const isEdit = existingDocument !== null;
     const title = isEdit ? 'Edit Document' : 'Add Document';
@@ -3808,7 +3861,8 @@ function showDocumentModal(applicationId, existingDocument = null) {
             <div class="form-group">
                 <label for="documentDate">Date Sent *</label>
                 <input type="date" id="documentDate" name="dateSent" required
-                       value="${isEdit ? existingDocument.dateSent : currentDate}">
+                       value="${isEdit ? existingDocument.dateSent : currentDate}"
+                       max="${currentDate}">
                 <span class="error-message"></span>
             </div>
             
@@ -3833,6 +3887,28 @@ function showDocumentModal(applicationId, existingDocument = null) {
         size: 'medium',
         onSubmit: async (data) => {
             try {
+                // STEP 27: Validate document data
+                if (!data.name || !data.type || !data.dateSent) {
+                    notifyError('Please fill in all required fields');
+                    return false;
+                }
+                
+                // Validate date is not in the future
+                const sentDate = new Date(data.dateSent);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999); // Set to end of day
+                
+                if (sentDate > today) {
+                    notifyError('Document sent date cannot be in the future');
+                    return false;
+                }
+                
+                // Sanitize data
+                data.name = dataSanitizer.sanitizeString(data.name, 100);
+                data.version = dataSanitizer.sanitizeString(data.version || '1.0', 20);
+                data.dateSent = dataSanitizer.sanitizeDate(data.dateSent);
+                data.notes = dataSanitizer.sanitizeString(data.notes || '', 500);
+                
                 if (isEdit) {
                     await updateDocument(applicationId, existingDocument.id, data);
                 } else {
