@@ -3836,3 +3836,121 @@ body.modal-open {
 }
 
 /* ===== END OF DOCUMENT TRACKING STYLES ===== */
+/* ===== FIX FOR ACTION BUTTON STYLING CONSISTENCY ===== */
+/* Add these styles to your style.css file to fix the button appearance */
+
+/* Ensure all action buttons have consistent base styling */
+.card-actions .btn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 1.2rem;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Interview button with gradient background */
+.btn-icon.interview-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-icon.interview-btn::before {
+    display: none; /* Remove the hover effect background */
+}
+
+/* Contact button with gradient background */
+.btn-icon.contact-btn {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-icon.contact-btn::before {
+    display: none;
+}
+
+/* Document button with gradient background */
+.btn-icon.document-btn {
+    background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-icon.document-btn::before {
+    display: none;
+}
+
+/* Edit button styling */
+.btn-icon.edit-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-icon.edit-btn::before {
+    display: none;
+}
+
+/* Delete button styling */
+.btn-icon.delete-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.btn-icon.delete-btn::before {
+    display: none;
+}
+
+/* Link button (if exists) */
+.card-actions a.btn-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* Hover effects for all buttons */
+.btn-icon.interview-btn:hover,
+.btn-icon.contact-btn:hover,
+.btn-icon.document-btn:hover,
+.btn-icon.edit-btn:hover,
+.btn-icon.delete-btn:hover,
+.card-actions a.btn-icon:hover {
+    transform: translateY(-2px) scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Active/click effect */
+.btn-icon:active {
+    transform: scale(0.95);
+}
+
+/* Ensure icons are centered and visible */
+.card-actions .btn-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .card-actions .btn-icon {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .btn-icon:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== END OF ACTION BUTTON STYLING FIX ===== */
