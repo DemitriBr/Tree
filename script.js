@@ -695,15 +695,16 @@ async function renderApplicationsList(applications = null) {
         // Setup action button listeners after cards are rendered
         setupActionButtonsListeners();
         
-        // STEP 22 ADDITION: Enhance all cards with interview information
+        // STEP 22 & 23 ADDITIONS: Enhance all cards with interview and contact information
         const cards = document.querySelectorAll('.application-card');
         cards.forEach(async (card) => {
             const applicationId = card.dataset.id;
             try {
                 const application = await getApplicationFromDB(applicationId);
                 enhanceCardWithInterviews(card, application);
+                enhanceCardWithContacts(card, application);
             } catch (error) {
-                console.error('Error enhancing card with interviews:', error);
+                console.error('Error enhancing card:', error);
             }
         });
     }
@@ -1228,7 +1229,10 @@ async function calculateDashboardStats() {
             : 0;
         
         // STEP 22 ADDITION: Enhance stats with interview data
-        return enhanceDashboardWithInterviews(stats, applications);
+        let enhancedStats = enhanceDashboardWithInterviews(stats, applications);
+        
+        // STEP 23 ADDITION: Enhance stats with contact data
+        return enhanceDashboardWithContacts(enhancedStats, applications);
         
     } catch (error) {
         console.error('Error calculating dashboard stats:', error);
@@ -1283,6 +1287,15 @@ async function renderDashboard() {
                 <div class="stat-content">
                     <h3 class="stat-value">${stats.upcomingInterviews}</h3>
                     <p class="stat-label">Upcoming Interviews</p>
+                </div>
+            </div>
+            
+            <!-- STEP 23 ADDITION: Contacts statistics card -->
+            <div class="stat-card glass-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.totalContacts}</h3>
+                    <p class="stat-label">Total Contacts</p>
                 </div>
             </div>
             
@@ -1355,7 +1368,6 @@ async function renderDashboard() {
         }, 100);
     }
 }
-
 
 // Create status distribution chart using Canvas (with slice percentages and side legend)
 function createStatusChart(stats, canvasId) {
@@ -3235,3 +3247,419 @@ function enhanceDashboardWithInterviews(stats, applications) {
 console.log('✅ Step 22: Interview functionality added successfully!');
 
 // ===== END OF INTERVIEW FUNCTIONALITY =====
+// ===== STEP 23: CONTACTS FUNCTIONALITY =====
+// Add this code to your script.js file after the interview functionality section
+
+// Contact Management Functions
+async function addContact(applicationId, contactData) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        if (!application.contacts) {
+            application.contacts = [];
+        }
+        
+        // Add new contact with unique ID
+        const contact = {
+            id: generateId(),
+            name: contactData.name,
+            title: contactData.title,
+            type: contactData.type, // recruiter, hiring-manager, technical, hr, other
+            email: contactData.email,
+            phone: contactData.phone,
+            linkedin: contactData.linkedin,
+            notes: contactData.notes,
+            isPrimary: contactData.isPrimary || false,
+            createdAt: new Date().toISOString()
+        };
+        
+        // If marking as primary, unmark others
+        if (contact.isPrimary) {
+            application.contacts.forEach(c => c.isPrimary = false);
+        }
+        
+        application.contacts.push(contact);
+        application.updatedAt = new Date().toISOString();
+        
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Contact added successfully!');
+        return contact;
+        
+    } catch (error) {
+        console.error('Error adding contact:', error);
+        notifyError('Failed to add contact');
+        throw error;
+    }
+}
+
+async function updateContact(applicationId, contactId, updatedData) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        const contactIndex = application.contacts.findIndex(c => c.id === contactId);
+        if (contactIndex === -1) {
+            throw new Error('Contact not found');
+        }
+        
+        // If marking as primary, unmark others
+        if (updatedData.isPrimary) {
+            application.contacts.forEach(c => c.isPrimary = false);
+        }
+        
+        application.contacts[contactIndex] = {
+            ...application.contacts[contactIndex],
+            ...updatedData,
+            updatedAt: new Date().toISOString()
+        };
+        
+        application.updatedAt = new Date().toISOString();
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Contact updated successfully!');
+        
+    } catch (error) {
+        console.error('Error updating contact:', error);
+        notifyError('Failed to update contact');
+        throw error;
+    }
+}
+
+async function deleteContact(applicationId, contactId) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        application.contacts = application.contacts.filter(c => c.id !== contactId);
+        application.updatedAt = new Date().toISOString();
+        
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Contact removed successfully!');
+        
+    } catch (error) {
+        console.error('Error deleting contact:', error);
+        notifyError('Failed to remove contact');
+        throw error;
+    }
+}
+
+// Show contact form modal
+function showContactModal(applicationId, existingContact = null) {
+    const isEdit = existingContact !== null;
+    const title = isEdit ? 'Edit Contact' : 'Add Contact';
+    
+    const formHtml = `
+        <form id="contactForm" class="modal-form contact-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="contactName">Name *</label>
+                    <input type="text" id="contactName" name="name" required 
+                           value="${isEdit ? existingContact.name : ''}"
+                           placeholder="John Doe">
+                    <span class="error-message"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactTitle">Title/Role</label>
+                    <input type="text" id="contactTitle" name="title"
+                           value="${isEdit ? existingContact.title || '' : ''}"
+                           placeholder="Senior Recruiter">
+                    <span class="error-message"></span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="contactType">Contact Type *</label>
+                <select id="contactType" name="type" required>
+                    <option value="">Select Type</option>
+                    <option value="recruiter" ${isEdit && existingContact.type === 'recruiter' ? 'selected' : ''}>Recruiter</option>
+                    <option value="hiring-manager" ${isEdit && existingContact.type === 'hiring-manager' ? 'selected' : ''}>Hiring Manager</option>
+                    <option value="technical" ${isEdit && existingContact.type === 'technical' ? 'selected' : ''}>Technical Interviewer</option>
+                    <option value="hr" ${isEdit && existingContact.type === 'hr' ? 'selected' : ''}>HR Representative</option>
+                    <option value="other" ${isEdit && existingContact.type === 'other' ? 'selected' : ''}>Other</option>
+                </select>
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="contactEmail">Email</label>
+                    <input type="email" id="contactEmail" name="email"
+                           value="${isEdit ? existingContact.email || '' : ''}"
+                           placeholder="john.doe@company.com">
+                    <span class="error-message"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactPhone">Phone</label>
+                    <input type="tel" id="contactPhone" name="phone"
+                           value="${isEdit ? existingContact.phone || '' : ''}"
+                           placeholder="+1 (555) 123-4567">
+                    <span class="error-message"></span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="contactLinkedin">LinkedIn Profile</label>
+                <input type="url" id="contactLinkedin" name="linkedin"
+                       value="${isEdit ? existingContact.linkedin || '' : ''}"
+                       placeholder="https://linkedin.com/in/johndoe">
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group full-width">
+                <label for="contactNotes">Notes</label>
+                <textarea id="contactNotes" name="notes" rows="3" 
+                          placeholder="Additional notes about this contact...">${isEdit ? existingContact.notes || '' : ''}</textarea>
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="contactPrimary" name="isPrimary" 
+                           ${isEdit && existingContact.isPrimary ? 'checked' : ''}>
+                    Mark as primary contact
+                </label>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    ${isEdit ? 'Update Contact' : 'Add Contact'}
+                </button>
+            </div>
+        </form>
+    `;
+    
+    showFormModal(formHtml, {
+        title: title,
+        size: 'medium',
+        onSubmit: async (data) => {
+            try {
+                // Convert checkbox value to boolean
+                data.isPrimary = data.isPrimary === 'on';
+                
+                if (isEdit) {
+                    await updateContact(applicationId, existingContact.id, data);
+                } else {
+                    await addContact(applicationId, data);
+                }
+                
+                // Refresh the current view
+                const activeView = document.querySelector('.view.active');
+                if (activeView && activeView.id === 'listView') {
+                    renderApplicationsList();
+                } else if (activeView && activeView.id === 'kanbanView') {
+                    renderKanbanBoard();
+                }
+                
+                return true; // Close modal
+            } catch (error) {
+                return false; // Keep modal open
+            }
+        }
+    });
+}
+
+// Show all contacts for an application
+async function showContactsModal(applicationId) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        const contacts = application.contacts || [];
+        
+        let content = `
+            <div class="contacts-list">
+                <div class="contacts-header">
+                    <h4>${application.jobTitle} at ${application.companyName}</h4>
+                    <button class="btn btn-primary btn-small" onclick="window.handleAddContactClick('${applicationId}')">
+                        + Add Contact
+                    </button>
+                </div>
+        `;
+        
+        if (contacts.length === 0) {
+            content += `
+                <div class="empty-state-contacts">
+                    <p>No contacts added yet</p>
+                </div>
+            `;
+        } else {
+            content += '<div class="contacts-grid">';
+            
+            // Sort contacts: primary first, then by name
+            const sortedContacts = [...contacts].sort((a, b) => {
+                if (a.isPrimary && !b.isPrimary) return -1;
+                if (!a.isPrimary && b.isPrimary) return 1;
+                return a.name.localeCompare(b.name);
+            });
+            
+            sortedContacts.forEach(contact => {
+                const contactDataEscaped = encodeURIComponent(JSON.stringify(contact));
+                
+                content += `
+                    <div class="contact-card">
+                        ${contact.isPrimary ? '<span class="contact-primary">Primary</span>' : ''}
+                        <div class="contact-card-header">
+                            <h5 class="contact-name">${contact.name}</h5>
+                            <span class="contact-type ${contact.type}">${contact.type.replace('-', ' ')}</span>
+                        </div>
+                        ${contact.title ? `<div class="contact-title">${contact.title}</div>` : ''}
+                        
+                        <div class="contact-details">
+                            ${contact.email ? `
+                                <div class="contact-detail">
+                                    <span class="contact-detail-icon">📧</span>
+                                    <a href="mailto:${contact.email}">${contact.email}</a>
+                                </div>
+                            ` : ''}
+                            ${contact.phone ? `
+                                <div class="contact-detail">
+                                    <span class="contact-detail-icon">📱</span>
+                                    <a href="tel:${contact.phone}">${contact.phone}</a>
+                                </div>
+                            ` : ''}
+                            ${contact.linkedin ? `
+                                <div class="contact-detail">
+                                    <span class="contact-detail-icon">💼</span>
+                                    <a href="${contact.linkedin}" target="_blank" rel="noopener noreferrer">LinkedIn Profile</a>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        ${contact.notes ? `<div class="contact-notes">${contact.notes}</div>` : ''}
+                        
+                        <div class="contact-actions">
+                            <button class="btn-icon small" onclick="window.handleEditContactClick('${applicationId}', '${contactDataEscaped}')" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="btn-icon small delete" onclick="confirmDeleteContact('${applicationId}', '${contact.id}')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content += '</div>';
+        }
+        
+        content += '</div>';
+        
+        showModal(content, {
+            title: 'Contacts',
+            size: 'large',
+            closeOnBackdrop: true
+        });
+        
+    } catch (error) {
+        console.error('Error showing contacts:', error);
+        notifyError('Failed to load contacts');
+    }
+}
+
+// Modal transition helpers for contacts
+window.handleAddContactClick = async function(applicationId) {
+    await hideModal();
+    setTimeout(() => {
+        showContactModal(applicationId);
+    }, 100);
+};
+
+window.handleEditContactClick = async function(applicationId, contactDataEscaped) {
+    const contact = JSON.parse(decodeURIComponent(contactDataEscaped));
+    await hideModal();
+    setTimeout(() => {
+        showContactModal(applicationId, contact);
+    }, 100);
+};
+
+// Confirm contact deletion
+function confirmDeleteContact(applicationId, contactId) {
+    showConfirmModal(
+        'Are you sure you want to delete this contact?',
+        {
+            title: 'Delete Contact',
+            confirmText: 'Delete',
+            confirmClass: 'btn btn-danger',
+            onConfirm: async () => {
+                await deleteContact(applicationId, contactId);
+                await hideModal();
+                setTimeout(() => {
+                    showContactsModal(applicationId);
+                }, 100);
+            }
+        }
+    );
+}
+
+// Helper function to enhance application cards with contact information
+function enhanceCardWithContacts(card, application) {
+    const contacts = application.contacts || [];
+    
+    if (contacts.length > 0) {
+        // Add contact indicator to card header
+        const cardHeader = card.querySelector('.card-header');
+        const interviewIndicator = cardHeader.querySelector('.card-interview-indicator');
+        
+        const contactIndicator = document.createElement('span');
+        contactIndicator.className = 'card-contact-indicator';
+        contactIndicator.title = `${contacts.length} contact${contacts.length > 1 ? 's' : ''} saved`;
+        contactIndicator.innerHTML = `
+            <span class="indicator-icon">👥</span>
+            <span class="indicator-count">${contacts.length}</span>
+        `;
+        
+        // Insert after interview indicator if it exists, otherwise before status badge
+        if (interviewIndicator) {
+            interviewIndicator.after(contactIndicator);
+        } else {
+            const statusBadge = cardHeader.querySelector('.status-badge');
+            cardHeader.insertBefore(contactIndicator, statusBadge);
+        }
+    }
+    
+    // Add contact button to card actions
+    const cardActions = card.querySelector('.card-actions');
+    const contactBtn = document.createElement('button');
+    contactBtn.className = 'btn-icon contact-btn';
+    contactBtn.dataset.id = application.id;
+    contactBtn.title = 'Manage Contacts';
+    contactBtn.innerHTML = '👥';
+    contactBtn.onclick = (e) => {
+        e.stopPropagation();
+        showContactsModal(application.id);
+    };
+    
+    // Insert after interview button if it exists, otherwise before edit button
+    const interviewBtn = cardActions.querySelector('.interview-btn');
+    if (interviewBtn) {
+        interviewBtn.after(contactBtn);
+    } else {
+        const editBtn = cardActions.querySelector('.edit-btn');
+        cardActions.insertBefore(contactBtn, editBtn);
+    }
+}
+
+// Helper function to enhance dashboard statistics with contact data
+function enhanceDashboardWithContacts(stats, applications) {
+    // Calculate contact statistics
+    let totalContacts = 0;
+    let applicationsWithContacts = 0;
+    
+    applications.forEach(app => {
+        if (app.contacts && app.contacts.length > 0) {
+            applicationsWithContacts++;
+            totalContacts += app.contacts.length;
+        }
+    });
+    
+    // Add to stats object
+    stats.totalContacts = totalContacts;
+    stats.applicationsWithContacts = applicationsWithContacts;
+    
+    return stats;
+}
+
+console.log('✅ Step 23: Contacts functionality added successfully!');
+
+// ===== END OF CONTACTS FUNCTIONALITY =====
