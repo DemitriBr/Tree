@@ -731,8 +731,6 @@ function setupActionButtonsListeners() {
     }
 }
 
-// Replace the handleActionButtonClick function with this updated version:
-
 async function handleActionButtonClick(e) {
     // Don't prevent default for links
     if (e.target.tagName !== 'A' && !e.target.closest('a')) {
@@ -754,6 +752,7 @@ async function handleActionButtonClick(e) {
     // Handle delete button click
     if (deleteBtn) {
         e.stopPropagation();
+        e.stopImmediatePropagation(); // Prevent any other handlers from executing
         
         // Check if any modal is already open
         if (isModalOpen()) {
@@ -761,11 +760,21 @@ async function handleActionButtonClick(e) {
             return;
         }
         
+        // Check if button is already disabled (prevents double-click)
+        if (deleteBtn.disabled || deleteBtn.dataset.processing === 'true') {
+            console.log('Delete button already processing');
+            return;
+        }
+        
+        // Mark button as processing
+        deleteBtn.dataset.processing = 'true';
+        
         const applicationId = deleteBtn.dataset.id;
         const applicationCard = deleteBtn.closest('.application-card') || deleteBtn.closest('.kanban-card');
         
         if (!applicationCard) {
             console.error('Card not found');
+            deleteBtn.dataset.processing = 'false';
             return;
         }
         
@@ -831,6 +840,7 @@ async function handleActionButtonClick(e) {
                         deleteBtn.innerHTML = originalContent;
                         deleteBtn.style.opacity = '';
                         deleteBtn.style.cursor = '';
+                        deleteBtn.dataset.processing = 'false';
                         
                         notifyError('Failed to delete application. Please try again.');
                     }
@@ -841,6 +851,7 @@ async function handleActionButtonClick(e) {
                     deleteBtn.innerHTML = originalContent;
                     deleteBtn.style.opacity = '';
                     deleteBtn.style.cursor = '';
+                    deleteBtn.dataset.processing = 'false';
                 },
                 onClose: () => {
                     // Ensure button state is restored on close
@@ -849,13 +860,13 @@ async function handleActionButtonClick(e) {
                         deleteBtn.innerHTML = originalContent;
                         deleteBtn.style.opacity = '';
                         deleteBtn.style.cursor = '';
+                        deleteBtn.dataset.processing = 'false';
                     }
                 }
             }
         );
     }
 }
-
 // Load application data into form for editing
 async function loadApplicationForEdit(applicationId) {
     try {
