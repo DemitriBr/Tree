@@ -2994,6 +2994,7 @@ function showInterviewModal(applicationId, existingInterview = null) {
     });
 }
 
+// ===== FIX FOR INTERVIEW DELETE FUNCTIONALITY =====
 // Replace your existing showInterviewsModal function with this fixed version:
 
 async function showInterviewsModal(applicationId) {
@@ -3057,7 +3058,7 @@ async function showInterviewsModal(applicationId) {
                             <button class="btn-icon small" onclick="window.handleEditInterviewClick('${applicationId}', '${interviewDataEscaped}')" title="Edit">
                                 ✏️
                             </button>
-                            <button class="btn-icon small delete" onclick="confirmDeleteInterview('${applicationId}', '${interview.id}')" title="Delete">
+                            <button class="btn-icon small delete" onclick="window.handleDeleteInterviewClick('${applicationId}', '${interview.id}')" title="Delete">
                                 🗑️
                             </button>
                         </div>
@@ -3081,6 +3082,33 @@ async function showInterviewsModal(applicationId) {
         notifyError('Failed to load interviews');
     }
 }
+
+// Add this new helper function for handling interview deletion:
+window.handleDeleteInterviewClick = function(applicationId, interviewId) {
+    showConfirmModal(
+        'Are you sure you want to delete this interview?',
+        {
+            title: 'Delete Interview',
+            confirmText: 'Delete',
+            confirmClass: 'btn btn-danger',
+            onConfirm: async () => {
+                try {
+                    await deleteInterview(applicationId, interviewId);
+                    
+                    // Close the confirmation modal
+                    await hideModal();
+                    
+                    // Small delay then reopen the interviews modal
+                    setTimeout(() => {
+                        showInterviewsModal(applicationId);
+                    }, 100);
+                } catch (error) {
+                    console.error('Error in delete confirmation:', error);
+                }
+            }
+        }
+    );
+};
 
 // Add these helper functions to handle the modal transitions:
 
@@ -3106,30 +3134,6 @@ window.handleEditInterviewClick = async function(applicationId, interviewDataEsc
         showInterviewModal(applicationId, interview);
     }, 100);
 };
-
-// Also update the confirmDeleteInterview function to handle the refresh properly:
-
-function confirmDeleteInterview(applicationId, interviewId) {
-    showConfirmModal(
-        'Are you sure you want to delete this interview?',
-        {
-            title: 'Delete Interview',
-            confirmText: 'Delete',
-            confirmClass: 'btn btn-danger',
-            onConfirm: async () => {
-                await deleteInterview(applicationId, interviewId);
-                
-                // Close the current modal first
-                await hideModal();
-                
-                // Small delay then reopen the interviews modal
-                setTimeout(() => {
-                    showInterviewsModal(applicationId);
-                }, 100);
-            }
-        }
-    );
-}
 
 function enhanceCardWithInterviews(card, application) {
     const interviews = application.interviewDates || [];
