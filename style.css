@@ -2673,9 +2673,8 @@ canvas {
 }
 
 /* ===== ENHANCED MODAL SYSTEM STYLES ===== */
-/* Replace the existing modal styles with these */
 
-/* Modal Container - Full screen overlay */
+/* Modal Container - Fixed properly */
 #modalContainer {
     position: fixed;
     top: 0;
@@ -2683,24 +2682,24 @@ canvas {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
     z-index: 9999;
     display: none;
     align-items: center;
     justify-content: center;
     padding: 1rem;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    isolation: isolate; /* Prevent z-index issues */
+    opacity: 0;
+    transition: opacity 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 #modalContainer.active {
+    display: flex;
+    opacity: 1;
     background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
 }
 
-/* Modal Box */
+/* Modal Box - Simplified */
 .modal {
     background: var(--glass-bg-solid);
     backdrop-filter: blur(20px);
@@ -2716,9 +2715,15 @@ canvas {
     display: flex;
     flex-direction: column;
     position: relative;
-    transform: scale(1);
+    transform: scale(0.95) translateY(10px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Active state for modal */
+#modalContainer.active .modal {
+    transform: scale(1) translateY(0);
     opacity: 1;
-    transition: none; /* Controlled by classes */
 }
 
 /* Modal sizes */
@@ -2734,35 +2739,11 @@ canvas {
     max-width: 800px;
 }
 
-/* Modal animations */
-.modal.modal-enter {
-    animation: modalEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
+/* Remove conflicting animations */
+.modal.modal-enter,
 .modal.modal-exit {
-    animation: modalExit 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-@keyframes modalEnter {
-    from {
-        transform: scale(0.95) translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes modalExit {
-    from {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: scale(0.95) translateY(20px);
-        opacity: 0;
-    }
+    /* Remove these classes from being used */
+    animation: none !important;
 }
 
 /* Modal Header */
@@ -3086,422 +3067,9 @@ canvas {
     will-change: auto;
 }
 
-.modal.modal-enter,
-.modal.modal-exit {
-    will-change: transform, opacity;
-}
-
 /* Prevent body scroll when modal is open */
 body.modal-open {
     overflow: hidden;
-    position: fixed;
-    width: 100%;
-}
-
-/* ===== END OF ENHANCED MODAL SYSTEM STYLES ===== */
-
-/* ===== ENHANCED NOTIFICATION STYLES ===== */
-
-/* Notification Container - Fixed position in top-right */
-.notification-container {
-    position: fixed;
-    top: 2rem;
-    right: 2rem;
-    z-index: 10001;
-    pointer-events: none;
-    max-width: 400px;
-}
-
-/* Individual Notification */
-.notification {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
-    box-shadow: 
-        0 10px 40px 0 rgba(0, 0, 0, 0.3),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    min-width: 320px;
-    max-width: 400px;
-    font-weight: 500;
-    position: relative;
-    overflow: hidden;
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-/* Notification Icons */
-.notification-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-/* Notification Message */
-.notification-message {
-    flex: 1;
-    line-height: 1.4;
-    font-size: 0.95rem;
-}
-
-/* Close Button */
-.notification-close {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: all 0.2s ease;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-}
-
-.notification-close:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotate(90deg);
-}
-
-/* Progress Bar Animation */
-.notification::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 3px;
-    width: 100%;
-    background: rgba(255, 255, 255, 0.3);
-    animation: notificationProgress 4s linear forwards;
-}
-
-@keyframes notificationProgress {
-    from {
-        width: 100%;
-    }
-    to {
-        width: 0%;
-    }
-}
-
-/* Notification Types with Gradients */
-.notification.success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.notification.error {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-}
-
-.notification.error::before {
-    animation-duration: 6s;
-}
-
-.notification.warning {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.notification.warning::before {
-    animation-duration: 5s;
-}
-
-.notification.info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-/* Shimmer Effect */
-.notification::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.2) 50%,
-        transparent 100%
-    );
-    animation: notificationShimmer 2s infinite;
-}
-
-@keyframes notificationShimmer {
-    0% {
-        left: -100%;
-    }
-    100% {
-        left: 100%;
-    }
-}
-
-/* Dark Mode Adjustments */
-[data-theme="dark"] .notification {
-    background: var(--glass-bg-solid);
-    color: white;
-}
-
-[data-theme="dark"] .notification.success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-[data-theme="dark"] .notification.error {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-}
-
-[data-theme="dark"] .notification.warning {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-[data-theme="dark"] .notification.info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-/* Slide In Animation */
-@keyframes slideInRight {
-    from {
-        transform: translateX(120%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .notification-container {
-        top: 1rem;
-        right: 1rem;
-        left: 1rem;
-        max-width: none;
-    }
-    
-    .notification {
-        min-width: auto;
-        max-width: none;
-        width: 100%;
-        font-size: 0.9rem;
-    }
-    
-    .notification-icon {
-        font-size: 1.25rem;
-    }
-}
-
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-    .notification {
-        transition: opacity 0.2s ease;
-    }
-    
-    .notification::before,
-    .notification::after {
-        animation: none;
-    }
-    
-    @keyframes slideInRight {
-        from, to {
-            transform: translateX(0);
-        }
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-}
-
-/* Stacking Offset */
-.notification:nth-child(1) { z-index: 10003; }
-.notification:nth-child(2) { z-index: 10002; }
-.notification:nth-child(3) { z-index: 10001; }
-
-/* Success State for Forms */
-.form-success {
-    animation: successPulse 0.5s ease;
-}
-
-@keyframes successPulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.02);
-        box-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* ===== DANGER BUTTON STYLES ===== */
-/* These should be with your other button styles */
-
-/* Danger Button Style */
-.btn-danger {
-    background: var(--danger-gradient);
-    color: white;
-    box-shadow: 0 4px 15px 0 rgba(245, 87, 108, 0.4);
-}
-
-.btn-danger:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px 0 rgba(245, 87, 108, 0.5);
-}
-
-.btn-danger::before {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* Modal with danger theme */
-.modal-danger .modal-header {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-    color: white;
-    margin: -2rem -2rem 1.5rem -2rem;
-    padding: 1.5rem 2rem;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
-
-.modal-danger .modal-header h3 {
-    color: white;
-}
-
-.modal-danger .modal-close {
-    color: white;
-    opacity: 0.9;
-}
-
-.modal-danger .modal-close:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* ===== END OF ENHANCED NOTIFICATION STYLES ===== */
-
-
-/* Add this CSS to prevent the double flash issue */
-
-/* Modal Container - Prevent flash during initialization */
-#modalContainer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    z-index: 9999;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    isolation: isolate;
-    pointer-events: none; /* Prevent interaction when hidden */
-}
-
-#modalContainer.active {
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    pointer-events: auto; /* Enable interaction when active */
-}
-
-/* Modal Box - Ensure single render */
-.modal {
-    background: var(--glass-bg-solid);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--border-radius);
-    box-shadow: 
-        0 24px 48px 0 rgba(0, 0, 0, 0.4),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-    width: 100%;
-    max-width: 500px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    transform: scale(0.9);
-    opacity: 0;
-    visibility: hidden; /* Hide initially */
-    transition: none;
-    pointer-events: none; /* Prevent interaction during animation */
-}
-
-/* Show modal when container is active */
-#modalContainer.active .modal {
-    visibility: visible;
-    pointer-events: auto;
-}
-
-/* Modal animations - single animation */
-.modal.modal-enter {
-    animation: modalEnterSingle 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.modal.modal-exit {
-    animation: modalExitSingle 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-}
-
-@keyframes modalEnterSingle {
-    0% {
-        transform: scale(0.9) translateY(20px);
-        opacity: 0;
-        visibility: visible;
-    }
-    100% {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-        visibility: visible;
-    }
-}
-
-@keyframes modalExitSingle {
-    0% {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-        visibility: visible;
-    }
-    100% {
-        transform: scale(0.9) translateY(20px);
-        opacity: 0;
-        visibility: visible;
-    }
-}
-
-/* Prevent modal content from showing during setup */
-.modal-content {
-    opacity: 1;
-    transition: opacity 0.2s ease;
-}
-
-.modal:not(.modal-enter):not(.modal-exit) .modal-content {
-    opacity: 0;
-}
-
-.modal.modal-enter .modal-content,
-#modalContainer.active .modal:not(.modal-exit) .modal-content {
-    opacity: 1;
 }
 
 /* Ensure delete buttons can't be double-clicked */
@@ -3511,10 +3079,4 @@ body.modal-open {
     cursor: not-allowed !important;
 }
 
-/* Prevent any flashing during state changes */
-#modalContainer * {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-}
+/* ===== END OF ENHANCED MODAL SYSTEM STYLES ===== */
