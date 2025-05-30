@@ -4074,3 +4074,431 @@ function enhanceDashboardWithDocuments(stats, applications) {
 console.log('✅ Step 24: Document tracking functionality added successfully!');
 
 // ===== END OF DOCUMENT TRACKING FUNCTIONALITY =====
+// ===== STEP 25: DATA EXPORT FUNCTIONALITY =====
+// Add this code to your script.js file after the document tracking section
+
+// Export functionality
+async function exportData(format = 'json', options = {}) {
+    try {
+        // Default options
+        const exportOptions = {
+            includeInterviews: true,
+            includeContacts: true,
+            includeDocuments: true,
+            includeNotes: true,
+            ...options
+        };
+        
+        // Fetch all applications
+        const applications = await getAllApplicationsFromDB();
+        
+        if (applications.length === 0) {
+            notifyWarning('No applications to export');
+            return null;
+        }
+        
+        // Prepare data based on options
+        const exportData = applications.map(app => {
+            const cleanApp = {
+                id: app.id,
+                jobTitle: app.jobTitle,
+                companyName: app.companyName,
+                applicationDate: app.applicationDate,
+                status: app.status,
+                deadline: app.deadline,
+                url: app.url,
+                salary: app.salary,
+                location: app.location,
+                progressStage: app.progressStage,
+                createdAt: app.createdAt,
+                updatedAt: app.updatedAt
+            };
+            
+            if (exportOptions.includeNotes && app.notes) {
+                cleanApp.notes = app.notes;
+            }
+            
+            if (exportOptions.includeInterviews && app.interviewDates) {
+                cleanApp.interviews = app.interviewDates;
+            }
+            
+            if (exportOptions.includeContacts && app.contacts) {
+                cleanApp.contacts = app.contacts;
+            }
+            
+            if (exportOptions.includeDocuments && app.documents) {
+                cleanApp.documents = app.documents;
+            }
+            
+            return cleanApp;
+        });
+        
+        let fileContent, fileName, mimeType;
+        
+        if (format === 'json') {
+            // Export as JSON
+            fileContent = JSON.stringify({
+                exportDate: new Date().toISOString(),
+                applicationCount: exportData.length,
+                applications: exportData
+            }, null, 2);
+            fileName = `job-applications-${formatDate(new Date())}.json`;
+            mimeType = 'application/json';
+            
+        } else if (format === 'csv') {
+            // Export as CSV
+            fileContent = convertToCSV(exportData, exportOptions);
+            fileName = `job-applications-${formatDate(new Date())}.csv`;
+            mimeType = 'text/csv';
+        }
+        
+        // Create and download file
+        downloadFile(fileContent, fileName, mimeType);
+        
+        // Return statistics
+        return {
+            format: format,
+            applicationCount: exportData.length,
+            fileSize: new Blob([fileContent]).size,
+            fileName: fileName
+        };
+        
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        notifyError('Failed to export data');
+        throw error;
+    }
+}
+
+// Convert data to CSV format
+function convertToCSV(data, options) {
+    if (data.length === 0) return '';
+    
+    // Define CSV headers based on options
+    const headers = [
+        'ID',
+        'Job Title',
+        'Company',
+        'Application Date',
+        'Status',
+        'Progress Stage',
+        'Deadline',
+        'URL',
+        'Salary',
+        'Location'
+    ];
+    
+    if (options.includeNotes) {
+        headers.push('Notes');
+    }
+    
+    if (options.includeInterviews) {
+        headers.push('Interview Count', 'Next Interview');
+    }
+    
+    if (options.includeContacts) {
+        headers.push('Contact Count', 'Primary Contact');
+    }
+    
+    if (options.includeDocuments) {
+        headers.push('Documents Count', 'Document Types');
+    }
+    
+    headers.push('Created Date', 'Updated Date');
+    
+    // Create CSV rows
+    const rows = data.map(app => {
+        const row = [
+            app.id,
+            escapeCSV(app.jobTitle),
+            escapeCSV(app.companyName),
+            app.applicationDate,
+            app.status,
+            app.progressStage,
+            app.deadline || '',
+            app.url || '',
+            escapeCSV(app.salary || ''),
+            escapeCSV(app.location || '')
+        ];
+        
+        if (options.includeNotes) {
+            row.push(escapeCSV(app.notes || ''));
+        }
+        
+        if (options.includeInterviews) {
+            const interviews = app.interviews || [];
+            const upcomingInterviews = interviews.filter(i => 
+                i.status === 'scheduled' && 
+                new Date(`${i.date} ${i.time}`) >= new Date()
+            ).sort((a, b) => new Date(`${a.date} ${a.time}`) - new Date(`${b.date} ${b.time}`));
+            
+            row.push(interviews.length);
+            row.push(upcomingInterviews.length > 0 ? 
+                `${upcomingInterviews[0].date} ${upcomingInterviews[0].time}` : '');
+        }
+        
+        if (options.includeContacts) {
+            const contacts = app.contacts || [];
+            const primaryContact = contacts.find(c => c.isPrimary);
+            
+            row.push(contacts.length);
+            row.push(primaryContact ? escapeCSV(primaryContact.name) : '');
+        }
+        
+        if (options.includeDocuments) {
+            const documents = app.documents || [];
+            const documentTypes = [...new Set(documents.map(d => d.type))].join('; ');
+            
+            row.push(documents.length);
+            row.push(escapeCSV(documentTypes));
+        }
+        
+        row.push(app.createdAt || '');
+        row.push(app.updatedAt || '');
+        
+        return row;
+    });
+    
+    // Combine headers and rows
+    return [headers, ...rows]
+        .map(row => row.join(','))
+        .join('\n');
+}
+
+// Escape CSV values
+function escapeCSV(value) {
+    if (value === null || value === undefined) return '';
+    
+    const stringValue = String(value);
+    
+    // If value contains comma, quotes, or newline, wrap in quotes and escape quotes
+    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    
+    return stringValue;
+}
+
+// Format date for filename
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Download file
+function downloadFile(content, fileName, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Show export modal
+function showExportModal() {
+    const modalContent = `
+        <div class="export-modal-content">
+            <div class="export-stats" id="exportStats">
+                <!-- Stats will be populated here -->
+            </div>
+            
+            <div class="export-form" id="exportForm">
+                <h4>Choose Export Format:</h4>
+                
+                <div class="export-options">
+                    <div class="export-option selected" data-format="json">
+                        <div class="export-option-header">
+                            <span class="export-option-icon">📄</span>
+                            <h5 class="export-option-title">JSON Format</h5>
+                        </div>
+                        <p class="export-option-description">
+                            Complete data backup including all details, perfect for importing later
+                        </p>
+                    </div>
+                    
+                    <div class="export-option" data-format="csv">
+                        <div class="export-option-header">
+                            <span class="export-option-icon">📊</span>
+                            <h5 class="export-option-title">CSV Format</h5>
+                        </div>
+                        <p class="export-option-description">
+                            Spreadsheet format for Excel, Google Sheets, or data analysis
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="export-settings">
+                    <h4>Include in Export:</h4>
+                    <div class="export-checkboxes">
+                        <div class="export-checkbox">
+                            <input type="checkbox" id="includeInterviews" checked>
+                            <label for="includeInterviews">Interview Information</label>
+                        </div>
+                        <div class="export-checkbox">
+                            <input type="checkbox" id="includeContacts" checked>
+                            <label for="includeContacts">Contact Details</label>
+                        </div>
+                        <div class="export-checkbox">
+                            <input type="checkbox" id="includeDocuments" checked>
+                            <label for="includeDocuments">Document Records</label>
+                        </div>
+                        <div class="export-checkbox">
+                            <input type="checkbox" id="includeNotes" checked>
+                            <label for="includeNotes">Application Notes</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="exportButton">
+                        Export Data
+                    </button>
+                </div>
+            </div>
+            
+            <div class="export-progress" id="exportProgress">
+                <div class="export-progress-spinner"></div>
+                <p class="export-progress-text">Preparing your export...</p>
+            </div>
+            
+            <div class="export-success" id="exportSuccess">
+                <div class="export-success-icon">✅</div>
+                <h3 class="export-success-text">Export Successful!</h3>
+                <p class="export-success-details" id="exportDetails"></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" onclick="hideModal()">Done</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    showModal(modalContent, {
+        title: 'Export Application Data',
+        size: 'medium',
+        closeOnBackdrop: true,
+        onOpen: async (modalElement) => {
+            // Load statistics
+            await loadExportStats();
+            
+            // Setup format selection
+            const formatOptions = modalElement.querySelectorAll('.export-option');
+            formatOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    formatOptions.forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                });
+            });
+            
+            // Setup export button
+            const exportButton = modalElement.querySelector('#exportButton');
+            exportButton.addEventListener('click', async () => {
+                await handleExport();
+            });
+        }
+    });
+}
+
+// Load export statistics
+async function loadExportStats() {
+    try {
+        const applications = await getAllApplicationsFromDB();
+        const stats = await calculateDashboardStats();
+        
+        const statsContainer = document.getElementById('exportStats');
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="export-stat">
+                    <p class="export-stat-value">${applications.length}</p>
+                    <p class="export-stat-label">Applications</p>
+                </div>
+                <div class="export-stat">
+                    <p class="export-stat-value">${stats.totalInterviews || 0}</p>
+                    <p class="export-stat-label">Interviews</p>
+                </div>
+                <div class="export-stat">
+                    <p class="export-stat-value">${stats.totalContacts || 0}</p>
+                    <p class="export-stat-label">Contacts</p>
+                </div>
+                <div class="export-stat">
+                    <p class="export-stat-value">${stats.totalDocuments || 0}</p>
+                    <p class="export-stat-label">Documents</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading export stats:', error);
+    }
+}
+
+// Handle export process
+async function handleExport() {
+    const selectedFormat = document.querySelector('.export-option.selected').dataset.format;
+    const options = {
+        includeInterviews: document.getElementById('includeInterviews').checked,
+        includeContacts: document.getElementById('includeContacts').checked,
+        includeDocuments: document.getElementById('includeDocuments').checked,
+        includeNotes: document.getElementById('includeNotes').checked
+    };
+    
+    // Show progress
+    document.getElementById('exportForm').style.display = 'none';
+    document.getElementById('exportProgress').classList.add('active');
+    
+    try {
+        // Small delay for UI feedback
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Export data
+        const result = await exportData(selectedFormat, options);
+        
+        if (result) {
+            // Show success
+            document.getElementById('exportProgress').classList.remove('active');
+            document.getElementById('exportSuccess').classList.add('active');
+            
+            const fileSizeKB = (result.fileSize / 1024).toFixed(1);
+            document.getElementById('exportDetails').textContent = 
+                `Exported ${result.applicationCount} applications to ${result.fileName} (${fileSizeKB} KB)`;
+            
+            notifySuccess(`Data exported successfully to ${result.fileName}`);
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        hideModal();
+        notifyError('Failed to export data. Please try again.');
+    }
+}
+
+// Add export button to navigation
+function addExportButton() {
+    const navigation = document.getElementById('navigation');
+    if (navigation && !document.getElementById('exportBtn')) {
+        const exportBtn = document.createElement('button');
+        exportBtn.id = 'exportBtn';
+        exportBtn.className = 'export-btn';
+        exportBtn.innerHTML = '📥 Export Data';
+        exportBtn.onclick = showExportModal;
+        
+        navigation.appendChild(exportBtn);
+    }
+}
+
+// Initialize export functionality
+document.addEventListener('DOMContentLoaded', () => {
+    // Add export button after a small delay to ensure navigation is ready
+    setTimeout(addExportButton, 100);
+});
+
+console.log('✅ Step 25: Data export functionality added successfully!');
+
+// ===== END OF DATA EXPORT FUNCTIONALITY =====
