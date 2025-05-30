@@ -4227,3 +4227,393 @@ body.modal-open {
 }
 
 /* ===== END OF DATA EXPORT STYLES ===== */
+/* ===== STEP 26: DATA IMPORT STYLES ===== */
+/* Add these styles to your style.css file */
+
+/* Import Button in Navigation */
+.import-btn {
+    background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+    color: white;
+    padding: 0.75rem 2rem;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: var(--transition);
+    font-size: 1rem;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.import-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(102, 187, 106, 0.3);
+}
+
+.import-btn:active {
+    transform: scale(0.95);
+}
+
+/* Import Modal Styles */
+.import-modal-content {
+    padding: 1.5rem;
+}
+
+/* File Drop Zone */
+.file-drop-zone {
+    border: 3px dashed var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 3rem 2rem;
+    text-align: center;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    transition: var(--transition);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.file-drop-zone:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateY(-2px);
+}
+
+.file-drop-zone.drag-over {
+    border-color: #66bb6a;
+    background: rgba(102, 187, 106, 0.1);
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(102, 187, 106, 0.3);
+}
+
+.file-drop-zone-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.file-drop-zone-text {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.file-drop-zone-subtext {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.file-input {
+    display: none;
+}
+
+/* File Selected State */
+.file-selected {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    display: none;
+}
+
+.file-selected.active {
+    display: block;
+    animation: fadeInUp 0.3s ease;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.file-icon {
+    font-size: 2.5rem;
+}
+
+.file-details h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.file-details p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* Import Options */
+.import-options {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+}
+
+.import-options h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.import-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+}
+
+.import-option:last-child {
+    margin-bottom: 0;
+}
+
+.import-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.import-option label {
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    user-select: none;
+    flex: 1;
+}
+
+.import-option-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-left: 1.75rem;
+    margin-top: 0.25rem;
+}
+
+/* Import Preview */
+.import-preview {
+    display: none;
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+}
+
+.import-preview.active {
+    display: block;
+}
+
+.import-preview h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.import-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.import-summary-item {
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--border-radius-xs);
+    text-align: center;
+}
+
+[data-theme="dark"] .import-summary-item {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.import-summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin: 0;
+}
+
+.import-summary-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0.25rem 0 0 0;
+}
+
+/* Import Progress */
+.import-progress {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.import-progress.active {
+    display: block;
+}
+
+.import-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1.5rem 0;
+}
+
+[data-theme="dark"] .import-progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.import-progress-fill {
+    height: 100%;
+    background: var(--primary-gradient);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.import-progress-text {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.import-progress-details {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Import Results */
+.import-results {
+    display: none;
+    padding: 1.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+    margin: 1.5rem 0;
+}
+
+.import-results.active {
+    display: block;
+}
+
+.import-results.success {
+    border-color: #66bb6a;
+    background: rgba(102, 187, 106, 0.1);
+}
+
+.import-results.error {
+    border-color: #f5576c;
+    background: rgba(245, 87, 108, 0.1);
+}
+
+.import-results-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.import-results-text {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.import-results-details {
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+/* Import Error List */
+.import-errors {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(245, 87, 108, 0.1);
+    border: 1px solid #f5576c;
+    border-radius: var(--border-radius-xs);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.import-error-item {
+    font-size: 0.9rem;
+    color: #f5576c;
+    margin-bottom: 0.5rem;
+}
+
+.import-error-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .file-drop-zone-text {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .file-details h4 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .import-options h4,
+[data-theme="dark"] .import-preview h4 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .import-option label {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .import-progress-text {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .import-results-text {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .file-drop-zone {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .import-btn {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .file-drop-zone {
+        padding: 2rem 1rem;
+    }
+    
+    .import-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ===== END OF DATA IMPORT STYLES ===== */
