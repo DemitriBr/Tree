@@ -2994,7 +2994,8 @@ function showInterviewModal(applicationId, existingInterview = null) {
     });
 }
 
-// Show all interviews for an application
+// Replace your existing showInterviewsModal function with this fixed version:
+
 async function showInterviewsModal(applicationId) {
     try {
         const application = await getApplicationFromDB(applicationId);
@@ -3004,7 +3005,7 @@ async function showInterviewsModal(applicationId) {
             <div class="interviews-list">
                 <div class="interviews-header">
                     <h4>${application.jobTitle} at ${application.companyName}</h4>
-                    <button class="btn btn-primary btn-small" onclick="showInterviewModal('${applicationId}')">
+                    <button class="btn btn-primary btn-small" onclick="window.handleAddInterviewClick('${applicationId}')">
                         + Add Interview
                     </button>
                 </div>
@@ -3033,6 +3034,9 @@ async function showInterviewsModal(applicationId) {
                                   interview.status === 'cancelled' ? 'cancelled' : 
                                   isPast ? 'past' : 'upcoming';
                 
+                // Escape the interview data for safe passing
+                const interviewDataEscaped = encodeURIComponent(JSON.stringify(interview));
+                
                 content += `
                     <div class="interview-card ${statusClass}">
                         <div class="interview-card-header">
@@ -3050,7 +3054,7 @@ async function showInterviewsModal(applicationId) {
                         ${interview.interviewer ? `<div class="interview-interviewer">👤 ${interview.interviewer}</div>` : ''}
                         ${interview.notes ? `<div class="interview-notes">${interview.notes}</div>` : ''}
                         <div class="interview-actions">
-                            <button class="btn-icon small" onclick="showInterviewModal('${applicationId}', ${JSON.stringify(interview).replace(/"/g, '&quot;')})" title="Edit">
+                            <button class="btn-icon small" onclick="window.handleEditInterviewClick('${applicationId}', '${interviewDataEscaped}')" title="Edit">
                                 ✏️
                             </button>
                             <button class="btn-icon small delete" onclick="confirmDeleteInterview('${applicationId}', '${interview.id}')" title="Delete">
@@ -3078,7 +3082,33 @@ async function showInterviewsModal(applicationId) {
     }
 }
 
-// Confirm interview deletion
+// Add these helper functions to handle the modal transitions:
+
+window.handleAddInterviewClick = async function(applicationId) {
+    // Close current modal first
+    await hideModal();
+    
+    // Small delay to ensure modal is fully closed
+    setTimeout(() => {
+        showInterviewModal(applicationId);
+    }, 100);
+};
+
+window.handleEditInterviewClick = async function(applicationId, interviewDataEscaped) {
+    // Decode the interview data
+    const interview = JSON.parse(decodeURIComponent(interviewDataEscaped));
+    
+    // Close current modal first
+    await hideModal();
+    
+    // Small delay to ensure modal is fully closed
+    setTimeout(() => {
+        showInterviewModal(applicationId, interview);
+    }, 100);
+};
+
+// Also update the confirmDeleteInterview function to handle the refresh properly:
+
 function confirmDeleteInterview(applicationId, interviewId) {
     showConfirmModal(
         'Are you sure you want to delete this interview?',
@@ -3088,11 +3118,18 @@ function confirmDeleteInterview(applicationId, interviewId) {
             confirmClass: 'btn btn-danger',
             onConfirm: async () => {
                 await deleteInterview(applicationId, interviewId);
-                // Refresh the interviews modal
-                showInterviewsModal(applicationId);
+                
+                // Close the current modal first
+                await hideModal();
+                
+                // Small delay then reopen the interviews modal
+                setTimeout(() => {
+                    showInterviewsModal(applicationId);
+                }, 100);
             }
         }
     );
+}
 }
 
 // Helper function to enhance application cards with interview information
