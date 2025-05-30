@@ -4481,3 +4481,606 @@ async function handleExport() {
 console.log('✅ Step 25: Data export functionality added successfully!');
 
 // ===== END OF DATA EXPORT FUNCTIONALITY =====
+// ===== STEP 26: DATA IMPORT FUNCTIONALITY =====
+// Add this code to your script.js file after the export functionality section
+
+// Import functionality
+async function importData(fileContent, fileType, importMode = 'merge') {
+    try {
+        let applications = [];
+        
+        if (fileType === 'json') {
+            applications = parseJSONImport(fileContent);
+        } else if (fileType === 'csv') {
+            applications = parseCSVImport(fileContent);
+        } else {
+            throw new Error('Unsupported file type');
+        }
+        
+        if (!applications || applications.length === 0) {
+            throw new Error('No valid applications found in file');
+        }
+        
+        // Get existing applications
+        const existingApplications = await getAllApplicationsFromDB();
+        const existingIds = new Set(existingApplications.map(app => app.id));
+        
+        let imported = 0;
+        let skipped = 0;
+        let updated = 0;
+        const errors = [];
+        
+        // Process each application
+        for (const app of applications) {
+            try {
+                // Validate required fields
+                if (!app.jobTitle || !app.companyName || !app.applicationDate || !app.status) {
+                    errors.push(`Missing required fields for ${app.jobTitle || 'Unknown'} at ${app.companyName || 'Unknown'}`);
+                    skipped++;
+                    continue;
+                }
+                
+                // Check if application already exists
+                const exists = existingIds.has(app.id);
+                
+                if (importMode === 'merge') {
+                    if (exists) {
+                        // Update existing application
+                        await updateApplicationInDB(app);
+                        updated++;
+                    } else {
+                        // Add new application
+                        await addApplicationToDB(app);
+                        imported++;
+                    }
+                } else if (importMode === 'new') {
+                    if (!exists) {
+                        // Only add if it doesn't exist
+                        await addApplicationToDB(app);
+                        imported++;
+                    } else {
+                        skipped++;
+                    }
+                } else if (importMode === 'replace') {
+                    // Clear all existing data first (only once)
+                    if (imported === 0 && updated === 0) {
+                        await clearAllApplications();
+                    }
+                    // Add all applications
+                    await addApplicationToDB(app);
+                    imported++;
+                }
+                
+            } catch (error) {
+                console.error('Error importing application:', error);
+                errors.push(`Failed to import ${app.jobTitle} at ${app.companyName}: ${error.message}`);
+                skipped++;
+            }
+        }
+        
+        return {
+            success: true,
+            imported,
+            updated,
+            skipped,
+            total: applications.length,
+            errors
+        };
+        
+    } catch (error) {
+        console.error('Error importing data:', error);
+        return {
+            success: false,
+            error: error.message,
+            imported: 0,
+            updated: 0,
+            skipped: 0,
+            total: 0,
+            errors: [error.message]
+        };
+    }
+}
+
+// Parse JSON import file
+function parseJSONImport(fileContent) {
+    try {
+        const data = JSON.parse(fileContent);
+        
+        // Handle both direct array and wrapped format
+        let applications = data;
+        if (data.applications && Array.isArray(data.applications)) {
+            applications = data.applications;
+        }
+        
+        if (!Array.isArray(applications)) {
+            throw new Error('Invalid JSON format: expected array of applications');
+        }
+        
+        // Process and validate each application
+        return applications.map(app => ({
+            id: app.id || generateId(),
+            jobTitle: app.jobTitle,
+            companyName: app.companyName,
+            applicationDate: app.applicationDate,
+            status: app.status,
+            deadline: app.deadline || null,
+            url: app.url || '',
+            salary: app.salary || '',
+            location: app.location || '',
+            progressStage: app.progressStage || 'to-apply',
+            notes: app.notes || '',
+            interviewDates: app.interviews || app.interviewDates || [],
+            contacts: app.contacts || [],
+            documents: app.documents || [],
+            createdAt: app.createdAt || new Date().toISOString(),
+            updatedAt: app.updatedAt || new Date().toISOString()
+        }));
+        
+    } catch (error) {
+        console.error('JSON parsing error:', error);
+        throw new Error('Invalid JSON file format');
+    }
+}
+
+// Parse CSV import file
+function parseCSVImport(fileContent) {
+    try {
+        const lines = fileContent.split('\n').filter(line => line.trim());
+        if (lines.length < 2) {
+            throw new Error('CSV file is empty or has no data');
+        }
+        
+        // Parse headers
+        const headers = parseCSVLine(lines[0]);
+        const applications = [];
+        
+        // Process each data row
+        for (let i = 1; i < lines.length; i++) {
+            const values = parseCSVLine(lines[i]);
+            if (values.length === 0) continue;
+            
+            // Map CSV columns to application object
+            const app = {
+                id: generateId(), // Generate new ID for CSV imports
+                jobTitle: getValue(headers, values, ['Job Title', 'jobTitle', 'Title']),
+                companyName: getValue(headers, values, ['Company', 'companyName', 'Company Name']),
+                applicationDate: getValue(headers, values, ['Application Date', 'applicationDate', 'Date Applied']),
+                status: getValue(headers, values, ['Status', 'status']),
+                deadline: getValue(headers, values, ['Deadline', 'deadline']) || null,
+                url: getValue(headers, values, ['URL', 'url', 'Link']) || '',
+                salary: getValue(headers, values, ['Salary', 'salary', 'Salary Range']) || '',
+                location: getValue(headers, values, ['Location', 'location']) || '',
+                progressStage: getValue(headers, values, ['Progress Stage', 'progressStage']) || 'to-apply',
+                notes: getValue(headers, values, ['Notes', 'notes']) || '',
+                interviewDates: [], // CSV doesn't include nested data
+                contacts: [],
+                documents: [],
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            applications.push(app);
+        }
+        
+        return applications;
+        
+    } catch (error) {
+        console.error('CSV parsing error:', error);
+        throw new Error('Invalid CSV file format');
+    }
+}
+
+// Parse a single CSV line handling quotes and commas
+function parseCSVLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"' && inQuotes && nextChar === '"') {
+            // Escaped quote
+            current += '"';
+            i++; // Skip next quote
+        } else if (char === '"') {
+            // Toggle quote state
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            // End of field
+            values.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    // Add last field
+    values.push(current.trim());
+    
+    return values;
+}
+
+// Get value from CSV row by header name
+function getValue(headers, values, possibleNames) {
+    for (const name of possibleNames) {
+        const index = headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+        if (index !== -1 && values[index]) {
+            return values[index];
+        }
+    }
+    return '';
+}
+
+// Clear all applications from database
+async function clearAllApplications() {
+    const applications = await getAllApplicationsFromDB();
+    for (const app of applications) {
+        await deleteApplicationFromDB(app.id);
+    }
+}
+
+// Show import modal
+function showImportModal() {
+    const modalContent = `
+        <div class="import-modal-content">
+            <div class="file-drop-zone" id="dropZone">
+                <input type="file" id="fileInput" class="file-input" accept=".json,.csv">
+                <div class="file-drop-zone-icon">📤</div>
+                <p class="file-drop-zone-text">Drop your file here or click to browse</p>
+                <p class="file-drop-zone-subtext">Supports JSON and CSV files exported from this app</p>
+            </div>
+            
+            <div class="file-selected" id="fileSelected">
+                <div class="file-info">
+                    <span class="file-icon" id="fileIcon">📄</span>
+                    <div class="file-details">
+                        <h4 id="fileName">No file selected</h4>
+                        <p id="fileDetails">Select a file to import</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="import-preview" id="importPreview">
+                <h4>Import Preview</h4>
+                <div class="import-summary" id="importSummary">
+                    <!-- Summary will be populated here -->
+                </div>
+            </div>
+            
+            <div class="import-options">
+                <h4>Import Mode:</h4>
+                <div class="import-option">
+                    <input type="radio" id="importMerge" name="importMode" value="merge" checked>
+                    <label for="importMerge">Merge with existing data</label>
+                </div>
+                <p class="import-option-description">Update existing applications and add new ones</p>
+                
+                <div class="import-option">
+                    <input type="radio" id="importNew" name="importMode" value="new">
+                    <label for="importNew">Import only new applications</label>
+                </div>
+                <p class="import-option-description">Skip applications that already exist</p>
+                
+                <div class="import-option">
+                    <input type="radio" id="importReplace" name="importMode" value="replace">
+                    <label for="importReplace">Replace all data</label>
+                </div>
+                <p class="import-option-description">⚠️ Delete all existing data and import fresh</p>
+            </div>
+            
+            <div class="import-progress" id="importProgress">
+                <p class="import-progress-text">Importing applications...</p>
+                <div class="import-progress-bar">
+                    <div class="import-progress-fill" id="progressFill"></div>
+                </div>
+                <p class="import-progress-details" id="progressDetails">Processing...</p>
+            </div>
+            
+            <div class="import-results" id="importResults">
+                <div class="import-results-icon" id="resultsIcon"></div>
+                <p class="import-results-text" id="resultsText"></p>
+                <p class="import-results-details" id="resultsDetails"></p>
+                <div class="import-errors" id="importErrors" style="display: none;">
+                    <!-- Errors will be listed here -->
+                </div>
+            </div>
+            
+            <div class="modal-actions" id="importActions">
+                <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="importButton" disabled>
+                    Import Data
+                </button>
+            </div>
+        </div>
+    `;
+    
+    showModal(modalContent, {
+        title: 'Import Application Data',
+        size: 'medium',
+        closeOnBackdrop: false,
+        onOpen: (modalElement) => {
+            setupImportModal();
+        }
+    });
+}
+
+// Setup import modal functionality
+function setupImportModal() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const importButton = document.getElementById('importButton');
+    
+    let selectedFile = null;
+    let fileContent = null;
+    let fileType = null;
+    
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleFileSelect(file);
+        }
+    });
+    
+    // Drop zone click
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // Drag and drop events
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+    
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            handleFileSelect(file);
+        }
+    });
+    
+    // Handle file selection
+    async function handleFileSelect(file) {
+        selectedFile = file;
+        
+        // Validate file type
+        const extension = file.name.split('.').pop().toLowerCase();
+        if (extension !== 'json' && extension !== 'csv') {
+            notifyError('Please select a JSON or CSV file');
+            return;
+        }
+        
+        fileType = extension;
+        
+        // Update UI
+        document.getElementById('fileSelected').classList.add('active');
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileDetails').textContent = `${fileType.toUpperCase()} • ${formatFileSize(file.size)}`;
+        document.getElementById('fileIcon').textContent = fileType === 'json' ? '📄' : '📊';
+        
+        // Read file content
+        try {
+            fileContent = await readFile(file);
+            
+            // Preview import
+            const preview = await previewImport(fileContent, fileType);
+            displayImportPreview(preview);
+            
+            // Enable import button
+            importButton.disabled = false;
+            
+        } catch (error) {
+            console.error('Error reading file:', error);
+            notifyError('Failed to read file. Please check the file format.');
+            importButton.disabled = true;
+        }
+    }
+    
+    // Import button click
+    importButton.addEventListener('click', async () => {
+        if (!fileContent || !fileType) return;
+        
+        const importMode = document.querySelector('input[name="importMode"]:checked').value;
+        
+        // Confirm replace mode
+        if (importMode === 'replace') {
+            const confirmed = await new Promise(resolve => {
+                showConfirmModal(
+                    'Are you sure you want to replace all existing data? This action cannot be undone.',
+                    {
+                        title: 'Confirm Data Replacement',
+                        confirmText: 'Replace All Data',
+                        confirmClass: 'btn btn-danger',
+                        onConfirm: () => resolve(true),
+                        onCancel: () => resolve(false)
+                    }
+                );
+            });
+            
+            if (!confirmed) return;
+        }
+        
+        // Hide form and show progress
+        document.querySelector('.import-modal-content > :not(.import-progress):not(.import-results)').style.display = 'none';
+        document.getElementById('importActions').style.display = 'none';
+        document.getElementById('importProgress').classList.add('active');
+        
+        // Perform import
+        try {
+            const result = await importData(fileContent, fileType, importMode);
+            
+            // Show results
+            document.getElementById('importProgress').classList.remove('active');
+            displayImportResults(result);
+            
+        } catch (error) {
+            console.error('Import error:', error);
+            document.getElementById('importProgress').classList.remove('active');
+            displayImportResults({
+                success: false,
+                error: error.message,
+                imported: 0,
+                updated: 0,
+                skipped: 0,
+                errors: [error.message]
+            });
+        }
+    });
+}
+
+// Read file content
+function readFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+// Preview import data
+async function previewImport(fileContent, fileType) {
+    try {
+        let applications = [];
+        
+        if (fileType === 'json') {
+            applications = parseJSONImport(fileContent);
+        } else if (fileType === 'csv') {
+            applications = parseCSVImport(fileContent);
+        }
+        
+        // Count various data types
+        let interviewCount = 0;
+        let contactCount = 0;
+        let documentCount = 0;
+        
+        applications.forEach(app => {
+            if (app.interviewDates) interviewCount += app.interviewDates.length;
+            if (app.contacts) contactCount += app.contacts.length;
+            if (app.documents) documentCount += app.documents.length;
+        });
+        
+        return {
+            applications: applications.length,
+            interviews: interviewCount,
+            contacts: contactCount,
+            documents: documentCount
+        };
+        
+    } catch (error) {
+        console.error('Preview error:', error);
+        return {
+            applications: 0,
+            interviews: 0,
+            contacts: 0,
+            documents: 0
+        };
+    }
+}
+
+// Display import preview
+function displayImportPreview(preview) {
+    const previewElement = document.getElementById('importPreview');
+    const summaryElement = document.getElementById('importSummary');
+    
+    previewElement.classList.add('active');
+    
+    summaryElement.innerHTML = `
+        <div class="import-summary-item">
+            <p class="import-summary-value">${preview.applications}</p>
+            <p class="import-summary-label">Applications</p>
+        </div>
+        <div class="import-summary-item">
+            <p class="import-summary-value">${preview.interviews}</p>
+            <p class="import-summary-label">Interviews</p>
+        </div>
+        <div class="import-summary-item">
+            <p class="import-summary-value">${preview.contacts}</p>
+            <p class="import-summary-label">Contacts</p>
+        </div>
+        <div class="import-summary-item">
+            <p class="import-summary-value">${preview.documents}</p>
+            <p class="import-summary-label">Documents</p>
+        </div>
+    `;
+}
+
+// Display import results
+function displayImportResults(result) {
+    const resultsElement = document.getElementById('importResults');
+    const iconElement = document.getElementById('resultsIcon');
+    const textElement = document.getElementById('resultsText');
+    const detailsElement = document.getElementById('resultsDetails');
+    const errorsElement = document.getElementById('importErrors');
+    const actionsElement = document.getElementById('importActions');
+    
+    resultsElement.classList.add('active');
+    
+    if (result.success) {
+        resultsElement.classList.add('success');
+        iconElement.textContent = '✅';
+        textElement.textContent = 'Import Completed Successfully!';
+        
+        const details = [];
+        if (result.imported > 0) details.push(`${result.imported} new applications imported`);
+        if (result.updated > 0) details.push(`${result.updated} applications updated`);
+        if (result.skipped > 0) details.push(`${result.skipped} applications skipped`);
+        
+        detailsElement.textContent = details.join(', ');
+        
+        if (result.errors && result.errors.length > 0) {
+            errorsElement.style.display = 'block';
+            errorsElement.innerHTML = '<h5>Import Warnings:</h5>' + 
+                result.errors.map(err => `<div class="import-error-item">${err}</div>`).join('');
+        }
+        
+        // Refresh the current view
+        setTimeout(() => {
+            const activeView = document.querySelector('.view.active');
+            if (activeView && activeView.id === 'listView') {
+                renderApplicationsList();
+            } else if (activeView && activeView.id === 'kanbanView') {
+                renderKanbanBoard();
+            } else if (activeView && activeView.id === 'dashboardView') {
+                renderDashboard();
+            }
+        }, 100);
+        
+    } else {
+        resultsElement.classList.add('error');
+        iconElement.textContent = '❌';
+        textElement.textContent = 'Import Failed';
+        detailsElement.textContent = result.error || 'An error occurred during import';
+        
+        if (result.errors && result.errors.length > 0) {
+            errorsElement.style.display = 'block';
+            errorsElement.innerHTML = '<h5>Errors:</h5>' + 
+                result.errors.map(err => `<div class="import-error-item">${err}</div>`).join('');
+        }
+    }
+    
+    // Show done button
+    actionsElement.style.display = 'flex';
+    actionsElement.innerHTML = '<button type="button" class="btn btn-primary" onclick="hideModal()">Done</button>';
+}
+
+// Format file size
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+console.log('✅ Step 26: Data import functionality added successfully!');
+
+// ===== END OF DATA IMPORT FUNCTIONALITY =====
