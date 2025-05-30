@@ -1730,115 +1730,110 @@ const dragHandlers = {
     },
     
     drop: async function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // CRITICAL: Capture all necessary data immediately
-        const currentCard = draggedCard;
-        const currentApplicationId = draggedApplicationId;
-        const currentOriginalStatus = originalStatus;
-        
-        const dropZone = e.target.closest('.kanban-cards-container') || 
-                        e.target.closest('.kanban-column')?.querySelector('.kanban-cards-container');
-        
-        if (!dropZone || !currentCard || !currentApplicationId || !currentOriginalStatus) {
-            document.querySelectorAll('.kanban-column').forEach(col => {
-                col.classList.remove('drag-over');
-            });
-            // Reset globals
-            draggedCard = null;
-            draggedApplicationId = null;
-            originalStatus = null;
-            return;
-        }
-        
-        const newStatus = dropZone.dataset.status;
-        
-        // Clean up columns immediately
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // CRITICAL: Capture all necessary data immediately
+    const currentCard = draggedCard;
+    const currentApplicationId = draggedApplicationId;
+    const currentOriginalStatus = originalStatus;
+    
+    const dropZone = e.target.closest('.kanban-cards-container') || 
+                    e.target.closest('.kanban-column')?.querySelector('.kanban-cards-container');
+    
+    if (!dropZone || !currentCard || !currentApplicationId || !currentOriginalStatus) {
         document.querySelectorAll('.kanban-column').forEach(col => {
             col.classList.remove('drag-over');
         });
-        
-        if (currentOriginalStatus !== newStatus) {
-            // Add updating class
-            currentCard.classList.add('updating');
-            
-            try {
-                const application = await getApplicationFromDB(currentApplicationId);
-                
-                application.status = newStatus;
-                application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
-                application.updatedAt = new Date().toISOString();
-                
-                if (!application.statusHistory) {
-                    application.statusHistory = [];
-                }
-                application.statusHistory.push({
-                    from: currentOriginalStatus,
-                    to: newStatus,
-                    date: new Date().toISOString(),
-                    action: 'kanban-drag'
-                });
-                
-                await updateApplicationInDB(application);
-                
-                console.log(`Moved "${application.jobTitle}" from ${currentOriginalStatus} to ${newStatus}`);
-                notifySuccess(`Moved "${application.jobTitle}" to ${newStatus}`);
-                
-                // Remove updating class and add success
-                if (currentCard.parentNode) {
-                    currentCard.classList.remove('updating');
-                    currentCard.classList.add('drop-success');
-                    
-                    // Remove success class after animation
-                    setTimeout(() => {
-                        // Double check the card still exists
-                        if (currentCard && currentCard.parentNode && currentCard.classList) {
-                            currentCard.classList.remove('drop-success');
-                        }
-                    }, 500);
-                }
-                
-                updateKanbanUI();
-                
-            } catch (error) {
-                console.error('Error updating status:', error);
-                notifyError('Failed to update application status. Please try again.');
-                
-                // Remove updating class
-                if (currentCard && currentCard.parentNode) {
-                    currentCard.classList.remove('updating');
-                }
-                
-                // Move card back to original column
-                const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${currentOriginalStatus}"]`);
-                if (originalColumn && currentCard && currentCard.parentNode) {
-                    originalColumn.appendChild(currentCard);
-                }
-            }
-        }
-        
-        // Reset globals after everything is done
+        // Reset globals
         draggedCard = null;
         draggedApplicationId = null;
         originalStatus = null;
-    },
+        return;
+    }
     
-    enter: function(e) {
-        const column = e.target.closest('.kanban-column');
-        if (column) {
-            column.classList.add('drag-over');
-        }
-    },
+    const newStatus = dropZone.dataset.status;
     
-    leave: function(e) {
-        const column = e.target.closest('.kanban-column');
-        if (column && !column.contains(e.relatedTarget)) {
-            column.classList.remove('drag-over');
+    // Clean up columns immediately
+    document.querySelectorAll('.kanban-column').forEach(col => {
+        col.classList.remove('drag-over');
+    });
+    
+    if (currentOriginalStatus !== newStatus) {
+        // Add updating class
+        currentCard.classList.add('updating');
+        
+        try {
+            const application = await getApplicationFromDB(currentApplicationId);
+            
+            application.status = newStatus;
+            application.progressStage = statusToProgressStageMap[newStatus] || application.progressStage;
+            application.updatedAt = new Date().toISOString();
+            
+            if (!application.statusHistory) {
+                application.statusHistory = [];
+            }
+            application.statusHistory.push({
+                from: currentOriginalStatus,
+                to: newStatus,
+                date: new Date().toISOString(),
+                action: 'kanban-drag'
+            });
+            
+            await updateApplicationInDB(application);
+            
+            console.log(`Moved "${application.jobTitle}" from ${currentOriginalStatus} to ${newStatus}`);
+            
+            // Format the status name properly for display
+            const formatStatus = (status) => {
+                return status
+                    .replace(/[^\w\s-]/gi, '') // Remove special characters
+                    .replace(/-/g, ' ')        // Replace hyphens with spaces
+                    .split(' ')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+            };
+            
+            notifySuccess(`Moved "${application.jobTitle}" to ${formatStatus(newStatus)}`);
+            
+            // Remove updating class and add success
+            if (currentCard.parentNode) {
+                currentCard.classList.remove('updating');
+                currentCard.classList.add('drop-success');
+                
+                // Remove success class after animation
+                setTimeout(() => {
+                    // Double check the card still exists
+                    if (currentCard && currentCard.parentNode && currentCard.classList) {
+                        currentCard.classList.remove('drop-success');
+                    }
+                }, 500);
+            }
+            
+            updateKanbanUI();
+            
+        } catch (error) {
+            console.error('Error updating status:', error);
+            notifyError('Failed to update application status. Please try again.');
+            
+            // Remove updating class
+            if (currentCard && currentCard.parentNode) {
+                currentCard.classList.remove('updating');
+            }
+            
+            // Move card back to original column
+            const originalColumn = document.querySelector(`.kanban-cards-container[data-status="${currentOriginalStatus}"]`);
+            if (originalColumn && currentCard && currentCard.parentNode) {
+                originalColumn.appendChild(currentCard);
+            }
         }
     }
-};
-
+    
+    // Reset globals after everything is done
+    draggedCard = null;
+    draggedApplicationId = null;
+    originalStatus = null;
+}
 // Main function to render the Kanban Board
 async function renderKanbanBoard() {
     const kanbanContainer = document.getElementById('kanbanContainer');
