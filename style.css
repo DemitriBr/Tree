@@ -3954,3 +3954,276 @@ body.modal-open {
 }
 
 /* ===== END OF ACTION BUTTON STYLING FIX ===== */
+/* ===== STEP 25: DATA EXPORT STYLES ===== */
+/* Add these styles to your style.css file */
+
+/* Export Button in Navigation */
+.export-btn {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 0.75rem 2rem;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: var(--transition);
+    font-size: 1rem;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.export-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+}
+
+.export-btn:active {
+    transform: scale(0.95);
+}
+
+/* Export Modal Styles */
+.export-modal-content {
+    padding: 1.5rem;
+}
+
+.export-options {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.export-option {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.export-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.export-option.selected {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.export-option-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.export-option-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.export-option-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.export-option-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Export Settings */
+.export-settings {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.export-settings h4 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.export-checkboxes {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.export-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.export-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.export-checkbox label {
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    user-select: none;
+}
+
+/* Export Progress */
+.export-progress {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.export-progress.active {
+    display: block;
+}
+
+.export-progress-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid var(--glass-border);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    animation: exportSpin 1s linear infinite;
+}
+
+@keyframes exportSpin {
+    to { transform: rotate(360deg); }
+}
+
+.export-progress-text {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Export Success */
+.export-success {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.export-success.active {
+    display: block;
+}
+
+.export-success-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: successBounce 0.5s ease;
+}
+
+@keyframes successBounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.export-success-text {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.export-success-details {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+/* Export Statistics */
+.export-stats {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    text-align: center;
+}
+
+.export-stat {
+    padding: 0.5rem;
+}
+
+.export-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #667eea;
+    margin: 0;
+}
+
+.export-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .export-option-title {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .export-checkbox label {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .export-progress-text {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .export-success-text {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .export-option {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .export-option.selected {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .export-btn {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .export-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .export-option {
+        padding: 1.25rem;
+    }
+}
+
+/* ===== END OF DATA EXPORT STYLES ===== */
