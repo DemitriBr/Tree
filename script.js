@@ -798,74 +798,51 @@ async function handleActionButtonClick(e) {
         deleteBtn.style.opacity = '0.5';
         deleteBtn.style.cursor = 'not-allowed';
         
-        // Show confirmation modal
-        showConfirmModal(
-            `Are you sure you want to delete the application for "${jobTitle}" at ${companyName}?`,
-            {
-                title: 'Delete Application',
-                confirmText: 'Delete',
-                cancelText: 'Cancel',
-                confirmClass: 'btn btn-danger',
-                cancelClass: 'btn btn-secondary',
-                onConfirm: async () => {
-                    try {
-                        // Show loading state
-                        deleteBtn.innerHTML = '⏳';
-                        
-                        // Delete from database
-                        await deleteApplicationFromDB(applicationId);
-                        
-                        // Animate card removal
-                        applicationCard.style.transition = 'all 0.3s ease';
-                        applicationCard.style.opacity = '0';
-                        applicationCard.style.transform = 'translateX(-100%)';
-                        
-                        // Show success notification
-                        notifySuccess(`Application for "${jobTitle}" at ${companyName} deleted successfully.`);
-                        
-                        // Refresh the appropriate view
-                        setTimeout(() => {
-                            if (document.getElementById('listView').classList.contains('active')) {
-                                filterSortAndRender();
-                            } else if (document.getElementById('kanbanView').classList.contains('active')) {
-                                renderKanbanBoard();
-                            }
-                        }, 300);
-                        
-                    } catch (error) {
-                        console.error('Error deleting application:', error);
-                        
-                        // Restore button state on error
-                        deleteBtn.disabled = wasDisabled;
-                        deleteBtn.innerHTML = originalContent;
-                        deleteBtn.style.opacity = '';
-                        deleteBtn.style.cursor = '';
-                        deleteBtn.dataset.processing = 'false';
-                        
-                        notifyError('Failed to delete application. Please try again.');
-                    }
-                },
-                onCancel: () => {
-                    // Restore button state on cancel
-                    deleteBtn.disabled = wasDisabled;
-                    deleteBtn.innerHTML = originalContent;
-                    deleteBtn.style.opacity = '';
-                    deleteBtn.style.cursor = '';
-                    deleteBtn.dataset.processing = 'false';
-                },
-                onClose: () => {
-                    // Ensure button state is restored on close
-                    if (deleteBtn) {
-                        deleteBtn.disabled = wasDisabled;
-                        deleteBtn.innerHTML = originalContent;
-                        deleteBtn.style.opacity = '';
-                        deleteBtn.style.cursor = '';
-                        deleteBtn.dataset.processing = 'false';
-                    }
-                }
-            }
-        );
+        function showConfirmModal(message, options = {}) {
+    const modalContainer = document.getElementById('modalContainer');
+    const modalContent = modalContainer.querySelector('.modal-content');
+
+    if (!modalContainer || !modalContent) {
+        console.error('Modal container or content missing');
+        return;
     }
+
+    modalContent.innerHTML = `
+        <h3>${options.title || 'Confirm Action'}</h3>
+        <p>${message}</p>
+        <div class="form-actions">
+            <button class="${options.cancelClass || 'btn btn-secondary'}" id="modalCancelBtn">
+                ${options.cancelText || 'Cancel'}
+            </button>
+            <button class="${options.confirmClass || 'btn btn-danger'}" id="modalConfirmBtn">
+                ${options.confirmText || 'Confirm'}
+            </button>
+        </div>
+    `;
+
+    modalContainer.classList.add('active');
+
+    const confirmBtn = modalContent.querySelector('#modalConfirmBtn');
+    const cancelBtn = modalContent.querySelector('#modalCancelBtn');
+
+    const closeModal = () => {
+        modalContainer.classList.remove('active');
+        if (typeof options.onClose === 'function') options.onClose();
+    };
+
+    confirmBtn.addEventListener('click', async () => {
+        if (typeof options.onConfirm === 'function') {
+            await options.onConfirm();
+        }
+        closeModal();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        if (typeof options.onCancel === 'function') {
+            options.onCancel();
+        }
+        closeModal();
+    });
 }
 // Load application data into form for editing
 async function loadApplicationForEdit(applicationId) {
