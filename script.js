@@ -3657,3 +3657,409 @@ function enhanceDashboardWithContacts(stats, applications) {
 console.log('✅ Step 23: Contacts functionality added successfully!');
 
 // ===== END OF CONTACTS FUNCTIONALITY =====
+// ===== STEP 24: DOCUMENT TRACKING FUNCTIONALITY =====
+// Add this code to your script.js file after the contacts functionality section
+
+// Document Management Functions
+async function addDocument(applicationId, documentData) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        if (!application.documents) {
+            application.documents = [];
+        }
+        
+        // Add new document with unique ID
+        const document = {
+            id: generateId(),
+            name: documentData.name,
+            type: documentData.type, // resume, cover-letter, portfolio, reference, other
+            version: documentData.version || '1.0',
+            dateSent: documentData.dateSent,
+            notes: documentData.notes,
+            createdAt: new Date().toISOString()
+        };
+        
+        application.documents.push(document);
+        application.updatedAt = new Date().toISOString();
+        
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Document added successfully!');
+        return document;
+        
+    } catch (error) {
+        console.error('Error adding document:', error);
+        notifyError('Failed to add document');
+        throw error;
+    }
+}
+
+async function updateDocument(applicationId, documentId, updatedData) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        const documentIndex = application.documents.findIndex(d => d.id === documentId);
+        if (documentIndex === -1) {
+            throw new Error('Document not found');
+        }
+        
+        application.documents[documentIndex] = {
+            ...application.documents[documentIndex],
+            ...updatedData,
+            updatedAt: new Date().toISOString()
+        };
+        
+        application.updatedAt = new Date().toISOString();
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Document updated successfully!');
+        
+    } catch (error) {
+        console.error('Error updating document:', error);
+        notifyError('Failed to update document');
+        throw error;
+    }
+}
+
+async function deleteDocument(applicationId, documentId) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        application.documents = application.documents.filter(d => d.id !== documentId);
+        application.updatedAt = new Date().toISOString();
+        
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Document removed successfully!');
+        
+    } catch (error) {
+        console.error('Error deleting document:', error);
+        notifyError('Failed to remove document');
+        throw error;
+    }
+}
+
+// Show document form modal
+function showDocumentModal(applicationId, existingDocument = null) {
+    const isEdit = existingDocument !== null;
+    const title = isEdit ? 'Edit Document' : 'Add Document';
+    
+    // Get current date for default
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    const formHtml = `
+        <form id="documentForm" class="modal-form document-form">
+            <div class="form-group">
+                <label for="documentName">Document Name *</label>
+                <input type="text" id="documentName" name="name" required 
+                       value="${isEdit ? existingDocument.name : ''}"
+                       placeholder="e.g., Resume_CompanyName_v2">
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="documentType">Document Type *</label>
+                    <select id="documentType" name="type" required>
+                        <option value="">Select Type</option>
+                        <option value="resume" ${isEdit && existingDocument.type === 'resume' ? 'selected' : ''}>Resume/CV</option>
+                        <option value="cover-letter" ${isEdit && existingDocument.type === 'cover-letter' ? 'selected' : ''}>Cover Letter</option>
+                        <option value="portfolio" ${isEdit && existingDocument.type === 'portfolio' ? 'selected' : ''}>Portfolio</option>
+                        <option value="reference" ${isEdit && existingDocument.type === 'reference' ? 'selected' : ''}>References</option>
+                        <option value="other" ${isEdit && existingDocument.type === 'other' ? 'selected' : ''}>Other</option>
+                    </select>
+                    <span class="error-message"></span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="documentVersion">Version</label>
+                    <input type="text" id="documentVersion" name="version"
+                           value="${isEdit ? existingDocument.version || '1.0' : '1.0'}"
+                           placeholder="1.0">
+                    <span class="error-message"></span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="documentDate">Date Sent *</label>
+                <input type="date" id="documentDate" name="dateSent" required
+                       value="${isEdit ? existingDocument.dateSent : currentDate}">
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group full-width">
+                <label for="documentNotes">Notes</label>
+                <textarea id="documentNotes" name="notes" rows="3" 
+                          placeholder="e.g., Tailored for senior position, emphasized leadership experience...">${isEdit ? existingDocument.notes || '' : ''}</textarea>
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    ${isEdit ? 'Update Document' : 'Add Document'}
+                </button>
+            </div>
+        </form>
+    `;
+    
+    showFormModal(formHtml, {
+        title: title,
+        size: 'medium',
+        onSubmit: async (data) => {
+            try {
+                if (isEdit) {
+                    await updateDocument(applicationId, existingDocument.id, data);
+                } else {
+                    await addDocument(applicationId, data);
+                }
+                
+                // Refresh the current view
+                const activeView = document.querySelector('.view.active');
+                if (activeView && activeView.id === 'listView') {
+                    renderApplicationsList();
+                } else if (activeView && activeView.id === 'kanbanView') {
+                    renderKanbanBoard();
+                }
+                
+                return true; // Close modal
+            } catch (error) {
+                return false; // Keep modal open
+            }
+        }
+    });
+}
+
+// Show all documents for an application
+async function showDocumentsModal(applicationId) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        const documents = application.documents || [];
+        
+        let content = `
+            <div class="documents-list">
+                <div class="documents-header">
+                    <h4>${application.jobTitle} at ${application.companyName}</h4>
+                    <button class="btn btn-primary btn-small" onclick="window.handleAddDocumentClick('${applicationId}')">
+                        + Add Document
+                    </button>
+                </div>
+        `;
+        
+        if (documents.length === 0) {
+            content += `
+                <div class="empty-state-documents">
+                    <p>No documents tracked yet</p>
+                </div>
+            `;
+        } else {
+            content += '<div class="documents-grid">';
+            
+            // Sort documents by date sent (newest first)
+            const sortedDocuments = [...documents].sort((a, b) => 
+                new Date(b.dateSent) - new Date(a.dateSent)
+            );
+            
+            sortedDocuments.forEach(document => {
+                const documentDataEscaped = encodeURIComponent(JSON.stringify(document));
+                
+                // Get document icon based on type
+                const documentIcons = {
+                    'resume': '📄',
+                    'cover-letter': '📝',
+                    'portfolio': '🎨',
+                    'reference': '👤',
+                    'other': '📎'
+                };
+                const icon = documentIcons[document.type] || '📎';
+                
+                content += `
+                    <div class="document-card">
+                        <div class="document-card-header">
+                            <h5 class="document-name">${document.name}</h5>
+                            <span class="document-type ${document.type}">${document.type.replace('-', ' ')}</span>
+                        </div>
+                        
+                        <div class="document-details">
+                            <div class="document-detail">
+                                <span class="document-detail-icon">${icon}</span>
+                                <span>Type: ${document.type.replace('-', ' ')}</span>
+                            </div>
+                            <div class="document-detail">
+                                <span class="document-detail-icon">📅</span>
+                                <span>Sent: ${new Date(document.dateSent).toLocaleDateString()}</span>
+                            </div>
+                            ${document.version ? `
+                                <div class="document-detail">
+                                    <span class="document-detail-icon">🔢</span>
+                                    <span class="document-version">Version ${document.version}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        ${document.notes ? `<div class="document-notes">${document.notes}</div>` : ''}
+                        
+                        <div class="document-actions">
+                            <button class="btn-icon small" onclick="window.handleEditDocumentClick('${applicationId}', '${documentDataEscaped}')" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="btn-icon small delete" onclick="window.handleDeleteDocumentClick('${applicationId}', '${document.id}')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content += '</div>';
+        }
+        
+        content += '</div>';
+        
+        showModal(content, {
+            title: 'Documents',
+            size: 'large',
+            closeOnBackdrop: true
+        });
+        
+    } catch (error) {
+        console.error('Error showing documents:', error);
+        notifyError('Failed to load documents');
+    }
+}
+
+// Modal transition helpers for documents
+window.handleAddDocumentClick = async function(applicationId) {
+    await hideModal();
+    setTimeout(() => {
+        showDocumentModal(applicationId);
+    }, 100);
+};
+
+window.handleEditDocumentClick = async function(applicationId, documentDataEscaped) {
+    const document = JSON.parse(decodeURIComponent(documentDataEscaped));
+    await hideModal();
+    setTimeout(() => {
+        showDocumentModal(applicationId, document);
+    }, 100);
+};
+
+window.handleDeleteDocumentClick = async function(applicationId, documentId) {
+    await hideModal();
+    setTimeout(() => {
+        showConfirmModal(
+            'Are you sure you want to delete this document record?',
+            {
+                title: 'Delete Document',
+                confirmText: 'Delete',
+                confirmClass: 'btn btn-danger',
+                onConfirm: async () => {
+                    try {
+                        await deleteDocument(applicationId, documentId);
+                        setTimeout(() => {
+                            showDocumentsModal(applicationId);
+                        }, 100);
+                    } catch (error) {
+                        console.error('Error deleting document:', error);
+                        setTimeout(() => {
+                            showDocumentsModal(applicationId);
+                        }, 100);
+                    }
+                },
+                onCancel: () => {
+                    setTimeout(() => {
+                        showDocumentsModal(applicationId);
+                    }, 100);
+                }
+            }
+        );
+    }, 100);
+};
+
+// Helper function to enhance application cards with document information
+function enhanceCardWithDocuments(card, application) {
+    const documents = application.documents || [];
+    
+    if (documents.length > 0) {
+        // Add document indicator to card header
+        const cardHeader = card.querySelector('.card-header');
+        const contactIndicator = cardHeader.querySelector('.card-contact-indicator');
+        
+        const documentIndicator = document.createElement('span');
+        documentIndicator.className = 'card-document-indicator';
+        documentIndicator.title = `${documents.length} document${documents.length > 1 ? 's' : ''} tracked`;
+        documentIndicator.innerHTML = `
+            <span class="indicator-icon">📎</span>
+            <span class="indicator-count">${documents.length}</span>
+        `;
+        
+        // Insert after contact indicator if it exists, otherwise after interview indicator
+        if (contactIndicator) {
+            contactIndicator.after(documentIndicator);
+        } else {
+            const interviewIndicator = cardHeader.querySelector('.card-interview-indicator');
+            if (interviewIndicator) {
+                interviewIndicator.after(documentIndicator);
+            } else {
+                const statusBadge = cardHeader.querySelector('.status-badge');
+                cardHeader.insertBefore(documentIndicator, statusBadge);
+            }
+        }
+    }
+    
+    // Add document button to card actions
+    const cardActions = card.querySelector('.card-actions');
+    const documentBtn = document.createElement('button');
+    documentBtn.className = 'btn-icon document-btn';
+    documentBtn.dataset.id = application.id;
+    documentBtn.title = 'Manage Documents';
+    documentBtn.innerHTML = '📎';
+    documentBtn.onclick = (e) => {
+        e.stopPropagation();
+        showDocumentsModal(application.id);
+    };
+    
+    // Insert after contact button if it exists, otherwise after interview button
+    const contactBtn = cardActions.querySelector('.contact-btn');
+    if (contactBtn) {
+        contactBtn.after(documentBtn);
+    } else {
+        const interviewBtn = cardActions.querySelector('.interview-btn');
+        if (interviewBtn) {
+            interviewBtn.after(documentBtn);
+        } else {
+            const editBtn = cardActions.querySelector('.edit-btn');
+            cardActions.insertBefore(documentBtn, editBtn);
+        }
+    }
+}
+
+// Helper function to enhance dashboard statistics with document data
+function enhanceDashboardWithDocuments(stats, applications) {
+    // Calculate document statistics
+    let totalDocuments = 0;
+    let resumesSent = 0;
+    let coverLettersSent = 0;
+    
+    applications.forEach(app => {
+        if (app.documents && app.documents.length > 0) {
+            app.documents.forEach(doc => {
+                totalDocuments++;
+                if (doc.type === 'resume') resumesSent++;
+                if (doc.type === 'cover-letter') coverLettersSent++;
+            });
+        }
+    });
+    
+    // Add to stats object
+    stats.totalDocuments = totalDocuments;
+    stats.resumesSent = resumesSent;
+    stats.coverLettersSent = coverLettersSent;
+    
+    return stats;
+}
+
+console.log('✅ Step 24: Document tracking functionality added successfully!');
+
+// ===== END OF DOCUMENT TRACKING FUNCTIONALITY =====
