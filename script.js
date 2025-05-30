@@ -5125,3 +5125,527 @@ function formatFileSize(bytes) {
 console.log('✅ Step 26: Data import functionality added successfully!');
 
 // ===== END OF DATA IMPORT FUNCTIONALITY =====
+// ===== STEP 27: ENHANCED DATA VALIDATION FUNCTIONALITY =====
+// Add this code to your script.js file after the import functionality section
+
+// Validation rules configuration
+const validationRules = {
+    jobTitle: {
+        required: true,
+        minLength: 2,
+        maxLength: 100,
+        pattern: /^[a-zA-Z0-9\s\-\.\,\&\/\(\)]+$/,
+        message: 'Job title must be 2-100 characters and contain only letters, numbers, and basic punctuation'
+    },
+    companyName: {
+        required: true,
+        minLength: 2,
+        maxLength: 100,
+        pattern: /^[a-zA-Z0-9\s\-\.\,\&\/\(\)]+$/,
+        message: 'Company name must be 2-100 characters and contain only letters, numbers, and basic punctuation'
+    },
+    applicationDate: {
+        required: true,
+        maxDate: () => new Date().toISOString().split('T')[0],
+        message: 'Application date cannot be in the future'
+    },
+    status: {
+        required: true,
+        enum: ['applied', 'screening', 'interview', 'offer', 'rejected', 'withdrawn'],
+        message: 'Please select a valid status'
+    },
+    deadline: {
+        minDate: () => new Date().toISOString().split('T')[0],
+        message: 'Deadline cannot be in the past'
+    },
+    url: {
+        pattern: /^https?:\/\/.+\..+/,
+        message: 'Please enter a valid URL starting with http:// or https://'
+    },
+    salary: {
+        maxLength: 50,
+        pattern: /^[\$\€\£\¥]?[\d\s\,\.\-kKmM]+$/,
+        message: 'Please enter a valid salary format'
+    },
+    location: {
+        maxLength: 100,
+        pattern: /^[a-zA-Z0-9\s\-\,\.]+$/,
+        message: 'Location can only contain letters, numbers, spaces, and basic punctuation'
+    },
+    notes: {
+        maxLength: 1000,
+        message: 'Notes cannot exceed 1000 characters'
+    }
+};
+
+// Enhanced form validation system
+class FormValidator {
+    constructor(formElement) {
+        this.form = formElement;
+        this.fields = {};
+        this.errors = {};
+        this.isValid = true;
+        
+        this.initializeFields();
+        this.attachEventListeners();
+    }
+    
+    initializeFields() {
+        // Get all form fields
+        const inputs = this.form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (input.name) {
+                this.fields[input.name] = input;
+                
+                // Add validation icon container
+                const formGroup = input.closest('.form-group');
+                if (formGroup && !formGroup.querySelector('.field-validation-icon')) {
+                    const icon = document.createElement('span');
+                    icon.className = 'field-validation-icon';
+                    formGroup.style.position = 'relative';
+                    formGroup.appendChild(icon);
+                    
+                    // Add spinner for async validation
+                    const spinner = document.createElement('div');
+                    spinner.className = 'field-validation-spinner';
+                    formGroup.appendChild(spinner);
+                }
+                
+                // Add character counter for text fields with maxLength
+                if ((input.type === 'text' || input.tagName === 'TEXTAREA') && 
+                    validationRules[input.name]?.maxLength) {
+                    const counter = document.createElement('span');
+                    counter.className = 'character-counter';
+                    formGroup.appendChild(counter);
+                    this.updateCharacterCounter(input);
+                }
+            }
+        });
+    }
+    
+    attachEventListeners() {
+        // Real-time validation on input
+        Object.keys(this.fields).forEach(fieldName => {
+            const field = this.fields[fieldName];
+            
+            // Validate on blur
+            field.addEventListener('blur', () => {
+                this.validateField(fieldName);
+            });
+            
+            // Clear error on focus
+            field.addEventListener('focus', () => {
+                this.clearFieldError(fieldName);
+            });
+            
+            // Update character counter on input
+            if (field.type === 'text' || field.tagName === 'TEXTAREA') {
+                field.addEventListener('input', () => {
+                    this.updateCharacterCounter(field);
+                    
+                    // Validate if there was an error
+                    if (this.errors[fieldName]) {
+                        this.validateField(fieldName);
+                    }
+                });
+            }
+            
+            // Immediate validation for select fields
+            if (field.tagName === 'SELECT') {
+                field.addEventListener('change', () => {
+                    this.validateField(fieldName);
+                });
+            }
+        });
+        
+        // Form submit validation
+        this.form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (this.validateAll()) {
+                // Let the original handler process the form
+                return true;
+            }
+            return false;
+        });
+    }
+    
+    validateField(fieldName) {
+        const field = this.fields[fieldName];
+        const rules = validationRules[fieldName];
+        
+        if (!field || !rules) return true;
+        
+        const value = field.value.trim();
+        const formGroup = field.closest('.form-group');
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Required validation
+        if (rules.required && !value) {
+            isValid = false;
+            errorMessage = `${this.formatFieldName(fieldName)} is required`;
+        }
+        
+        // Only validate other rules if field has value
+        if (value && isValid) {
+            // Min length validation
+            if (rules.minLength && value.length < rules.minLength) {
+                isValid = false;
+                errorMessage = `${this.formatFieldName(fieldName)} must be at least ${rules.minLength} characters`;
+            }
+            
+            // Max length validation
+            if (rules.maxLength && value.length > rules.maxLength) {
+                isValid = false;
+                errorMessage = `${this.formatFieldName(fieldName)} cannot exceed ${rules.maxLength} characters`;
+            }
+            
+            // Pattern validation
+            if (rules.pattern && !rules.pattern.test(value)) {
+                isValid = false;
+                errorMessage = rules.message || `${this.formatFieldName(fieldName)} format is invalid`;
+            }
+            
+            // Enum validation
+            if (rules.enum && !rules.enum.includes(value)) {
+                isValid = false;
+                errorMessage = rules.message || 'Please select a valid option';
+            }
+            
+            // Date validations
+            if (field.type === 'date') {
+                const dateValue = new Date(value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (rules.maxDate) {
+                    const maxDate = new Date(rules.maxDate());
+                    if (dateValue > maxDate) {
+                        isValid = false;
+                        errorMessage = rules.message || `Date cannot be after ${maxDate.toLocaleDateString()}`;
+                    }
+                }
+                
+                if (rules.minDate) {
+                    const minDate = new Date(rules.minDate());
+                    if (dateValue < minDate) {
+                        isValid = false;
+                        errorMessage = rules.message || `Date cannot be before ${minDate.toLocaleDateString()}`;
+                    }
+                }
+            }
+        }
+        
+        // Update UI
+        if (isValid) {
+            this.setFieldSuccess(fieldName);
+            delete this.errors[fieldName];
+        } else {
+            this.setFieldError(fieldName, errorMessage);
+            this.errors[fieldName] = errorMessage;
+        }
+        
+        return isValid;
+    }
+    
+    validateAll() {
+        this.errors = {};
+        this.isValid = true;
+        const errorMessages = [];
+        
+        // Validate all fields
+        Object.keys(this.fields).forEach(fieldName => {
+            if (!this.validateField(fieldName)) {
+                this.isValid = false;
+                errorMessages.push(this.errors[fieldName]);
+            }
+        });
+        
+        // Show validation summary if errors exist
+        if (!this.isValid) {
+            this.showValidationSummary(errorMessages);
+            
+            // Focus first error field
+            const firstErrorField = Object.keys(this.errors)[0];
+            if (firstErrorField && this.fields[firstErrorField]) {
+                this.fields[firstErrorField].focus();
+            }
+        } else {
+            this.hideValidationSummary();
+        }
+        
+        return this.isValid;
+    }
+    
+    setFieldError(fieldName, message) {
+        const field = this.fields[fieldName];
+        const formGroup = field.closest('.form-group');
+        const errorElement = formGroup.querySelector('.error-message');
+        const icon = formGroup.querySelector('.field-validation-icon');
+        
+        formGroup.classList.add('error');
+        formGroup.classList.remove('success');
+        
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+        
+        if (icon) {
+            icon.textContent = '❌';
+        }
+        
+        // Add shake animation
+        field.classList.add('shake');
+        setTimeout(() => field.classList.remove('shake'), 300);
+    }
+    
+    setFieldSuccess(fieldName) {
+        const field = this.fields[fieldName];
+        const formGroup = field.closest('.form-group');
+        const errorElement = formGroup.querySelector('.error-message');
+        const icon = formGroup.querySelector('.field-validation-icon');
+        
+        formGroup.classList.add('success');
+        formGroup.classList.remove('error');
+        
+        if (errorElement) {
+            errorElement.textContent = '';
+            errorElement.classList.remove('show');
+        }
+        
+        if (icon) {
+            icon.textContent = '✅';
+        }
+    }
+    
+    clearFieldError(fieldName) {
+        const field = this.fields[fieldName];
+        const formGroup = field.closest('.form-group');
+        const errorElement = formGroup.querySelector('.error-message');
+        
+        formGroup.classList.remove('error', 'success');
+        
+        if (errorElement) {
+            errorElement.classList.remove('show');
+        }
+    }
+    
+    updateCharacterCounter(field) {
+        const formGroup = field.closest('.form-group');
+        const counter = formGroup.querySelector('.character-counter');
+        const rules = validationRules[field.name];
+        
+        if (counter && rules?.maxLength) {
+            const currentLength = field.value.length;
+            const maxLength = rules.maxLength;
+            const remaining = maxLength - currentLength;
+            
+            counter.textContent = `${currentLength}/${maxLength}`;
+            
+            if (remaining < 0) {
+                counter.classList.add('error');
+                counter.classList.remove('warning');
+            } else if (remaining < 20) {
+                counter.classList.add('warning');
+                counter.classList.remove('error');
+            } else {
+                counter.classList.remove('warning', 'error');
+            }
+        }
+    }
+    
+    showValidationSummary(messages) {
+        let summary = this.form.querySelector('.validation-summary');
+        
+        if (!summary) {
+            summary = document.createElement('div');
+            summary.className = 'validation-summary';
+            this.form.insertBefore(summary, this.form.firstChild);
+        }
+        
+        summary.innerHTML = `
+            <h4>⚠️ Please correct the following errors:</h4>
+            <ul>
+                ${messages.map(msg => `<li>${msg}</li>`).join('')}
+            </ul>
+        `;
+        
+        summary.classList.add('show');
+        summary.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    hideValidationSummary() {
+        const summary = this.form.querySelector('.validation-summary');
+        if (summary) {
+            summary.classList.remove('show');
+        }
+    }
+    
+    formatFieldName(fieldName) {
+        return fieldName
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+    }
+}
+
+// Data sanitization functions
+const dataSanitizer = {
+    sanitizeString(value, maxLength = 100) {
+        if (typeof value !== 'string') return '';
+        
+        return value
+            .trim()
+            .substring(0, maxLength)
+            .replace(/[<>]/g, '') // Remove potential HTML tags
+            .replace(/\s+/g, ' '); // Normalize whitespace
+    },
+    
+    sanitizeUrl(url) {
+        if (!url) return '';
+        
+        try {
+            const urlObj = new URL(url);
+            // Only allow http and https protocols
+            if (!['http:', 'https:'].includes(urlObj.protocol)) {
+                return '';
+            }
+            return urlObj.href;
+        } catch {
+            return '';
+        }
+    },
+    
+    sanitizeDate(date) {
+        if (!date) return null;
+        
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+            return null;
+        }
+        
+        return dateObj.toISOString().split('T')[0];
+    },
+    
+    sanitizeApplicationData(data) {
+        return {
+            ...data,
+            jobTitle: this.sanitizeString(data.jobTitle, 100),
+            companyName: this.sanitizeString(data.companyName, 100),
+            applicationDate: this.sanitizeDate(data.applicationDate),
+            status: ['applied', 'screening', 'interview', 'offer', 'rejected', 'withdrawn'].includes(data.status) 
+                ? data.status : 'applied',
+            deadline: this.sanitizeDate(data.deadline),
+            url: this.sanitizeUrl(data.url),
+            salary: this.sanitizeString(data.salary, 50),
+            location: this.sanitizeString(data.location, 100),
+            progressStage: ['to-apply', 'applied', 'in-progress', 'final-stage', 'completed'].includes(data.progressStage)
+                ? data.progressStage : 'to-apply',
+            notes: this.sanitizeString(data.notes, 1000)
+        };
+    }
+};
+
+// Enhanced form initialization
+function initializeFormValidation() {
+    const form = document.getElementById('applicationForm');
+    if (form) {
+        // Create validator instance
+        const validator = new FormValidator(form);
+        
+        // Store validator instance for access
+        form._validator = validator;
+        
+        // Add tooltips to fields
+        addFieldTooltips();
+        
+        console.log('✅ Enhanced form validation initialized');
+    }
+}
+
+// Add helpful tooltips to form fields
+function addFieldTooltips() {
+    const tooltips = {
+        deadline: 'Set a reminder for when to follow up on this application',
+        url: 'Link to the original job posting for easy reference',
+        salary: 'Include currency symbol and format (e.g., $60k-80k)',
+        progressStage: 'Track where you are in the application process',
+        notes: 'Add any important details, contact names, or interview feedback'
+    };
+    
+    Object.entries(tooltips).forEach(([fieldName, tooltip]) => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            const formGroup = field.closest('.form-group');
+            if (formGroup && !formGroup.querySelector('.field-tooltip')) {
+                const tooltipElement = document.createElement('div');
+                tooltipElement.className = 'field-tooltip';
+                tooltipElement.innerHTML = `
+                    ?
+                    <div class="field-tooltip-content">${tooltip}</div>
+                `;
+                formGroup.appendChild(tooltipElement);
+            }
+        }
+    });
+}
+
+// Update the existing handleFormSubmit to use sanitization
+const originalHandleFormSubmit = handleFormSubmit;
+handleFormSubmit = async function(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const validator = form._validator;
+    
+    // Validate form
+    if (validator && !validator.validateAll()) {
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const rawData = Object.fromEntries(formData.entries());
+    
+    // Sanitize data before saving
+    const sanitizedData = dataSanitizer.sanitizeApplicationData(rawData);
+    
+    // Create new FormData with sanitized values
+    const sanitizedFormData = new FormData();
+    Object.entries(sanitizedData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+            sanitizedFormData.append(key, value);
+        }
+    });
+    
+    // Call original handler with sanitized data
+    const modifiedEvent = new Event('submit');
+    modifiedEvent.target = form;
+    modifiedEvent.target.FormData = sanitizedFormData;
+    
+    // Temporarily replace FormData constructor
+    const OriginalFormData = window.FormData;
+    window.FormData = function(formElement) {
+        if (formElement === form) {
+            return sanitizedFormData;
+        }
+        return new OriginalFormData(formElement);
+    };
+    
+    try {
+        await originalHandleFormSubmit.call(this, modifiedEvent);
+    } finally {
+        // Restore original FormData
+        window.FormData = OriginalFormData;
+    }
+};
+
+// Initialize validation when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit to ensure form is ready
+    setTimeout(initializeFormValidation, 100);
+});
+
+console.log('✅ Step 27: Enhanced data validation added successfully!');
+
+// ===== END OF ENHANCED DATA VALIDATION FUNCTIONALITY =====
