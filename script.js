@@ -3131,7 +3131,6 @@ function confirmDeleteInterview(applicationId, interviewId) {
     );
 }
 
-// Helper function to enhance application cards with interview information
 function enhanceCardWithInterviews(card, application) {
     const interviews = application.interviewDates || [];
     const upcomingInterviews = interviews.filter(i => 
@@ -3139,8 +3138,26 @@ function enhanceCardWithInterviews(card, application) {
         new Date(`${i.date} ${i.time}`) >= new Date()
     ).length;
     
+    // Add interview indicator to card header if there are any scheduled interviews
+    if (upcomingInterviews > 0) {
+        const cardHeader = card.querySelector('.card-header');
+        const statusBadge = cardHeader.querySelector('.status-badge');
+        
+        // Create interview indicator
+        const interviewIndicator = document.createElement('span');
+        interviewIndicator.className = 'card-interview-indicator';
+        interviewIndicator.title = `${upcomingInterviews} upcoming interview${upcomingInterviews > 1 ? 's' : ''} scheduled`;
+        interviewIndicator.innerHTML = `
+            <span class="indicator-icon">🎤</span>
+            <span class="indicator-count">${upcomingInterviews}</span>
+        `;
+        
+        // Insert before status badge
+        cardHeader.insertBefore(interviewIndicator, statusBadge);
+    }
+    
+    // Keep the existing interview badge (shows total interviews)
     if (interviews.length > 0) {
-        // Add interview indicator to card header
         const cardHeader = card.querySelector('.card-header');
         const interviewBadge = document.createElement('span');
         interviewBadge.className = 'interview-badge';
