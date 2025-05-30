@@ -2777,3 +2777,369 @@ function clearAllNotifications() {
 }
 
 // ===== END OF NOTIFICATION SYSTEM SECTION =====
+// ===== STEP 22: INTERVIEW FUNCTIONALITY =====
+// Add this code to your script.js file after the notification system section
+
+// Interview Management Functions
+async function addInterview(applicationId, interviewData) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        if (!application.interviewDates) {
+            application.interviewDates = [];
+        }
+        
+        // Add new interview with unique ID
+        const interview = {
+            id: generateId(),
+            date: interviewData.date,
+            time: interviewData.time,
+            type: interviewData.type,
+            location: interviewData.location,
+            interviewer: interviewData.interviewer,
+            notes: interviewData.notes,
+            status: 'scheduled', // scheduled, completed, cancelled
+            createdAt: new Date().toISOString()
+        };
+        
+        application.interviewDates.push(interview);
+        application.updatedAt = new Date().toISOString();
+        
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Interview scheduled successfully!');
+        return interview;
+        
+    } catch (error) {
+        console.error('Error adding interview:', error);
+        notifyError('Failed to schedule interview');
+        throw error;
+    }
+}
+
+async function updateInterview(applicationId, interviewId, updatedData) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        const interviewIndex = application.interviewDates.findIndex(i => i.id === interviewId);
+        if (interviewIndex === -1) {
+            throw new Error('Interview not found');
+        }
+        
+        application.interviewDates[interviewIndex] = {
+            ...application.interviewDates[interviewIndex],
+            ...updatedData,
+            updatedAt: new Date().toISOString()
+        };
+        
+        application.updatedAt = new Date().toISOString();
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Interview updated successfully!');
+        
+    } catch (error) {
+        console.error('Error updating interview:', error);
+        notifyError('Failed to update interview');
+        throw error;
+    }
+}
+
+async function deleteInterview(applicationId, interviewId) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        
+        application.interviewDates = application.interviewDates.filter(i => i.id !== interviewId);
+        application.updatedAt = new Date().toISOString();
+        
+        await updateApplicationInDB(application);
+        
+        notifySuccess('Interview removed successfully!');
+        
+    } catch (error) {
+        console.error('Error deleting interview:', error);
+        notifyError('Failed to remove interview');
+        throw error;
+    }
+}
+
+// Show interview scheduling modal
+function showInterviewModal(applicationId, existingInterview = null) {
+    const isEdit = existingInterview !== null;
+    const title = isEdit ? 'Edit Interview' : 'Schedule Interview';
+    
+    // Get current date and time for defaults
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];
+    const currentTime = now.toTimeString().slice(0, 5);
+    
+    const formHtml = `
+        <form id="interviewForm" class="modal-form">
+            <div class="form-group">
+                <label for="interviewDate">Interview Date *</label>
+                <input type="date" id="interviewDate" name="date" required 
+                       value="${isEdit ? existingInterview.date : currentDate}"
+                       min="${currentDate}">
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="interviewTime">Interview Time *</label>
+                <input type="time" id="interviewTime" name="time" required
+                       value="${isEdit ? existingInterview.time : currentTime}">
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="interviewType">Interview Type *</label>
+                <select id="interviewType" name="type" required>
+                    <option value="">Select Type</option>
+                    <option value="phone" ${isEdit && existingInterview.type === 'phone' ? 'selected' : ''}>Phone</option>
+                    <option value="video" ${isEdit && existingInterview.type === 'video' ? 'selected' : ''}>Video</option>
+                    <option value="in-person" ${isEdit && existingInterview.type === 'in-person' ? 'selected' : ''}>In-Person</option>
+                    <option value="technical" ${isEdit && existingInterview.type === 'technical' ? 'selected' : ''}>Technical</option>
+                    <option value="behavioral" ${isEdit && existingInterview.type === 'behavioral' ? 'selected' : ''}>Behavioral</option>
+                    <option value="panel" ${isEdit && existingInterview.type === 'panel' ? 'selected' : ''}>Panel</option>
+                </select>
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="interviewLocation">Location/Link</label>
+                <input type="text" id="interviewLocation" name="location" 
+                       placeholder="Office address or video call link"
+                       value="${isEdit ? existingInterview.location || '' : ''}">
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="interviewer">Interviewer(s)</label>
+                <input type="text" id="interviewer" name="interviewer" 
+                       placeholder="Name and title"
+                       value="${isEdit ? existingInterview.interviewer || '' : ''}">
+                <span class="error-message"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="interviewNotes">Notes</label>
+                <textarea id="interviewNotes" name="notes" rows="3" 
+                          placeholder="Preparation notes, topics to discuss, etc.">${isEdit ? existingInterview.notes || '' : ''}</textarea>
+                <span class="error-message"></span>
+            </div>
+            
+            ${isEdit ? `
+                <div class="form-group">
+                    <label for="interviewStatus">Status</label>
+                    <select id="interviewStatus" name="status">
+                        <option value="scheduled" ${existingInterview.status === 'scheduled' ? 'selected' : ''}>Scheduled</option>
+                        <option value="completed" ${existingInterview.status === 'completed' ? 'selected' : ''}>Completed</option>
+                        <option value="cancelled" ${existingInterview.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                </div>
+            ` : ''}
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    ${isEdit ? 'Update Interview' : 'Schedule Interview'}
+                </button>
+            </div>
+        </form>
+    `;
+    
+    showFormModal(formHtml, {
+        title: title,
+        size: 'medium',
+        onSubmit: async (data) => {
+            try {
+                if (isEdit) {
+                    await updateInterview(applicationId, existingInterview.id, data);
+                } else {
+                    await addInterview(applicationId, data);
+                }
+                
+                // Refresh the current view
+                const activeView = document.querySelector('.view.active');
+                if (activeView && activeView.id === 'listView') {
+                    renderApplicationsList();
+                } else if (activeView && activeView.id === 'kanbanView') {
+                    renderKanbanBoard();
+                }
+                
+                return true; // Close modal
+            } catch (error) {
+                return false; // Keep modal open
+            }
+        }
+    });
+}
+
+// Show all interviews for an application
+async function showInterviewsModal(applicationId) {
+    try {
+        const application = await getApplicationFromDB(applicationId);
+        const interviews = application.interviewDates || [];
+        
+        let content = `
+            <div class="interviews-list">
+                <div class="interviews-header">
+                    <h4>${application.jobTitle} at ${application.companyName}</h4>
+                    <button class="btn btn-primary btn-small" onclick="showInterviewModal('${applicationId}')">
+                        + Add Interview
+                    </button>
+                </div>
+        `;
+        
+        if (interviews.length === 0) {
+            content += `
+                <div class="empty-state-small">
+                    <p>No interviews scheduled yet</p>
+                </div>
+            `;
+        } else {
+            // Sort interviews by date/time
+            const sortedInterviews = [...interviews].sort((a, b) => {
+                const dateA = new Date(`${a.date} ${a.time}`);
+                const dateB = new Date(`${b.date} ${b.time}`);
+                return dateA - dateB;
+            });
+            
+            content += '<div class="interviews-grid">';
+            
+            sortedInterviews.forEach(interview => {
+                const interviewDate = new Date(`${interview.date} ${interview.time}`);
+                const isPast = interviewDate < new Date();
+                const statusClass = interview.status === 'completed' ? 'completed' : 
+                                  interview.status === 'cancelled' ? 'cancelled' : 
+                                  isPast ? 'past' : 'upcoming';
+                
+                content += `
+                    <div class="interview-card ${statusClass}">
+                        <div class="interview-card-header">
+                            <span class="interview-type">${interview.type}</span>
+                            <span class="interview-status status-${interview.status}">${interview.status}</span>
+                        </div>
+                        <div class="interview-datetime">
+                            <strong>${new Date(interview.date).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                            })}</strong> at ${interview.time}
+                        </div>
+                        ${interview.location ? `<div class="interview-location">📍 ${interview.location}</div>` : ''}
+                        ${interview.interviewer ? `<div class="interview-interviewer">👤 ${interview.interviewer}</div>` : ''}
+                        ${interview.notes ? `<div class="interview-notes">${interview.notes}</div>` : ''}
+                        <div class="interview-actions">
+                            <button class="btn-icon small" onclick="showInterviewModal('${applicationId}', ${JSON.stringify(interview).replace(/"/g, '&quot;')})" title="Edit">
+                                ✏️
+                            </button>
+                            <button class="btn-icon small delete" onclick="confirmDeleteInterview('${applicationId}', '${interview.id}')" title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content += '</div>';
+        }
+        
+        content += '</div>';
+        
+        showModal(content, {
+            title: 'Interview Schedule',
+            size: 'large',
+            closeOnBackdrop: true
+        });
+        
+    } catch (error) {
+        console.error('Error showing interviews:', error);
+        notifyError('Failed to load interviews');
+    }
+}
+
+// Confirm interview deletion
+function confirmDeleteInterview(applicationId, interviewId) {
+    showConfirmModal(
+        'Are you sure you want to delete this interview?',
+        {
+            title: 'Delete Interview',
+            confirmText: 'Delete',
+            confirmClass: 'btn btn-danger',
+            onConfirm: async () => {
+                await deleteInterview(applicationId, interviewId);
+                // Refresh the interviews modal
+                showInterviewsModal(applicationId);
+            }
+        }
+    );
+}
+
+// Helper function to enhance application cards with interview information
+function enhanceCardWithInterviews(card, application) {
+    const interviews = application.interviewDates || [];
+    const upcomingInterviews = interviews.filter(i => 
+        i.status === 'scheduled' && 
+        new Date(`${i.date} ${i.time}`) >= new Date()
+    ).length;
+    
+    if (interviews.length > 0) {
+        // Add interview indicator to card header
+        const cardHeader = card.querySelector('.card-header');
+        const interviewBadge = document.createElement('span');
+        interviewBadge.className = 'interview-badge';
+        interviewBadge.innerHTML = `🎤 ${upcomingInterviews}/${interviews.length}`;
+        interviewBadge.title = `${upcomingInterviews} upcoming, ${interviews.length} total interviews`;
+        cardHeader.appendChild(interviewBadge);
+    }
+    
+    // Add interview button to card actions
+    const cardActions = card.querySelector('.card-actions');
+    const interviewBtn = document.createElement('button');
+    interviewBtn.className = 'btn-icon interview-btn';
+    interviewBtn.dataset.id = application.id;
+    interviewBtn.title = 'Manage Interviews';
+    interviewBtn.innerHTML = '🎤';
+    interviewBtn.onclick = (e) => {
+        e.stopPropagation();
+        showInterviewsModal(application.id);
+    };
+    
+    // Insert before the edit button
+    const editBtn = cardActions.querySelector('.edit-btn');
+    cardActions.insertBefore(interviewBtn, editBtn);
+}
+
+// Helper function to enhance dashboard statistics with interview data
+function enhanceDashboardWithInterviews(stats, applications) {
+    // Calculate interview statistics
+    let totalInterviews = 0;
+    let upcomingInterviews = 0;
+    let completedInterviews = 0;
+    
+    applications.forEach(app => {
+        if (app.interviewDates && app.interviewDates.length > 0) {
+            app.interviewDates.forEach(interview => {
+                totalInterviews++;
+                if (interview.status === 'completed') {
+                    completedInterviews++;
+                } else if (interview.status === 'scheduled') {
+                    const interviewDate = new Date(`${interview.date} ${interview.time}`);
+                    if (interviewDate >= new Date()) {
+                        upcomingInterviews++;
+                    }
+                }
+            });
+        }
+    });
+    
+    // Add to stats object
+    stats.totalInterviews = totalInterviews;
+    stats.upcomingInterviews = upcomingInterviews;
+    stats.completedInterviews = completedInterviews;
+    
+    return stats;
+}
+
+console.log('✅ Step 22: Interview functionality added successfully!');
+
+// ===== END OF INTERVIEW FUNCTIONALITY =====
