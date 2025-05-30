@@ -648,7 +648,7 @@ function createApplicationCard(application) {
     return card;
 }
 
-// Render the applications list
+// 1. REPLACE your entire renderApplicationsList function with this:
 async function renderApplicationsList(applications = null) {
     const listContainer = document.getElementById('listContainer');
     
@@ -694,9 +694,20 @@ async function renderApplicationsList(applications = null) {
         
         // Setup action button listeners after cards are rendered
         setupActionButtonsListeners();
+        
+        // STEP 22 ADDITION: Enhance all cards with interview information
+        const cards = document.querySelectorAll('.application-card');
+        cards.forEach(async (card) => {
+            const applicationId = card.dataset.id;
+            try {
+                const application = await getApplicationFromDB(applicationId);
+                enhanceCardWithInterviews(card, application);
+            } catch (error) {
+                console.error('Error enhancing card with interviews:', error);
+            }
+        });
     }
 }
-
 // Setup action buttons event listeners using event delegation - FIXED VERSION
 function setupActionButtonsListeners() {
     const listContainer = document.getElementById('listContainer');
@@ -1141,7 +1152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 });
 
-// Dashboard Statistics Calculation
+// 2. REPLACE your entire calculateDashboardStats function with this:
 async function calculateDashboardStats() {
     try {
         const applications = await getAllApplicationsFromDB();
@@ -1216,7 +1227,8 @@ async function calculateDashboardStats() {
             ? Math.round(totalResponseTime / responsesReceived) 
             : 0;
         
-        return stats;
+        // STEP 22 ADDITION: Enhance stats with interview data
+        return enhanceDashboardWithInterviews(stats, applications);
         
     } catch (error) {
         console.error('Error calculating dashboard stats:', error);
@@ -1224,7 +1236,7 @@ async function calculateDashboardStats() {
     }
 }
 
-// Update renderDashboard to include charts
+// 3. REPLACE your entire renderDashboard function with this:
 async function renderDashboard() {
     const statsContainer = document.getElementById('statsContainer');
     const chartsContainer = document.getElementById('chartsContainer');
@@ -1246,7 +1258,7 @@ async function renderDashboard() {
         return;
     }
     
-    // Render statistics cards (same as before)
+    // Render statistics cards
     statsContainer.innerHTML = `
         <div class="stats-grid">
             <div class="stat-card glass-card">
@@ -1262,6 +1274,15 @@ async function renderDashboard() {
                 <div class="stat-content">
                     <h3 class="stat-value">${stats.activeApplications}</h3>
                     <p class="stat-label">Active Applications</p>
+                </div>
+            </div>
+            
+            <!-- STEP 22 ADDITION: Interview statistics card -->
+            <div class="stat-card glass-card">
+                <div class="stat-icon">🎤</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.upcomingInterviews}</h3>
+                    <p class="stat-label">Upcoming Interviews</p>
                 </div>
             </div>
             
