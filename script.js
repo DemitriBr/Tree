@@ -3083,31 +3083,45 @@ async function showInterviewsModal(applicationId) {
     }
 }
 
-// Add this new helper function for handling interview deletion:
-window.handleDeleteInterviewClick = function(applicationId, interviewId) {
-    showConfirmModal(
-        'Are you sure you want to delete this interview?',
-        {
-            title: 'Delete Interview',
-            confirmText: 'Delete',
-            confirmClass: 'btn btn-danger',
-            onConfirm: async () => {
-                try {
-                    await deleteInterview(applicationId, interviewId);
-                    
-                    // Close the confirmation modal
-                    await hideModal();
-                    
-                    // Small delay then reopen the interviews modal
+// Update the handleDeleteInterviewClick function to close modal first:
+window.handleDeleteInterviewClick = async function(applicationId, interviewId) {
+    // Close the interviews modal first
+    await hideModal();
+    
+    // Small delay to ensure modal is fully closed
+    setTimeout(() => {
+        showConfirmModal(
+            'Are you sure you want to delete this interview?',
+            {
+                title: 'Delete Interview',
+                confirmText: 'Delete',
+                confirmClass: 'btn btn-danger',
+                onConfirm: async () => {
+                    try {
+                        await deleteInterview(applicationId, interviewId);
+                        
+                        // After successful deletion, show the interviews modal again
+                        setTimeout(() => {
+                            showInterviewsModal(applicationId);
+                        }, 100);
+                        
+                    } catch (error) {
+                        console.error('Error deleting interview:', error);
+                        // On error, still show the interviews modal again
+                        setTimeout(() => {
+                            showInterviewsModal(applicationId);
+                        }, 100);
+                    }
+                },
+                onCancel: () => {
+                    // If cancelled, reopen the interviews modal
                     setTimeout(() => {
                         showInterviewsModal(applicationId);
                     }, 100);
-                } catch (error) {
-                    console.error('Error in delete confirmation:', error);
                 }
             }
-        }
-    );
+        );
+    }, 100);
 };
 
 // Add these helper functions to handle the modal transitions:
