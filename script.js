@@ -695,7 +695,7 @@ async function renderApplicationsList(applications = null) {
         // Setup action button listeners after cards are rendered
         setupActionButtonsListeners();
         
-        // STEP 22 & 23 ADDITIONS: Enhance all cards with interview and contact information
+        // STEP 22, 23 & 24 ADDITIONS: Enhance all cards with interview, contact, and document information
         const cards = document.querySelectorAll('.application-card');
         cards.forEach(async (card) => {
             const applicationId = card.dataset.id;
@@ -703,6 +703,7 @@ async function renderApplicationsList(applications = null) {
                 const application = await getApplicationFromDB(applicationId);
                 enhanceCardWithInterviews(card, application);
                 enhanceCardWithContacts(card, application);
+                enhanceCardWithDocuments(card, application);
             } catch (error) {
                 console.error('Error enhancing card:', error);
             }
@@ -1232,14 +1233,16 @@ async function calculateDashboardStats() {
         let enhancedStats = enhanceDashboardWithInterviews(stats, applications);
         
         // STEP 23 ADDITION: Enhance stats with contact data
-        return enhanceDashboardWithContacts(enhancedStats, applications);
+        enhancedStats = enhanceDashboardWithContacts(enhancedStats, applications);
+        
+        // STEP 24 ADDITION: Enhance stats with document data
+        return enhanceDashboardWithDocuments(enhancedStats, applications);
         
     } catch (error) {
         console.error('Error calculating dashboard stats:', error);
         return null;
     }
 }
-
 // 3. REPLACE your entire renderDashboard function with this:
 async function renderDashboard() {
     const statsContainer = document.getElementById('statsContainer');
@@ -1296,6 +1299,15 @@ async function renderDashboard() {
                 <div class="stat-content">
                     <h3 class="stat-value">${stats.totalContacts}</h3>
                     <p class="stat-label">Total Contacts</p>
+                </div>
+            </div>
+            
+            <!-- STEP 24 ADDITION: Documents statistics card -->
+            <div class="stat-card glass-card">
+                <div class="stat-icon">📎</div>
+                <div class="stat-content">
+                    <h3 class="stat-value">${stats.totalDocuments}</h3>
+                    <p class="stat-label">Documents Sent</p>
                 </div>
             </div>
             
@@ -1368,7 +1380,6 @@ async function renderDashboard() {
         }, 100);
     }
 }
-
 // Create status distribution chart using Canvas (with slice percentages and side legend)
 function createStatusChart(stats, canvasId) {
     const canvas = document.getElementById(canvasId);
