@@ -867,6 +867,7 @@ async function handleActionButtonClick(e) {
         );
     }
 }
+}
 // Load application data into form for editing
 async function loadApplicationForEdit(applicationId) {
     try {
