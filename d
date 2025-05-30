@@ -4498,7 +4498,13 @@ async function importData(fileContent, fileType, importMode = 'merge') {
         
         // Get existing applications
         const existingApplications = await getAllApplicationsFromDB();
-        const existingIds = new Set(existingApplications.map(app => app.id));
+        
+        // Create a map for duplicate detection based on job title + company + date
+        const existingMap = new Map();
+        existingApplications.forEach(app => {
+            const key = createApplicationKey(app);
+            existingMap.set(key, app);
+        });
         
         let imported = 0;
         let skipped = 0;
@@ -4515,12 +4521,15 @@ async function importData(fileContent, fileType, importMode = 'merge') {
                     continue;
                 }
                 
-                // Check if application already exists
-                const exists = existingIds.has(app.id);
+                // Create key for duplicate detection
+                const appKey = createApplicationKey(app);
+                const existingApp = existingMap.get(appKey);
+                const exists = !!existingApp;
                 
                 if (importMode === 'merge') {
                     if (exists) {
-                        // Update existing application
+                        // Update existing application - preserve the original ID
+                        app.id = existingApp.id;
                         await updateApplicationInDB(app);
                         updated++;
                     } else {
@@ -4534,6 +4543,7 @@ async function importData(fileContent, fileType, importMode = 'merge') {
                         await addApplicationToDB(app);
                         imported++;
                     } else {
+                        console.log(`Skipping duplicate: ${app.jobTitle} at ${app.companyName} on ${app.applicationDate}`);
                         skipped++;
                     }
                 } else if (importMode === 'replace') {
@@ -4574,6 +4584,17 @@ async function importData(fileContent, fileType, importMode = 'merge') {
             errors: [error.message]
         };
     }
+}
+
+// Helper function to create a unique key for duplicate detection
+function createApplicationKey(app) {
+    // Create a key based on job title, company, and application date
+    // This helps identify the same application even if IDs differ
+    const jobTitle = (app.jobTitle || '').toLowerCase().trim();
+    const company = (app.companyName || '').toLowerCase().trim();
+    const date = app.applicationDate || '';
+    
+    return `${jobTitle}|${company}|${date}`;
 }
 
 // Parse JSON import file
@@ -5010,7 +5031,7 @@ function displayImportPreview(preview) {
     `;
 }
 
-// Display import results
+// Also update the displayImportResults function to show better feedback:
 function displayImportResults(result) {
     const resultsElement = document.getElementById('importResults');
     const iconElement = document.getElementById('resultsIcon');
@@ -5029,9 +5050,16 @@ function displayImportResults(result) {
         const details = [];
         if (result.imported > 0) details.push(`${result.imported} new applications imported`);
         if (result.updated > 0) details.push(`${result.updated} applications updated`);
-        if (result.skipped > 0) details.push(`${result.skipped} applications skipped`);
+        if (result.skipped > 0) details.push(`${result.skipped} applications skipped (duplicates or errors)`);
         
         detailsElement.textContent = details.join(', ');
+        
+        // Show notification
+        if (result.imported > 0 || result.updated > 0) {
+            notifySuccess(`Import completed: ${result.imported} added, ${result.updated} updated, ${result.skipped} skipped`);
+        } else if (result.skipped > 0) {
+            notifyWarning(`All ${result.skipped} applications were skipped as duplicates`);
+        }
         
         if (result.errors && result.errors.length > 0) {
             errorsElement.style.display = 'block';
