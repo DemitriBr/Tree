@@ -3250,7 +3250,7 @@ console.log('✅ Step 22: Interview functionality added successfully!');
 // ===== STEP 23: CONTACTS FUNCTIONALITY =====
 // Add this code to your script.js file after the interview functionality section
 
-// Contact Management Functions
+// 1. REPLACE the addContact function (removed primary contact logic):
 async function addContact(applicationId, contactData) {
     try {
         const application = await getApplicationFromDB(applicationId);
@@ -3269,14 +3269,8 @@ async function addContact(applicationId, contactData) {
             phone: contactData.phone,
             linkedin: contactData.linkedin,
             notes: contactData.notes,
-            isPrimary: contactData.isPrimary || false,
             createdAt: new Date().toISOString()
         };
-        
-        // If marking as primary, unmark others
-        if (contact.isPrimary) {
-            application.contacts.forEach(c => c.isPrimary = false);
-        }
         
         application.contacts.push(contact);
         application.updatedAt = new Date().toISOString();
@@ -3292,7 +3286,7 @@ async function addContact(applicationId, contactData) {
         throw error;
     }
 }
-
+// 2. REPLACE the updateContact function (removed primary contact logic):
 async function updateContact(applicationId, contactId, updatedData) {
     try {
         const application = await getApplicationFromDB(applicationId);
@@ -3300,11 +3294,6 @@ async function updateContact(applicationId, contactId, updatedData) {
         const contactIndex = application.contacts.findIndex(c => c.id === contactId);
         if (contactIndex === -1) {
             throw new Error('Contact not found');
-        }
-        
-        // If marking as primary, unmark others
-        if (updatedData.isPrimary) {
-            application.contacts.forEach(c => c.isPrimary = false);
         }
         
         application.contacts[contactIndex] = {
@@ -3343,7 +3332,7 @@ async function deleteContact(applicationId, contactId) {
     }
 }
 
-// Show contact form modal
+// 3. REPLACE the showContactModal function (removed primary contact checkbox):
 function showContactModal(applicationId, existingContact = null) {
     const isEdit = existingContact !== null;
     const title = isEdit ? 'Edit Contact' : 'Add Contact';
@@ -3414,14 +3403,6 @@ function showContactModal(applicationId, existingContact = null) {
                 <span class="error-message"></span>
             </div>
             
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="contactPrimary" name="isPrimary" 
-                           ${isEdit && existingContact.isPrimary ? 'checked' : ''}>
-                    Mark as primary contact
-                </label>
-            </div>
-            
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="hideModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary">
@@ -3436,9 +3417,6 @@ function showContactModal(applicationId, existingContact = null) {
         size: 'medium',
         onSubmit: async (data) => {
             try {
-                // Convert checkbox value to boolean
-                data.isPrimary = data.isPrimary === 'on';
-                
                 if (isEdit) {
                     await updateContact(applicationId, existingContact.id, data);
                 } else {
@@ -3461,7 +3439,7 @@ function showContactModal(applicationId, existingContact = null) {
     });
 }
 
-// Show all contacts for an application
+// 4. REPLACE the showContactsModal function (removed primary badge and fixed delete):
 async function showContactsModal(applicationId) {
     try {
         const application = await getApplicationFromDB(applicationId);
@@ -3486,19 +3464,14 @@ async function showContactsModal(applicationId) {
         } else {
             content += '<div class="contacts-grid">';
             
-            // Sort contacts: primary first, then by name
-            const sortedContacts = [...contacts].sort((a, b) => {
-                if (a.isPrimary && !b.isPrimary) return -1;
-                if (!a.isPrimary && b.isPrimary) return 1;
-                return a.name.localeCompare(b.name);
-            });
+            // Sort contacts by name
+            const sortedContacts = [...contacts].sort((a, b) => a.name.localeCompare(b.name));
             
             sortedContacts.forEach(contact => {
                 const contactDataEscaped = encodeURIComponent(JSON.stringify(contact));
                 
                 content += `
                     <div class="contact-card">
-                        ${contact.isPrimary ? '<span class="contact-primary">Primary</span>' : ''}
                         <div class="contact-card-header">
                             <h5 class="contact-name">${contact.name}</h5>
                             <span class="contact-type ${contact.type}">${contact.type.replace('-', ' ')}</span>
@@ -3532,7 +3505,7 @@ async function showContactsModal(applicationId) {
                             <button class="btn-icon small" onclick="window.handleEditContactClick('${applicationId}', '${contactDataEscaped}')" title="Edit">
                                 ✏️
                             </button>
-                            <button class="btn-icon small delete" onclick="confirmDeleteContact('${applicationId}', '${contact.id}')" title="Delete">
+                            <button class="btn-icon small delete" onclick="window.handleDeleteContactClick('${applicationId}', '${contact.id}')" title="Delete">
                                 🗑️
                             </button>
                         </div>
@@ -3556,7 +3529,6 @@ async function showContactsModal(applicationId) {
         notifyError('Failed to load contacts');
     }
 }
-
 // Modal transition helpers for contacts
 window.handleAddContactClick = async function(applicationId) {
     await hideModal();
@@ -3573,24 +3545,46 @@ window.handleEditContactClick = async function(applicationId, contactDataEscaped
     }, 100);
 };
 
-// Confirm contact deletion
-function confirmDeleteContact(applicationId, contactId) {
-    showConfirmModal(
-        'Are you sure you want to delete this contact?',
-        {
-            title: 'Delete Contact',
-            confirmText: 'Delete',
-            confirmClass: 'btn btn-danger',
-            onConfirm: async () => {
-                await deleteContact(applicationId, contactId);
-                await hideModal();
-                setTimeout(() => {
-                    showContactsModal(applicationId);
-                }, 100);
+// 5. ADD this new function to handle contact deletion (similar to interview delete fix):
+window.handleDeleteContactClick = async function(applicationId, contactId) {
+    // Close the contacts modal first
+    await hideModal();
+    
+    // Small delay to ensure modal is fully closed
+    setTimeout(() => {
+        showConfirmModal(
+            'Are you sure you want to delete this contact?',
+            {
+                title: 'Delete Contact',
+                confirmText: 'Delete',
+                confirmClass: 'btn btn-danger',
+                onConfirm: async () => {
+                    try {
+                        await deleteContact(applicationId, contactId);
+                        
+                        // After successful deletion, show the contacts modal again
+                        setTimeout(() => {
+                            showContactsModal(applicationId);
+                        }, 100);
+                        
+                    } catch (error) {
+                        console.error('Error deleting contact:', error);
+                        // On error, still show the contacts modal again
+                        setTimeout(() => {
+                            showContactsModal(applicationId);
+                        }, 100);
+                    }
+                },
+                onCancel: () => {
+                    // If cancelled, reopen the contacts modal
+                    setTimeout(() => {
+                        showContactsModal(applicationId);
+                    }, 100);
+                }
             }
-        }
-    );
-}
+        );
+    }, 100);
+};
 
 // Helper function to enhance application cards with contact information
 function enhanceCardWithContacts(card, application) {
