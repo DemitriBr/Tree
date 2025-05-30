@@ -3266,3 +3266,62 @@ body.modal-open {
 }
 
 /* ===== END OF INTERVIEW FUNCTIONALITY STYLES ===== */
+/* ===== INTERVIEW INDICATOR FOR APPLICATION CARDS ===== */
+/* Add these styles to your style.css file */
+
+/* Interview indicator icon in card header */
+.card-interview-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.75rem;
+    font-size: 1rem;
+    color: #4facfe;
+    animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+.card-interview-indicator .indicator-icon {
+    font-size: 1.1rem;
+}
+
+.card-interview-indicator .indicator-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 50px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Subtle pulse animation for the indicator */
+@keyframes subtle-pulse {
+    0%, 100% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .card-interview-indicator {
+    color: #64b5f6;
+}
+
+/* Responsive - smaller screens */
+@media (max-width: 768px) {
+    .card-interview-indicator {
+        margin-left: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .card-interview-indicator .indicator-icon {
+        font-size: 1rem;
+    }
+}
+
+/* ===== END OF INTERVIEW INDICATOR STYLES ===== */
