@@ -6341,3 +6341,225 @@ td a {
 }
 
 /* ===== END OF ACCESSIBILITY STYLES ===== */
+/* ===== STEP 30: CSS PERFORMANCE OPTIMIZATION ===== */
+/* Add these optimizations to your style.css file */
+
+/* Use CSS containment for better performance */
+.application-card,
+.kanban-card {
+    contain: layout style paint;
+}
+
+.view {
+    contain: layout style;
+}
+
+#listContainer,
+#kanbanContainer {
+    contain: layout style paint;
+}
+
+/* Optimize animations with will-change */
+.notification {
+    will-change: transform, opacity;
+}
+
+.modal {
+    will-change: transform, opacity;
+}
+
+.application-card:hover,
+.kanban-card:hover {
+    will-change: transform, box-shadow;
+}
+
+/* Remove will-change after animation */
+.notification:not(.animating),
+.modal:not(.animating) {
+    will-change: auto;
+}
+
+/* Use CSS Grid for better performance */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    contain: layout;
+}
+
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    contain: layout;
+}
+
+/* Optimize shadows for performance */
+@media (max-width: 768px) {
+    /* Reduce shadows on mobile for better performance */
+    .glass-card,
+    .application-card,
+    .kanban-card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Disable hover effects on mobile */
+    @media (hover: none) {
+        .application-card:hover,
+        .kanban-card:hover,
+        .btn:hover {
+            transform: none;
+            box-shadow: none;
+        }
+    }
+}
+
+/* Use transform instead of position for animations */
+@keyframes optimizedSlideInRight {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes optimizedFadeInUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Replace existing animations */
+.notification {
+    animation: optimizedSlideInRight 0.5s ease;
+}
+
+.view.active {
+    animation: optimizedFadeInUp 0.5s ease;
+}
+
+/* Optimize font loading */
+.font-loaded body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Critical CSS - Inline these styles in HTML for faster initial render */
+.critical-styles {
+    /* Basic layout */
+    body { margin: 0; padding: 0; }
+    #app { min-height: 100vh; display: flex; flex-direction: column; }
+    #header { padding: 1.5rem 2rem; }
+    #navigation { padding: 1rem 2rem; display: flex; gap: 1rem; }
+    .view { display: none; padding: 2rem; }
+    .view.active { display: block; }
+}
+
+/* Reduce CSS specificity for better performance */
+/* Instead of: */
+/* #app #header #navigation .nav-btn.active { } */
+/* Use: */
+.nav-btn.active {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+/* Use CSS custom properties for dynamic values */
+.dynamic-card {
+    --card-transform: translateY(0);
+    --card-opacity: 1;
+    transform: var(--card-transform);
+    opacity: var(--card-opacity);
+}
+
+/* Optimize media queries - group them */
+@media (max-width: 768px) {
+    /* All mobile styles in one place */
+    .stats-grid { grid-template-columns: 1fr; }
+    .kanban-board { grid-template-columns: 1fr; }
+    .filter-container { flex-direction: column; }
+    .sort-container { flex-direction: column; }
+    /* ... other mobile styles ... */
+}
+
+/* Use modern CSS features for better performance */
+.modern-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-gradient) transparent;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+}
+
+/* Optimize transitions - only transition what changes */
+.optimized-transition {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    /* NOT transition: all 0.3s ease; */
+}
+
+/* Use CSS-only solutions where possible */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Optimize print styles */
+@media print {
+    /* Hide non-essential elements */
+    #header, #navigation, .btn-icon, .modal-container, .notification-container {
+        display: none !important;
+    }
+    
+    /* Optimize for print */
+    .application-card {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    /* Use print-friendly colors */
+    * {
+        color: #000 !important;
+        background: #fff !important;
+    }
+}
+
+/* Loading skeleton for better perceived performance */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 1em;
+    margin: 0.5em 0;
+    border-radius: 4px;
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+/* ===== END OF CSS PERFORMANCE OPTIMIZATION ===== */
