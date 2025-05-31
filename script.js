@@ -5725,3 +5725,431 @@ document.addEventListener('DOMContentLoaded', () => {
 console.log('✅ Step 27: Enhanced data validation added successfully!');
 
 // ===== END OF ENHANCED DATA VALIDATION FUNCTIONALITY =====
+// ===== STEP 28: SERVICE WORKER INTEGRATION =====
+// Add this code to your script.js file after Step 27
+
+// Service Worker Registration and Management
+let serviceWorkerRegistration = null;
+let isOffline = false;
+let pendingSync = false;
+
+// Check if service workers are supported
+if ('serviceWorker' in navigator) {
+    // Register service worker when the app initializes
+    window.addEventListener('load', () => {
+        registerServiceWorker();
+    });
+}
+
+// Register the service worker
+async function registerServiceWorker() {
+    try {
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/'
+        });
+        
+        serviceWorkerRegistration = registration;
+        console.log('Service Worker registered successfully:', registration);
+        
+        // Check for updates on page focus
+        window.addEventListener('focus', () => {
+            registration.update();
+        });
+        
+        // Listen for service worker updates
+        registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            
+            newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New service worker available
+                    showUpdateNotification();
+                }
+            });
+        });
+        
+        // Setup message listener
+        navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+        
+        // Setup online/offline detection
+        setupOfflineDetection();
+        
+        // Setup background sync if supported
+        if ('sync' in registration) {
+            setupBackgroundSync();
+        }
+        
+    } catch (error) {
+        console.error('Service Worker registration failed:', error);
+    }
+}
+
+// Show update notification when new version is available
+function showUpdateNotification() {
+    const updateModal = showConfirmModal(
+        'A new version of the app is available. Would you like to update now?',
+        {
+            title: 'Update Available',
+            confirmText: 'Update',
+            cancelText: 'Later',
+            confirmClass: 'btn btn-primary',
+            onConfirm: () => {
+                updateServiceWorker();
+            }
+        }
+    );
+}
+
+// Update service worker
+function updateServiceWorker() {
+    if (serviceWorkerRegistration && serviceWorkerRegistration.waiting) {
+        // Tell the waiting service worker to take control
+        serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        
+        // Reload the page when the new service worker takes control
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
+    }
+}
+
+// Handle messages from service worker
+function handleServiceWorkerMessage(event) {
+    const { data } = event;
+    
+    if (data.type === 'SYNC_REQUIRED') {
+        // Handle sync when back online
+        if (!isOffline) {
+            syncOfflineData();
+        }
+    }
+}
+
+// Setup offline/online detection
+function setupOfflineDetection() {
+    // Check initial state
+    updateOnlineStatus();
+    
+    // Listen for online/offline events
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+}
+
+// Update online/offline status
+function updateOnlineStatus() {
+    isOffline = !navigator.onLine;
+    
+    if (isOffline) {
+        console.log('App is offline');
+        showOfflineIndicator();
+        
+        // Store offline state
+        localStorage.setItem('offlineMode', 'true');
+        
+    } else {
+        console.log('App is online');
+        hideOfflineIndicator();
+        
+        // Check if we were offline and have pending syncs
+        const wasOffline = localStorage.getItem('offlineMode') === 'true';
+        if (wasOffline) {
+            localStorage.removeItem('offlineMode');
+            syncOfflineData();
+        }
+    }
+}
+
+// Show offline indicator
+function showOfflineIndicator() {
+    let indicator = document.getElementById('offlineIndicator');
+    
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'offlineIndicator';
+        indicator.className = 'offline-indicator';
+        indicator.innerHTML = `
+            <span class="offline-icon">📡</span>
+            <span class="offline-text">Offline Mode - Changes will sync when connected</span>
+        `;
+        document.body.appendChild(indicator);
+    }
+    
+    indicator.classList.add('show');
+}
+
+// Hide offline indicator
+function hideOfflineIndicator() {
+    const indicator = document.getElementById('offlineIndicator');
+    if (indicator) {
+        indicator.classList.remove('show');
+    }
+}
+
+// Setup background sync
+async function setupBackgroundSync() {
+    try {
+        // Register for background sync
+        await serviceWorkerRegistration.sync.register('sync-applications');
+        console.log('Background sync registered');
+    } catch (error) {
+        console.log('Background sync registration failed:', error);
+    }
+}
+
+// Sync offline data when back online
+async function syncOfflineData() {
+    if (pendingSync) {
+        return; // Already syncing
+    }
+    
+    pendingSync = true;
+    
+    try {
+        console.log('Syncing offline data...');
+        
+        // Get any queued operations from IndexedDB
+        const queuedOps = await getQueuedOperations();
+        
+        if (queuedOps.length > 0) {
+            notifyInfo(`Syncing ${queuedOps.length} offline changes...`);
+            
+            for (const op of queuedOps) {
+                try {
+                    await processQueuedOperation(op);
+                    await removeQueuedOperation(op.id);
+                } catch (error) {
+                    console.error('Failed to sync operation:', error);
+                }
+            }
+            
+            notifySuccess('All offline changes have been synced!');
+        }
+        
+        // Refresh the current view
+        const activeView = document.querySelector('.view.active');
+        if (activeView) {
+            const viewName = activeView.id.replace('View', '');
+            switchView(viewName);
+        }
+        
+    } catch (error) {
+        console.error('Error syncing offline data:', error);
+        notifyError('Failed to sync some offline changes');
+    } finally {
+        pendingSync = false;
+    }
+}
+
+// Queue operations when offline
+async function queueOperation(operation) {
+    const queue = await getQueuedOperations();
+    
+    const queuedOp = {
+        id: generateId(),
+        type: operation.type,
+        data: operation.data,
+        timestamp: new Date().toISOString()
+    };
+    
+    queue.push(queuedOp);
+    await saveQueuedOperations(queue);
+    
+    return queuedOp;
+}
+
+// Get queued operations from IndexedDB
+async function getQueuedOperations() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('OfflineQueue', 1);
+        
+        request.onerror = () => reject(request.error);
+        
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('queue')) {
+                db.createObjectStore('queue', { keyPath: 'id' });
+            }
+        };
+        
+        request.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(['queue'], 'readonly');
+            const store = transaction.objectStore('queue');
+            const getAllRequest = store.getAll();
+            
+            getAllRequest.onsuccess = () => {
+                resolve(getAllRequest.result || []);
+            };
+            
+            getAllRequest.onerror = () => {
+                reject(getAllRequest.error);
+            };
+        };
+    });
+}
+
+// Save queued operations
+async function saveQueuedOperations(queue) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('OfflineQueue', 1);
+        
+        request.onerror = () => reject(request.error);
+        
+        request.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(['queue'], 'readwrite');
+            const store = transaction.objectStore('queue');
+            
+            // Clear existing queue
+            store.clear();
+            
+            // Add all operations
+            queue.forEach(op => {
+                store.add(op);
+            });
+            
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        };
+    });
+}
+
+// Remove a queued operation
+async function removeQueuedOperation(id) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('OfflineQueue', 1);
+        
+        request.onerror = () => reject(request.error);
+        
+        request.onsuccess = (event) => {
+            const db = event.target.result;
+            const transaction = db.transaction(['queue'], 'readwrite');
+            const store = transaction.objectStore('queue');
+            
+            store.delete(id);
+            
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+        };
+    });
+}
+
+// Process a queued operation
+async function processQueuedOperation(operation) {
+    switch (operation.type) {
+        case 'add':
+            await addApplicationToDB(operation.data);
+            break;
+        case 'update':
+            await updateApplicationInDB(operation.data);
+            break;
+        case 'delete':
+            await deleteApplicationFromDB(operation.data.id);
+            break;
+        default:
+            console.warn('Unknown operation type:', operation.type);
+    }
+}
+
+// Enhanced database operations with offline support
+const originalAddApplication = addApplicationToDB;
+addApplicationToDB = async function(applicationData) {
+    if (isOffline) {
+        // Queue the operation for later sync
+        await queueOperation({
+            type: 'add',
+            data: applicationData
+        });
+        
+        // Still add to local database
+        return originalAddApplication.call(this, applicationData);
+    }
+    
+    return originalAddApplication.call(this, applicationData);
+};
+
+const originalUpdateApplication = updateApplicationInDB;
+updateApplicationInDB = async function(applicationData) {
+    if (isOffline) {
+        // Queue the operation for later sync
+        await queueOperation({
+            type: 'update',
+            data: applicationData
+        });
+        
+        // Still update local database
+        return originalUpdateApplication.call(this, applicationData);
+    }
+    
+    return originalUpdateApplication.call(this, applicationData);
+};
+
+const originalDeleteApplication = deleteApplicationFromDB;
+deleteApplicationFromDB = async function(id) {
+    if (isOffline) {
+        // Queue the operation for later sync
+        await queueOperation({
+            type: 'delete',
+            data: { id }
+        });
+        
+        // Still delete from local database
+        return originalDeleteApplication.call(this, id);
+    }
+    
+    return originalDeleteApplication.call(this, id);
+};
+
+// Service Worker management functions
+async function clearServiceWorkerCache() {
+    if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+            cacheNames.map(cacheName => caches.delete(cacheName))
+        );
+        console.log('All caches cleared');
+        notifySuccess('Cache cleared successfully');
+    }
+}
+
+async function getServiceWorkerCacheSize() {
+    return new Promise((resolve) => {
+        if (navigator.serviceWorker.controller) {
+            const channel = new MessageChannel();
+            
+            channel.port1.onmessage = (event) => {
+                resolve(event.data.size);
+            };
+            
+            navigator.serviceWorker.controller.postMessage(
+                { type: 'GET_CACHE_SIZE' },
+                [channel.port2]
+            );
+        } else {
+            resolve(0);
+        }
+    });
+}
+
+// Add cache management to settings (future enhancement)
+function showCacheSettings() {
+    getServiceWorkerCacheSize().then(size => {
+        const sizeInMB = (size / (1024 * 1024)).toFixed(2);
+        
+        showConfirmModal(
+            `Cache Size: ${sizeInMB} MB\n\nWould you like to clear the cache?`,
+            {
+                title: 'Cache Management',
+                confirmText: 'Clear Cache',
+                cancelText: 'Cancel',
+                onConfirm: () => {
+                    clearServiceWorkerCache();
+                }
+            }
+        );
+    });
+}
+
+console.log('✅ Step 28: Service Worker integration added successfully!');
+
+// ===== END OF SERVICE WORKER INTEGRATION =====
