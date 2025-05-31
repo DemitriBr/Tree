@@ -6563,3 +6563,93 @@ td a {
 }
 
 /* ===== END OF CSS PERFORMANCE OPTIMIZATION ===== */
+/* Add this CSS to the end of your style.css file to fix high contrast mode */
+
+/* ===== HIGH CONTRAST MODE COMPLETE FIX ===== */
+
+/* Force text to be visible in high contrast mode */
+.high-contrast * {
+    -webkit-text-fill-color: initial !important;
+    text-shadow: none !important;
+}
+
+/* Light mode high contrast */
+.high-contrast body {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+.high-contrast #header h1,
+.high-contrast .view h2,
+.high-contrast h1,
+.high-contrast h2,
+.high-contrast h3,
+.high-contrast h4,
+.high-contrast h5,
+.high-contrast h6 {
+    background: transparent !important;
+    background-image: none !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: #000000 !important;
+    background-clip: initial !important;
+    color: #000000 !important;
+    filter: none !important;
+}
+
+/* Dark mode high contrast */
+[data-theme="dark"].high-contrast body {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast #header h1,
+[data-theme="dark"].high-contrast .view h2,
+[data-theme="dark"].high-contrast h1,
+[data-theme="dark"].high-contrast h2,
+[data-theme="dark"].high-contrast h3,
+[data-theme="dark"].high-contrast h4,
+[data-theme="dark"].high-contrast h5,
+[data-theme="dark"].high-contrast h6 {
+    background: transparent !important;
+    background-image: none !important;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-clip: initial !important;
+    color: #ffffff !important;
+    filter: none !important;
+}
+
+/* Ensure all text is visible */
+.high-contrast p,
+.high-contrast span,
+.high-contrast div,
+.high-contrast label,
+.high-contrast td,
+.high-contrast th,
+.high-contrast li {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast p,
+[data-theme="dark"].high-contrast span,
+[data-theme="dark"].high-contrast div,
+[data-theme="dark"].high-contrast label,
+[data-theme="dark"].high-contrast td,
+[data-theme="dark"].high-contrast th,
+[data-theme="dark"].high-contrast li {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Fix specific problematic elements */
+.high-contrast .view h2::after {
+    display: none !important;
+}
+
+.high-contrast .status-badge,
+.high-contrast .btn {
+    border: 2px solid currentColor !important;
+}
+
+/* ===== END HIGH CONTRAST FIX ===== */
