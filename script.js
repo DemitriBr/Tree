@@ -6643,7 +6643,7 @@ window.saveBackupSettings = function() {
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize auto-backup
     setTimeout(() => {
-        autoBackup.init();
+        //autoBackup.init();
         
         // Check for data recovery if database is empty
         getAllApplicationsFromDB().then(applications => {
