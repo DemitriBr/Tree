@@ -5618,42 +5618,296 @@ textarea:focus-visible {
     }
 }
 
-/* High contrast mode */
+/* ===== HIGH CONTRAST MODE FIX ===== */
+/* Replace the high contrast styles in your style.css with these fixed versions */
+
+/* High contrast mode - Light version */
 .high-contrast {
-    --primary-gradient: linear-gradient(135deg, #000000 0%, #333333 100%);
-    --glass-bg: rgba(255, 255, 255, 0.95);
-    --glass-border: #000000;
-    --text-primary: #000000;
-    --text-secondary: #333333;
+    /* Force solid backgrounds */
+    --glass-bg: #ffffff !important;
+    --glass-bg-solid: #ffffff !important;
+    --glass-border: #000000 !important;
+    
+    /* High contrast text colors */
+    --text-primary: #000000 !important;
+    --text-secondary: #000000 !important;
+    --text-light: #000000 !important;
+    
+    /* High contrast status colors */
+    --status-applied: #000000 !important;
+    --status-screening: #000000 !important;
+    --status-interview: #000000 !important;
+    --status-offer: #006400 !important;
+    --status-rejected: #8B0000 !important;
+    --status-withdrawn: #000000 !important;
 }
 
+/* High contrast body and backgrounds */
 .high-contrast body {
-    background: #ffffff;
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+.high-contrast #header {
+    background: #ffffff !important;
+    border-bottom: 3px solid #000000 !important;
+    box-shadow: none !important;
 }
 
 .high-contrast .glass-card,
 .high-contrast .application-card,
-.high-contrast .kanban-card {
-    background: #ffffff;
-    border: 2px solid #000000;
-    box-shadow: none;
+.high-contrast .kanban-card,
+.high-contrast .modal,
+.high-contrast #applicationForm {
+    background: #ffffff !important;
+    border: 3px solid #000000 !important;
+    box-shadow: none !important;
+    color: #000000 !important;
 }
 
-.high-contrast .btn-primary {
-    background: #000000;
-    color: #ffffff;
-    border: 2px solid #000000;
+/* High contrast text elements */
+.high-contrast h1, 
+.high-contrast h2, 
+.high-contrast h3, 
+.high-contrast h4, 
+.high-contrast h5, 
+.high-contrast h6,
+.high-contrast p,
+.high-contrast span,
+.high-contrast div,
+.high-contrast label,
+.high-contrast .job-title,
+.high-contrast .company-info,
+.high-contrast .detail-label,
+.high-contrast .detail-value,
+.high-contrast .empty-state h3,
+.high-contrast .empty-state p {
+    color: #000000 !important;
+    text-shadow: none !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: unset !important;
 }
 
-.high-contrast .btn-primary:hover {
-    background: #333333;
-    border-color: #333333;
+/* High contrast form elements */
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
 }
 
+.high-contrast input:focus,
+.high-contrast select:focus,
+.high-contrast textarea:focus {
+    outline: 3px solid #000000 !important;
+    outline-offset: 2px !important;
+}
+
+/* High contrast buttons */
+.high-contrast .btn,
+.high-contrast button {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #000000 !important;
+    font-weight: 700 !important;
+}
+
+.high-contrast .btn:hover,
+.high-contrast button:hover {
+    background: #333333 !important;
+    color: #ffffff !important;
+}
+
+.high-contrast .btn-secondary {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+}
+
+.high-contrast .btn-secondary:hover {
+    background: #f0f0f0 !important;
+    color: #000000 !important;
+}
+
+/* High contrast navigation */
+.high-contrast .nav-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+    font-weight: 600 !important;
+}
+
+.high-contrast .nav-btn:hover,
+.high-contrast .nav-btn.active {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+/* High contrast status badges */
 .high-contrast .status-badge {
-    border: 2px solid #000000;
-    font-weight: 700;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 3px solid #000000 !important;
+    font-weight: 700 !important;
 }
+
+.high-contrast .status-offer {
+    background: #90EE90 !important;
+    color: #000000 !important;
+    border-color: #006400 !important;
+}
+
+.high-contrast .status-rejected {
+    background: #FFB6C1 !important;
+    color: #000000 !important;
+    border-color: #8B0000 !important;
+}
+
+/* High contrast links */
+.high-contrast a {
+    color: #0000EE !important;
+    text-decoration: underline !important;
+    font-weight: 600 !important;
+}
+
+.high-contrast a:visited {
+    color: #551A8B !important;
+}
+
+.high-contrast a:hover {
+    color: #000000 !important;
+    background: #FFFF00 !important;
+}
+
+/* High contrast focus states */
+.high-contrast *:focus,
+.high-contrast *:focus-visible {
+    outline: 4px solid #000000 !important;
+    outline-offset: 2px !important;
+}
+
+/* High contrast dark mode */
+[data-theme="dark"].high-contrast {
+    --glass-bg: #000000 !important;
+    --glass-bg-solid: #000000 !important;
+    --glass-border: #ffffff !important;
+    --text-primary: #ffffff !important;
+    --text-secondary: #ffffff !important;
+    --text-light: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast body {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast #header {
+    background: #000000 !important;
+    border-bottom: 3px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .glass-card,
+[data-theme="dark"].high-contrast .application-card,
+[data-theme="dark"].high-contrast .kanban-card,
+[data-theme="dark"].high-contrast .modal,
+[data-theme="dark"].high-contrast #applicationForm {
+    background: #000000 !important;
+    border: 3px solid #ffffff !important;
+    color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast h1,
+[data-theme="dark"].high-contrast h2,
+[data-theme="dark"].high-contrast h3,
+[data-theme="dark"].high-contrast h4,
+[data-theme="dark"].high-contrast h5,
+[data-theme="dark"].high-contrast h6,
+[data-theme="dark"].high-contrast p,
+[data-theme="dark"].high-contrast span,
+[data-theme="dark"].high-contrast div,
+[data-theme="dark"].high-contrast label,
+[data-theme="dark"].high-contrast .job-title,
+[data-theme="dark"].high-contrast .company-info,
+[data-theme="dark"].high-contrast .detail-label,
+[data-theme="dark"].high-contrast .detail-value {
+    color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast input,
+[data-theme="dark"].high-contrast select,
+[data-theme="dark"].high-contrast textarea {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .btn,
+[data-theme="dark"].high-contrast button {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .btn:hover,
+[data-theme="dark"].high-contrast button:hover {
+    background: #cccccc !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast .nav-btn {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .nav-btn:hover,
+[data-theme="dark"].high-contrast .nav-btn.active {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast a {
+    color: #00FFFF !important;
+}
+
+[data-theme="dark"].high-contrast a:hover {
+    color: #000000 !important;
+    background: #FFFF00 !important;
+}
+
+[data-theme="dark"].high-contrast *:focus,
+[data-theme="dark"].high-contrast *:focus-visible {
+    outline: 4px solid #ffffff !important;
+}
+
+/* High contrast specific overrides */
+.high-contrast .notification {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 3px solid #ffffff !important;
+}
+
+.high-contrast .notification.error {
+    background: #8B0000 !important;
+}
+
+.high-contrast .notification.success {
+    background: #006400 !important;
+}
+
+/* Ensure gradients don't show in high contrast */
+.high-contrast *[class*="gradient"] {
+    background-image: none !important;
+}
+
+/* Fix for gradient text */
+.high-contrast .view h2::after {
+    display: none !important;
+}
+
+/* ===== END OF HIGH CONTRAST FIX ===== */
 
 /* Reduced motion preferences */
 .reduce-motion * {
