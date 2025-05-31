@@ -6153,3 +6153,510 @@ function showCacheSettings() {
 console.log('✅ Step 28: Service Worker integration added successfully!');
 
 // ===== END OF SERVICE WORKER INTEGRATION =====
+// ===== DATA PROTECTION & BACKUP FEATURES =====
+// Add this code to your script.js file to protect against data loss
+
+// Auto-backup functionality
+const autoBackup = {
+    isEnabled: false,
+    interval: null,
+    frequency: 24 * 60 * 60 * 1000, // 24 hours default
+    
+    // Initialize auto-backup
+    init() {
+        // Check if auto-backup is enabled
+        const settings = this.getSettings();
+        if (settings.enabled) {
+            this.start(settings.frequency);
+        }
+        
+        // Check for backup reminder
+        this.checkBackupReminder();
+    },
+    
+    // Get backup settings
+    getSettings() {
+        const settings = localStorage.getItem('backupSettings');
+        return settings ? JSON.parse(settings) : {
+            enabled: false,
+            frequency: this.frequency,
+            lastBackup: null
+        };
+    },
+    
+    // Save backup settings
+    saveSettings(settings) {
+        localStorage.setItem('backupSettings', JSON.stringify(settings));
+    },
+    
+    // Start auto-backup
+    start(frequency = this.frequency) {
+        this.stop(); // Clear any existing interval
+        
+        this.isEnabled = true;
+        this.frequency = frequency;
+        
+        // Save settings
+        this.saveSettings({
+            enabled: true,
+            frequency: frequency,
+            lastBackup: this.getSettings().lastBackup
+        });
+        
+        // Perform immediate backup
+        this.performBackup();
+        
+        // Set interval for future backups
+        this.interval = setInterval(() => {
+            this.performBackup();
+        }, frequency);
+        
+        console.log('Auto-backup started');
+    },
+    
+    // Stop auto-backup
+    stop() {
+        if (this.interval) {
+            clearInterval(this.interval);
+            this.interval = null;
+        }
+        
+        this.isEnabled = false;
+        
+        // Update settings
+        const settings = this.getSettings();
+        settings.enabled = false;
+        this.saveSettings(settings);
+        
+        console.log('Auto-backup stopped');
+    },
+    
+    // Perform backup
+    async performBackup() {
+        try {
+            const applications = await getAllApplicationsFromDB();
+            
+            if (applications.length === 0) {
+                console.log('No data to backup');
+                return;
+            }
+            
+            // Create backup data
+            const backupData = {
+                version: '1.0',
+                created: new Date().toISOString(),
+                applicationCount: applications.length,
+                applications: applications
+            };
+            
+            // Generate filename
+            const date = new Date();
+            const dateStr = date.toISOString().split('T')[0];
+            const filename = `job-tracker-backup-${dateStr}.json`;
+            
+            // Create and download backup file
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], {
+                type: 'application/json'
+            });
+            
+            // Store in browser's downloads
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            
+            // For auto-backup, we'll store in a special way
+            if (this.isEnabled) {
+                // Store backup in a separate IndexedDB for recovery
+                await this.storeBackupCopy(backupData);
+                
+                // Update last backup time
+                const settings = this.getSettings();
+                settings.lastBackup = date.toISOString();
+                this.saveSettings(settings);
+                
+                notifySuccess('Auto-backup completed successfully');
+            } else {
+                // Manual backup - trigger download
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                notifySuccess(`Backup saved: ${filename}`);
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Backup failed:', error);
+            notifyError('Failed to create backup');
+            return false;
+        }
+    },
+    
+    // Store backup copy in separate storage
+    async storeBackupCopy(backupData) {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('JobTrackerBackups', 1);
+            
+            request.onerror = () => reject(request.error);
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('backups')) {
+                    const store = db.createObjectStore('backups', { keyPath: 'id' });
+                    store.createIndex('created', 'created', { unique: false });
+                }
+            };
+            
+            request.onsuccess = (event) => {
+                const db = event.target.result;
+                const transaction = db.transaction(['backups'], 'readwrite');
+                const store = transaction.objectStore('backups');
+                
+                // Keep only last 5 backups
+                const getAllRequest = store.getAll();
+                
+                getAllRequest.onsuccess = () => {
+                    const backups = getAllRequest.result || [];
+                    
+                    // Sort by created date
+                    backups.sort((a, b) => new Date(b.created) - new Date(a.created));
+                    
+                    // Delete old backups if more than 5
+                    if (backups.length >= 5) {
+                        backups.slice(4).forEach(backup => {
+                            store.delete(backup.id);
+                        });
+                    }
+                    
+                    // Add new backup
+                    backupData.id = generateId();
+                    store.add(backupData);
+                    
+                    transaction.oncomplete = () => resolve();
+                    transaction.onerror = () => reject(transaction.error);
+                };
+            };
+        });
+    },
+    
+    // Check if backup reminder is needed
+    checkBackupReminder() {
+        const settings = this.getSettings();
+        const lastBackup = settings.lastBackup;
+        
+        if (!lastBackup) {
+            // No backup ever made
+            this.showBackupReminder('never');
+            return;
+        }
+        
+        const daysSinceBackup = Math.floor(
+            (new Date() - new Date(lastBackup)) / (1000 * 60 * 60 * 24)
+        );
+        
+        if (daysSinceBackup >= 7) {
+            this.showBackupReminder(daysSinceBackup);
+        }
+    },
+    
+    // Show backup reminder
+    showBackupReminder(daysSince) {
+        const message = daysSince === 'never' 
+            ? "You haven't created a backup yet. Would you like to backup your data now?"
+            : `It's been ${daysSince} days since your last backup. Would you like to backup now?`;
+        
+        // Don't show immediately on page load
+        setTimeout(() => {
+            showConfirmModal(message, {
+                title: '💾 Backup Reminder',
+                confirmText: 'Backup Now',
+                cancelText: 'Later',
+                onConfirm: () => {
+                    this.performBackup();
+                }
+            });
+        }, 3000);
+    },
+    
+    // Restore from backup
+    async restoreFromBackup(backupData) {
+        try {
+            // Validate backup data
+            if (!backupData.applications || !Array.isArray(backupData.applications)) {
+                throw new Error('Invalid backup format');
+            }
+            
+            // Ask user about restore mode
+            return new Promise((resolve) => {
+                showConfirmModal(
+                    `This backup contains ${backupData.applicationCount} applications from ${new Date(backupData.created).toLocaleDateString()}. How would you like to restore?`,
+                    {
+                        title: 'Restore Backup',
+                        confirmText: 'Merge with Current',
+                        cancelText: 'Replace All',
+                        onConfirm: async () => {
+                            // Merge mode
+                            const result = await importData(
+                                JSON.stringify(backupData.applications),
+                                'json',
+                                'merge'
+                            );
+                            resolve(result);
+                        },
+                        onCancel: async () => {
+                            // Replace mode
+                            const result = await importData(
+                                JSON.stringify(backupData.applications),
+                                'json',
+                                'replace'
+                            );
+                            resolve(result);
+                        }
+                    }
+                );
+            });
+            
+        } catch (error) {
+            console.error('Restore failed:', error);
+            notifyError('Failed to restore backup');
+            throw error;
+        }
+    }
+};
+
+// Data recovery functions
+const dataRecovery = {
+    // Check for recoverable data
+    async checkForRecoverableData() {
+        try {
+            // Check if main database exists but might be empty
+            const mainDB = await this.checkDatabase('JobApplicationTrackerDB');
+            
+            // Check for backup database
+            const backupDB = await this.checkDatabase('JobTrackerBackups');
+            
+            // Check for any cached data
+            const cachedData = await this.checkCachedData();
+            
+            return {
+                hasMainDB: mainDB.exists && mainDB.hasData,
+                hasBackups: backupDB.exists && backupDB.hasData,
+                hasCachedData: cachedData.exists,
+                mainDBCount: mainDB.count,
+                backupCount: backupDB.count,
+                cachedCount: cachedData.count
+            };
+            
+        } catch (error) {
+            console.error('Error checking for recoverable data:', error);
+            return {
+                hasMainDB: false,
+                hasBackups: false,
+                hasCachedData: false
+            };
+        }
+    },
+    
+    // Check if database exists and has data
+    async checkDatabase(dbName) {
+        return new Promise((resolve) => {
+            const request = indexedDB.open(dbName);
+            
+            request.onsuccess = (event) => {
+                const db = event.target.result;
+                
+                if (dbName === 'JobApplicationTrackerDB' && db.objectStoreNames.contains('applications')) {
+                    const transaction = db.transaction(['applications'], 'readonly');
+                    const store = transaction.objectStore('applications');
+                    const countRequest = store.count();
+                    
+                    countRequest.onsuccess = () => {
+                        resolve({
+                            exists: true,
+                            hasData: countRequest.result > 0,
+                            count: countRequest.result
+                        });
+                    };
+                } else if (dbName === 'JobTrackerBackups' && db.objectStoreNames.contains('backups')) {
+                    const transaction = db.transaction(['backups'], 'readonly');
+                    const store = transaction.objectStore('backups');
+                    const getAllRequest = store.getAll();
+                    
+                    getAllRequest.onsuccess = () => {
+                        resolve({
+                            exists: true,
+                            hasData: getAllRequest.result.length > 0,
+                            count: getAllRequest.result.length,
+                            backups: getAllRequest.result
+                        });
+                    };
+                } else {
+                    resolve({ exists: false, hasData: false, count: 0 });
+                }
+                
+                db.close();
+            };
+            
+            request.onerror = () => {
+                resolve({ exists: false, hasData: false, count: 0 });
+            };
+        });
+    },
+    
+    // Check for cached data
+    async checkCachedData() {
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                // Look for any cached API responses or data
+                // This is a placeholder - implement based on your caching strategy
+                return {
+                    exists: cacheNames.length > 0,
+                    count: 0
+                };
+            } catch (error) {
+                return { exists: false, count: 0 };
+            }
+        }
+        return { exists: false, count: 0 };
+    },
+    
+    // Attempt to recover data
+    async attemptRecovery() {
+        const recovery = await this.checkForRecoverableData();
+        
+        if (recovery.hasBackups) {
+            // Get latest backup
+            const backupDB = await this.checkDatabase('JobTrackerBackups');
+            if (backupDB.backups && backupDB.backups.length > 0) {
+                // Sort by created date and get latest
+                const latestBackup = backupDB.backups.sort((a, b) => 
+                    new Date(b.created) - new Date(a.created)
+                )[0];
+                
+                showConfirmModal(
+                    `Found a backup from ${new Date(latestBackup.created).toLocaleDateString()} with ${latestBackup.applicationCount} applications. Would you like to restore it?`,
+                    {
+                        title: '🔄 Data Recovery',
+                        confirmText: 'Restore Backup',
+                        cancelText: 'Start Fresh',
+                        onConfirm: async () => {
+                            await autoBackup.restoreFromBackup(latestBackup);
+                            window.location.reload();
+                        }
+                    }
+                );
+            }
+        }
+    }
+};
+
+// Show backup settings modal
+function showBackupSettingsModal() {
+    const settings = autoBackup.getSettings();
+    const lastBackupDate = settings.lastBackup 
+        ? new Date(settings.lastBackup).toLocaleString() 
+        : 'Never';
+    
+    const modalContent = `
+        <div class="backup-settings-content">
+            <div class="backup-info">
+                <p><strong>Last Backup:</strong> ${lastBackupDate}</p>
+                <p class="text-secondary">Backups help protect your data from accidental loss.</p>
+            </div>
+            
+            <div class="backup-options">
+                <h4>Manual Backup</h4>
+                <button class="btn btn-primary" onclick="autoBackup.performBackup()">
+                    💾 Create Backup Now
+                </button>
+                
+                <h4 style="margin-top: 1.5rem;">Automatic Backups</h4>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enableAutoBackup" ${settings.enabled ? 'checked' : ''}>
+                        Enable automatic backups
+                    </label>
+                </div>
+                
+                <div class="form-group" id="backupFrequencyGroup" style="${!settings.enabled ? 'display:none' : ''}">
+                    <label for="backupFrequency">Backup Frequency</label>
+                    <select id="backupFrequency" class="form-control">
+                        <option value="86400000" ${settings.frequency === 86400000 ? 'selected' : ''}>Daily</option>
+                        <option value="604800000" ${settings.frequency === 604800000 ? 'selected' : ''}>Weekly</option>
+                        <option value="2592000000" ${settings.frequency === 2592000000 ? 'selected' : ''}>Monthly</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="backup-warning">
+                <p class="text-warning">
+                    ⚠️ <strong>Important:</strong> Clearing browser data (cookies, cache) will delete all your applications. 
+                    Regular backups protect against data loss.
+                </p>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideModal()">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveBackupSettings()">
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    `;
+    
+    showModal(modalContent, {
+        title: '💾 Backup Settings',
+        size: 'medium',
+        onOpen: () => {
+            // Setup checkbox listener
+            const checkbox = document.getElementById('enableAutoBackup');
+            const frequencyGroup = document.getElementById('backupFrequencyGroup');
+            
+            checkbox.addEventListener('change', (e) => {
+                frequencyGroup.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+    });
+}
+
+// Save backup settings from modal
+window.saveBackupSettings = function() {
+    const enabled = document.getElementById('enableAutoBackup').checked;
+    const frequency = parseInt(document.getElementById('backupFrequency').value);
+    
+    if (enabled) {
+        autoBackup.start(frequency);
+        notifySuccess('Automatic backup enabled');
+    } else {
+        autoBackup.stop();
+        notifyInfo('Automatic backup disabled');
+    }
+    
+    hideModal();
+};
+
+// Initialize data protection on app start
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize auto-backup
+    setTimeout(() => {
+        autoBackup.init();
+        
+        // Check for data recovery if database is empty
+        getAllApplicationsFromDB().then(applications => {
+            if (applications.length === 0) {
+                dataRecovery.attemptRecovery();
+            }
+        });
+    }, 2000);
+});
+
+// Add backup button to navigation (add this to your HTML)
+// <button class="backup-btn" onclick="showBackupSettingsModal()">💾 Backup</button>
+
+console.log('✅ Data protection and backup features added!');
+
+// ===== END OF DATA PROTECTION =====
