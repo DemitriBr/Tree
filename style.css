@@ -5788,124 +5788,122 @@ textarea:focus-visible {
     outline-offset: 2px !important;
 }
 
-/* High contrast dark mode */
-[data-theme="dark"].high-contrast {
-    --glass-bg: #000000 !important;
-    --glass-bg-solid: #000000 !important;
-    --glass-border: #ffffff !important;
-    --text-primary: #ffffff !important;
-    --text-secondary: #ffffff !important;
-    --text-light: #ffffff !important;
-}
+/* ===== DARK MODE HIGH CONTRAST TEXT FIX ===== */
+/* Add these fixes to your style.css after the existing high contrast styles */
 
-[data-theme="dark"].high-contrast body {
-    background: #000000 !important;
+/* Fix header title in dark mode high contrast */
+[data-theme="dark"].high-contrast #header h1 {
     color: #ffffff !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-clip: unset !important;
+    text-fill-color: #ffffff !important;
+    filter: none !important;
 }
 
-[data-theme="dark"].high-contrast #header {
-    background: #000000 !important;
-    border-bottom: 3px solid #ffffff !important;
-}
-
-[data-theme="dark"].high-contrast .glass-card,
-[data-theme="dark"].high-contrast .application-card,
-[data-theme="dark"].high-contrast .kanban-card,
-[data-theme="dark"].high-contrast .modal,
-[data-theme="dark"].high-contrast #applicationForm {
-    background: #000000 !important;
-    border: 3px solid #ffffff !important;
+/* Fix view titles (Dashboard, Kanban, etc.) in dark mode high contrast */
+[data-theme="dark"].high-contrast .view h2 {
     color: #ffffff !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-clip: unset !important;
+    text-fill-color: #ffffff !important;
+    filter: none !important;
 }
 
+/* Remove the decorative line under h2 in high contrast */
+[data-theme="dark"].high-contrast .view h2::after,
+.high-contrast .view h2::after {
+    display: none !important;
+}
+
+/* Ensure all heading text is white in dark mode high contrast */
 [data-theme="dark"].high-contrast h1,
 [data-theme="dark"].high-contrast h2,
 [data-theme="dark"].high-contrast h3,
 [data-theme="dark"].high-contrast h4,
 [data-theme="dark"].high-contrast h5,
-[data-theme="dark"].high-contrast h6,
-[data-theme="dark"].high-contrast p,
-[data-theme="dark"].high-contrast span,
-[data-theme="dark"].high-contrast div,
-[data-theme="dark"].high-contrast label,
-[data-theme="dark"].high-contrast .job-title,
-[data-theme="dark"].high-contrast .company-info,
+[data-theme="dark"].high-contrast h6 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    text-fill-color: #ffffff !important;
+}
+
+/* Fix any remaining gray text in dark mode */
+[data-theme="dark"].high-contrast .stat-label,
+[data-theme="dark"].high-contrast .chart-placeholder p,
+[data-theme="dark"].high-contrast .empty-state p,
+[data-theme="dark"].high-contrast .kanban-empty-state,
+[data-theme="dark"].high-contrast .results-summary,
 [data-theme="dark"].high-contrast .detail-label,
-[data-theme="dark"].high-contrast .detail-value {
+[data-theme="dark"].high-contrast .progress-label {
     color: #ffffff !important;
 }
 
-[data-theme="dark"].high-contrast input,
-[data-theme="dark"].high-contrast select,
-[data-theme="dark"].high-contrast textarea {
-    background: #000000 !important;
+/* Fix stat values in dashboard */
+[data-theme="dark"].high-contrast .stat-value {
     color: #ffffff !important;
-    border: 2px solid #ffffff !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
+/* Fix status breakdown text */
+[data-theme="dark"].high-contrast .status-breakdown h3,
+[data-theme="dark"].high-contrast .status-label,
+[data-theme="dark"].high-contrast .status-count {
+    color: #ffffff !important;
+}
+
+/* Fix chart container titles */
+[data-theme="dark"].high-contrast .chart-container h3 {
+    color: #ffffff !important;
+}
+
+/* Ensure kanban column titles are visible */
+[data-theme="dark"].high-contrast .kanban-column-title h3 {
+    color: #ffffff !important;
+}
+
+/* Fix any text that might be using --text-secondary */
+[data-theme="dark"].high-contrast {
+    --text-secondary: #ffffff !important;
+    --text-light: #ffffff !important;
+}
+
+/* Force all text elements to be white in dark high contrast */
+[data-theme="dark"].high-contrast * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* But keep buttons with proper contrast */
 [data-theme="dark"].high-contrast .btn,
 [data-theme="dark"].high-contrast button {
     background: #ffffff !important;
     color: #000000 !important;
-    border: 2px solid #ffffff !important;
+    -webkit-text-fill-color: #000000 !important;
 }
 
-[data-theme="dark"].high-contrast .btn:hover,
-[data-theme="dark"].high-contrast button:hover {
-    background: #cccccc !important;
-    color: #000000 !important;
-}
-
-[data-theme="dark"].high-contrast .nav-btn {
+[data-theme="dark"].high-contrast .btn-secondary {
     background: #000000 !important;
     color: #ffffff !important;
-    border: 2px solid #ffffff !important;
-}
-
-[data-theme="dark"].high-contrast .nav-btn:hover,
-[data-theme="dark"].high-contrast .nav-btn.active {
-    background: #ffffff !important;
-    color: #000000 !important;
-}
-
-[data-theme="dark"].high-contrast a {
-    color: #00FFFF !important;
-}
-
-[data-theme="dark"].high-contrast a:hover {
-    color: #000000 !important;
-    background: #FFFF00 !important;
-}
-
-[data-theme="dark"].high-contrast *:focus,
-[data-theme="dark"].high-contrast *:focus-visible {
-    outline: 4px solid #ffffff !important;
-}
-
-/* High contrast specific overrides */
-.high-contrast .notification {
-    background: #000000 !important;
-    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
     border: 3px solid #ffffff !important;
 }
 
-.high-contrast .notification.error {
-    background: #8B0000 !important;
+/* Fix navigation buttons specifically */
+[data-theme="dark"].high-contrast .nav-btn.active {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
 }
 
-.high-contrast .notification.success {
-    background: #006400 !important;
-}
-
-/* Ensure gradients don't show in high contrast */
-.high-contrast *[class*="gradient"] {
-    background-image: none !important;
-}
-
-/* Fix for gradient text */
-.high-contrast .view h2::after {
-    display: none !important;
-}
+/* ===== END OF DARK MODE HIGH CONTRAST TEXT FIX ===== */
 
 /* ===== END OF HIGH CONTRAST FIX ===== */
 
