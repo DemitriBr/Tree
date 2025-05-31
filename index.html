@@ -1,11 +1,39 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Job Application Tracker</title>
-   <link rel="stylesheet" href="style.css?v=5300">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JobTracker">
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    
+    <!-- Splash Screens for iOS -->
+    <link rel="apple-touch-startup-image" href="/splash/launch-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/splash/launch-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    <link rel="apple-touch-startup-image" href="/splash/launch-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+    <link rel="apple-touch-startup-image" href="/splash/launch-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css?v=5201">
 </head>
 <body>
     <!-- Main Container -->
@@ -18,13 +46,14 @@
 
         <!-- Navigation -->
         <nav id="navigation">
-    <button class="nav-btn active" data-view="home">Add Application</button>
-    <button class="nav-btn" data-view="list">Applications List</button>
-    <button class="nav-btn" data-view="dashboard">Dashboard</button>
-    <button class="nav-btn" data-view="kanban">Kanban Board</button>
-    <button class="export-btn" onclick="showExportModal()">📥 Export Data</button>
-    <button class="import-btn" onclick="showImportModal()">📤 Import Data</button>
-</nav>
+            <button class="nav-btn active" data-view="home">Add Application</button>
+            <button class="nav-btn" data-view="list">Applications List</button>
+            <button class="nav-btn" data-view="dashboard">Dashboard</button>
+            <button class="nav-btn" data-view="kanban">Kanban Board</button>
+            <button class="export-btn" onclick="showExportModal()">📥 Export Data</button>
+            <button class="import-btn" onclick="showImportModal()">📤 Import Data</button>
+            <button class="backup-btn" onclick="showBackupSettingsModal()">💾 Backup</button>
+        </nav>
 
         <!-- View Containers -->
         <main id="viewContainer">
@@ -120,81 +149,82 @@
             </div>
 
             <!-- List View -->
-<div id="listView" class="view">
-    <h2>Applications List</h2>
-    
-    <!-- Search, Filter, Sort Controls -->
-    <div class="list-controls glass-card">
-        <!-- Search Bar -->
-        <div class="search-container">
-            <input 
-                type="text" 
-                id="searchInput" 
-                class="search-input" 
-                placeholder="Search by job title, company, or notes..."
-                aria-label="Search applications"
-            >
-            <span class="search-icon">🔍</span>
-        </div>
-        
-        <!-- Filter Controls -->
-        <div class="filter-container">
-            <div class="filter-group">
-                <label for="statusFilter">Status</label>
-                <select id="statusFilter" class="filter-select">
-                    <option value="">All Statuses</option>
-                    <option value="applied">Applied</option>
-                    <option value="screening">Screening</option>
-                    <option value="interview">Interview</option>
-                    <option value="offer">Offer</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="withdrawn">Withdrawn</option>
-                </select>
+            <div id="listView" class="view">
+                <h2>Applications List</h2>
+                
+                <!-- Search, Filter, Sort Controls -->
+                <div class="list-controls glass-card">
+                    <!-- Search Bar -->
+                    <div class="search-container">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-input" 
+                            placeholder="Search by job title, company, or notes..."
+                            aria-label="Search applications"
+                        >
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    
+                    <!-- Filter Controls -->
+                    <div class="filter-container">
+                        <div class="filter-group">
+                            <label for="statusFilter">Status</label>
+                            <select id="statusFilter" class="filter-select">
+                                <option value="">All Statuses</option>
+                                <option value="applied">Applied</option>
+                                <option value="screening">Screening</option>
+                                <option value="interview">Interview</option>
+                                <option value="offer">Offer</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="withdrawn">Withdrawn</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="dateRangeFilter">Date Range</label>
+                            <select id="dateRangeFilter" class="filter-select">
+                                <option value="">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                                <option value="quarter">Last 3 Months</option>
+                                <option value="year">This Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Sort Controls -->
+                    <div class="sort-container">
+                        <span class="sort-label">Sort by:</span>
+                        <button class="sort-btn active" data-sort="date" data-direction="desc">
+                            Date <span class="sort-arrow">↓</span>
+                        </button>
+                        <button class="sort-btn" data-sort="company" data-direction="asc">
+                            Company <span class="sort-arrow">↑</span>
+                        </button>
+                        <button class="sort-btn" data-sort="status" data-direction="asc">
+                            Status <span class="sort-arrow">↑</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Reset Button -->
+                    <button id="resetFilters" class="btn btn-secondary">
+                        Reset Filters
+                    </button>
+                </div>
+                
+                <!-- Results Summary -->
+                <div class="results-summary">
+                    <span id="resultCount">Showing all applications</span>
+                </div>
+                
+                <!-- Applications List Container -->
+                <div id="listContainer">
+                    <!-- Application cards will be rendered here -->
+                </div>
             </div>
-            
-            <div class="filter-group">
-                <label for="dateRangeFilter">Date Range</label>
-                <select id="dateRangeFilter" class="filter-select">
-                    <option value="">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="quarter">Last 3 Months</option>
-                    <option value="year">This Year</option>
-                </select>
-            </div>
-        </div>
-        
-        <!-- Sort Controls -->
-        <div class="sort-container">
-            <span class="sort-label">Sort by:</span>
-            <button class="sort-btn active" data-sort="date" data-direction="desc">
-                Date <span class="sort-arrow">↓</span>
-            </button>
-            <button class="sort-btn" data-sort="company" data-direction="asc">
-                Company <span class="sort-arrow">↑</span>
-            </button>
-            <button class="sort-btn" data-sort="status" data-direction="asc">
-                Status <span class="sort-arrow">↑</span>
-            </button>
-        </div>
-        
-        <!-- Reset Button -->
-        <button id="resetFilters" class="btn btn-secondary">
-            Reset Filters
-        </button>
-    </div>
-    
-    <!-- Results Summary -->
-    <div class="results-summary">
-        <span id="resultCount">Showing all applications</span>
-    </div>
-    
-    <!-- Applications List Container -->
-    <div id="listContainer">
-        <!-- Application cards will be rendered here -->
-    </div>
-</div>
+
             <!-- Dashboard View -->
             <div id="dashboardView" class="view">
                 <h2>Dashboard</h2>
