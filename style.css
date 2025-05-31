@@ -5906,7 +5906,112 @@ textarea:focus-visible {
 /* ===== END OF DARK MODE HIGH CONTRAST TEXT FIX ===== */
 
 /* ===== END OF HIGH CONTRAST FIX ===== */
+/* ===== HEADER BUTTONS HIGH CONTRAST FIX ===== */
+/* Add these fixes to your style.css after the dark mode high contrast fixes */
 
+/* Fix header buttons in dark mode high contrast */
+[data-theme="dark"].high-contrast #header button,
+[data-theme="dark"].high-contrast #header .btn-icon,
+[data-theme="dark"].high-contrast #themeToggle,
+[data-theme="dark"].high-contrast .header-controls button {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast #header button:hover,
+[data-theme="dark"].high-contrast #header .btn-icon:hover,
+[data-theme="dark"].high-contrast #themeToggle:hover,
+[data-theme="dark"].high-contrast .header-controls button:hover {
+    background: #cccccc !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+/* Fix navigation buttons (Export, Import, Backup) in dark mode high contrast */
+[data-theme="dark"].high-contrast .export-btn,
+[data-theme="dark"].high-contrast .import-btn,
+[data-theme="dark"].high-contrast .backup-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .export-btn:hover,
+[data-theme="dark"].high-contrast .import-btn:hover,
+[data-theme="dark"].high-contrast .backup-btn:hover {
+    background: #cccccc !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+/* Ensure all nav buttons have consistent styling */
+[data-theme="dark"].high-contrast .nav-btn {
+    background: #000000 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .nav-btn:hover {
+    background: #333333 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .nav-btn.active {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+/* Fix any icon buttons that might be in cards */
+[data-theme="dark"].high-contrast .card-actions .btn-icon,
+[data-theme="dark"].high-contrast .interview-btn,
+[data-theme="dark"].high-contrast .contact-btn,
+[data-theme="dark"].high-contrast .document-btn,
+[data-theme="dark"].high-contrast .edit-btn,
+[data-theme="dark"].high-contrast .delete-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    border: 2px solid #ffffff !important;
+}
+
+/* Ensure modal buttons also have proper contrast */
+[data-theme="dark"].high-contrast .modal .btn,
+[data-theme="dark"].high-contrast .modal button {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .modal .btn-secondary {
+    background: #000000 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border: 3px solid #ffffff !important;
+}
+
+/* Fix form buttons */
+[data-theme="dark"].high-contrast .form-actions .btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"].high-contrast .form-actions .btn-secondary {
+    background: #000000 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border: 3px solid #ffffff !important;
+}
+
+/* ===== END OF HEADER BUTTONS HIGH CONTRAST FIX ===== */
 /* Reduced motion preferences */
 .reduce-motion * {
     animation-duration: 0.01ms !important;
