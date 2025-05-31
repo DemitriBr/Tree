@@ -5961,7 +5961,91 @@ textarea:focus-visible {
 [data-theme="dark"].high-contrast * {
     background-image: none !important;
 }
+/* ===== HEADERS ONLY - HIGH CONTRAST FIX ===== */
+/* This specifically fixes header visibility in high contrast mode */
 
+/* LIGHT MODE - Headers should be BLACK text */
+.high-contrast h1,
+.high-contrast h2,
+.high-contrast h3,
+.high-contrast h4,
+.high-contrast h5,
+.high-contrast h6 {
+    color: #000000 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #000000 !important;
+    background-clip: unset !important;
+    text-fill-color: #000000 !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+/* DARK MODE - Headers should be WHITE text */
+[data-theme="dark"].high-contrast h1,
+[data-theme="dark"].high-contrast h2,
+[data-theme="dark"].high-contrast h3,
+[data-theme="dark"].high-contrast h4,
+[data-theme="dark"].high-contrast h5,
+[data-theme="dark"].high-contrast h6 {
+    color: #ffffff !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-clip: unset !important;
+    text-fill-color: #ffffff !important;
+    filter: none !important;
+    text-shadow: none !important;
+}
+
+/* Specific fix for main header title */
+.high-contrast #header h1 {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast #header h1 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Fix for view titles (Dashboard, etc.) */
+.high-contrast .view h2 {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast .view h2 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Remove decorative elements */
+.high-contrast .view h2::after,
+[data-theme="dark"].high-contrast .view h2::after {
+    display: none !important;
+}
+
+/* Fix any stat card headers */
+.high-contrast .stat-card h3,
+.high-contrast .status-breakdown h3,
+.high-contrast .chart-container h3 {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast .stat-card h3,
+[data-theme="dark"].high-contrast .status-breakdown h3,
+[data-theme="dark"].high-contrast .chart-container h3 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* ===== END OF HEADERS ONLY FIX ===== */
 /* ===== END OF COMPLETE HIGH CONTRAST FIX ===== */
 /* Reduced motion preferences */
 .reduce-motion * {
