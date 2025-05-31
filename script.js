@@ -6660,3 +6660,625 @@ document.addEventListener('DOMContentLoaded', () => {
 console.log('✅ Data protection and backup features added!');
 
 // ===== END OF DATA PROTECTION =====
+// ===== STEP 29: ACCESSIBILITY ENHANCEMENTS =====
+// Add this code to your script.js file after Step 28
+
+// Accessibility Manager
+const accessibilityManager = {
+    // Initialize accessibility features
+    init() {
+        this.setupKeyboardNavigation();
+        this.setupScreenReaderAnnouncements();
+        this.setupFocusManagement();
+        this.setupSkipLinks();
+        this.enhanceFormAccessibility();
+        this.setupHighContrastMode();
+        this.setupReducedMotion();
+        console.log('✅ Accessibility features initialized');
+    },
+    
+    // Setup keyboard navigation
+    setupKeyboardNavigation() {
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Skip to main content (Alt + 1)
+            if (e.altKey && e.key === '1') {
+                e.preventDefault();
+                const mainContent = document.getElementById('viewContainer');
+                if (mainContent) {
+                    mainContent.focus();
+                    this.announceToScreenReader('Navigated to main content');
+                }
+            }
+            
+            // Skip to navigation (Alt + 2)
+            if (e.altKey && e.key === '2') {
+                e.preventDefault();
+                const nav = document.getElementById('navigation');
+                if (nav) {
+                    const firstButton = nav.querySelector('button');
+                    if (firstButton) {
+                        firstButton.focus();
+                        this.announceToScreenReader('Navigated to navigation menu');
+                    }
+                }
+            }
+            
+            // Open search (Ctrl/Cmd + K)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput && document.getElementById('listView').classList.contains('active')) {
+                    searchInput.focus();
+                    this.announceToScreenReader('Search input focused');
+                }
+            }
+            
+            // Close modal (Escape)
+            if (e.key === 'Escape' && isModalOpen()) {
+                const activeModal = getActiveModal();
+                if (activeModal && activeModal.options.closeOnEscape) {
+                    activeModal.close();
+                    this.announceToScreenReader('Modal closed');
+                }
+            }
+        });
+        
+        // Navigation arrow keys
+        this.setupNavigationArrowKeys();
+        
+        // Application card keyboard navigation
+        this.setupCardKeyboardNav();
+        
+        // Kanban board keyboard navigation
+        this.setupKanbanKeyboardNav();
+    },
+    
+    // Setup navigation with arrow keys
+    setupNavigationArrowKeys() {
+        const navigation = document.getElementById('navigation');
+        if (!navigation) return;
+        
+        navigation.addEventListener('keydown', (e) => {
+            const buttons = Array.from(navigation.querySelectorAll('button'));
+            const currentIndex = buttons.indexOf(document.activeElement);
+            
+            if (currentIndex === -1) return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : buttons.length - 1;
+                    buttons[prevIndex].focus();
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    const nextIndex = currentIndex < buttons.length - 1 ? currentIndex + 1 : 0;
+                    buttons[nextIndex].focus();
+                    break;
+                    
+                case 'Home':
+                    e.preventDefault();
+                    buttons[0].focus();
+                    break;
+                    
+                case 'End':
+                    e.preventDefault();
+                    buttons[buttons.length - 1].focus();
+                    break;
+            }
+        });
+    },
+    
+    // Setup card keyboard navigation
+    setupCardKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            const listContainer = document.getElementById('listContainer');
+            if (!listContainer || !document.getElementById('listView').classList.contains('active')) {
+                return;
+            }
+            
+            const cards = Array.from(listContainer.querySelectorAll('.application-card'));
+            const focusedCard = cards.find(card => card === document.activeElement || card.contains(document.activeElement));
+            
+            if (!focusedCard) return;
+            
+            const currentIndex = cards.indexOf(focusedCard);
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    if (e.target.tagName !== 'BUTTON') {
+                        e.preventDefault();
+                        const nextCard = cards[Math.min(currentIndex + 1, cards.length - 1)];
+                        nextCard.focus();
+                    }
+                    break;
+                    
+                case 'ArrowUp':
+                    if (e.target.tagName !== 'BUTTON') {
+                        e.preventDefault();
+                        const prevCard = cards[Math.max(currentIndex - 1, 0)];
+                        prevCard.focus();
+                    }
+                    break;
+                    
+                case 'Enter':
+                    if (e.target === focusedCard) {
+                        // Open details modal or expand card
+                        const viewBtn = focusedCard.querySelector('.view-btn');
+                        if (viewBtn) {
+                            viewBtn.click();
+                        }
+                    }
+                    break;
+            }
+        });
+    },
+    
+    // Setup Kanban keyboard navigation
+    setupKanbanKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            const kanbanContainer = document.getElementById('kanbanContainer');
+            if (!kanbanContainer || !document.getElementById('kanbanView').classList.contains('active')) {
+                return;
+            }
+            
+            const columns = Array.from(kanbanContainer.querySelectorAll('.kanban-column'));
+            const cards = Array.from(kanbanContainer.querySelectorAll('.kanban-card'));
+            const focusedElement = document.activeElement;
+            
+            // Column navigation
+            if (focusedElement.classList.contains('kanban-column')) {
+                const currentColIndex = columns.indexOf(focusedElement);
+                
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        const prevCol = columns[Math.max(currentColIndex - 1, 0)];
+                        prevCol.focus();
+                        break;
+                        
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        const nextCol = columns[Math.min(currentColIndex + 1, columns.length - 1)];
+                        nextCol.focus();
+                        break;
+                        
+                    case 'Enter':
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        const firstCard = focusedElement.querySelector('.kanban-card');
+                        if (firstCard) {
+                            firstCard.focus();
+                        }
+                        break;
+                }
+            }
+            
+            // Card navigation within columns
+            if (focusedElement.classList.contains('kanban-card')) {
+                const parentColumn = focusedElement.closest('.kanban-column');
+                const columnCards = Array.from(parentColumn.querySelectorAll('.kanban-card'));
+                const currentCardIndex = columnCards.indexOf(focusedElement);
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        if (currentCardIndex > 0) {
+                            columnCards[currentCardIndex - 1].focus();
+                        } else {
+                            parentColumn.focus();
+                        }
+                        break;
+                        
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        if (currentCardIndex < columnCards.length - 1) {
+                            columnCards[currentCardIndex + 1].focus();
+                        }
+                        break;
+                        
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        const currentColIndex = columns.indexOf(parentColumn);
+                        if (currentColIndex > 0) {
+                            const prevColumn = columns[currentColIndex - 1];
+                            const targetCard = prevColumn.querySelector('.kanban-card');
+                            if (targetCard) {
+                                targetCard.focus();
+                            } else {
+                                prevColumn.focus();
+                            }
+                        }
+                        break;
+                        
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        const colIndex = columns.indexOf(parentColumn);
+                        if (colIndex < columns.length - 1) {
+                            const nextColumn = columns[colIndex + 1];
+                            const targetCard = nextColumn.querySelector('.kanban-card');
+                            if (targetCard) {
+                                targetCard.focus();
+                            } else {
+                                nextColumn.focus();
+                            }
+                        }
+                        break;
+                        
+                    case ' ': // Spacebar to move card
+                        e.preventDefault();
+                        this.startKeyboardDrag(focusedElement);
+                        break;
+                }
+            }
+        });
+    },
+    
+    // Keyboard drag and drop for Kanban
+    startKeyboardDrag(card) {
+        card.setAttribute('aria-grabbed', 'true');
+        card.classList.add('keyboard-dragging');
+        this.announceToScreenReader('Card grabbed. Use arrow keys to move between columns. Press space to drop.');
+        
+        const handleKeyboardDrop = (e) => {
+            if (e.key === ' ' && card.getAttribute('aria-grabbed') === 'true') {
+                e.preventDefault();
+                card.setAttribute('aria-grabbed', 'false');
+                card.classList.remove('keyboard-dragging');
+                
+                const newColumn = card.closest('.kanban-column');
+                if (newColumn) {
+                    // Trigger the actual move
+                    const event = new CustomEvent('card-dropped', {
+                        detail: {
+                            card: card,
+                            column: newColumn
+                        }
+                    });
+                    newColumn.dispatchEvent(event);
+                    this.announceToScreenReader(`Card dropped in ${newColumn.querySelector('h3').textContent} column`);
+                }
+                
+                document.removeEventListener('keydown', handleKeyboardDrop);
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyboardDrop);
+    },
+    
+    // Setup screen reader announcements
+    setupScreenReaderAnnouncements() {
+        // Create live region for announcements
+        const liveRegion = document.createElement('div');
+        liveRegion.id = 'sr-announcements';
+        liveRegion.setAttribute('role', 'status');
+        liveRegion.setAttribute('aria-live', 'polite');
+        liveRegion.setAttribute('aria-atomic', 'true');
+        liveRegion.className = 'sr-only';
+        document.body.appendChild(liveRegion);
+        
+        // Create alert region for important announcements
+        const alertRegion = document.createElement('div');
+        alertRegion.id = 'sr-alerts';
+        alertRegion.setAttribute('role', 'alert');
+        alertRegion.setAttribute('aria-live', 'assertive');
+        alertRegion.setAttribute('aria-atomic', 'true');
+        alertRegion.className = 'sr-only';
+        document.body.appendChild(alertRegion);
+    },
+    
+    // Announce to screen readers
+    announceToScreenReader(message, isAlert = false) {
+        const regionId = isAlert ? 'sr-alerts' : 'sr-announcements';
+        const region = document.getElementById(regionId);
+        
+        if (region) {
+            // Clear and set new message
+            region.textContent = '';
+            setTimeout(() => {
+                region.textContent = message;
+            }, 100);
+        }
+    },
+    
+    // Setup focus management
+    setupFocusManagement() {
+        // Store last focused element before modal opens
+        const originalShowModal = window.showModal;
+        window.showModal = function(content, options = {}) {
+            const lastFocused = document.activeElement;
+            
+            const modal = originalShowModal(content, options);
+            
+            // Store last focused element
+            modal.lastFocusedElement = lastFocused;
+            
+            // Override close to restore focus
+            const originalClose = modal.close.bind(modal);
+            modal.close = async function() {
+                const result = await originalClose();
+                
+                // Restore focus
+                if (modal.lastFocusedElement && modal.lastFocusedElement.focus) {
+                    setTimeout(() => {
+                        modal.lastFocusedElement.focus();
+                    }, 100);
+                }
+                
+                return result;
+            };
+            
+            return modal;
+        };
+        
+        // Manage focus when switching views
+        const originalSwitchView = window.switchView;
+        window.switchView = function(viewName) {
+            originalSwitchView(viewName);
+            
+            // Set focus to main heading of new view
+            setTimeout(() => {
+                const activeView = document.querySelector('.view.active');
+                if (activeView) {
+                    const heading = activeView.querySelector('h2');
+                    if (heading) {
+                        heading.setAttribute('tabindex', '-1');
+                        heading.focus();
+                        accessibilityManager.announceToScreenReader(`Navigated to ${heading.textContent}`);
+                    }
+                }
+            }, 100);
+        };
+    },
+    
+    // Setup skip links
+    setupSkipLinks() {
+        const skipLink = document.createElement('a');
+        skipLink.href = '#viewContainer';
+        skipLink.className = 'skip-link';
+        skipLink.textContent = 'Skip to main content';
+        
+        skipLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = document.getElementById('viewContainer');
+            if (target) {
+                target.setAttribute('tabindex', '-1');
+                target.focus();
+            }
+        });
+        
+        document.body.insertBefore(skipLink, document.body.firstChild);
+    },
+    
+    // Enhance form accessibility
+    enhanceFormAccessibility() {
+        const form = document.getElementById('applicationForm');
+        if (!form) return;
+        
+        // Add form landmark role
+        form.setAttribute('role', 'form');
+        form.setAttribute('aria-label', 'Job application form');
+        
+        // Enhance form fields
+        const formGroups = form.querySelectorAll('.form-group');
+        formGroups.forEach(group => {
+            const label = group.querySelector('label');
+            const input = group.querySelector('input, select, textarea');
+            const errorMsg = group.querySelector('.error-message');
+            
+            if (label && input) {
+                // Ensure label is properly associated
+                const inputId = input.id || `field-${Math.random().toString(36).substr(2, 9)}`;
+                input.id = inputId;
+                label.setAttribute('for', inputId);
+                
+                // Add aria-describedby for error messages
+                if (errorMsg) {
+                    const errorId = `error-${inputId}`;
+                    errorMsg.id = errorId;
+                    input.setAttribute('aria-describedby', errorId);
+                    input.setAttribute('aria-invalid', 'false');
+                }
+                
+                // Add aria-required for required fields
+                if (input.hasAttribute('required')) {
+                    input.setAttribute('aria-required', 'true');
+                }
+            }
+        });
+        
+        // Update aria-invalid on validation
+        const originalValidateField = FormValidator.prototype.validateField;
+        FormValidator.prototype.validateField = function(fieldName) {
+            const isValid = originalValidateField.call(this, fieldName);
+            const field = this.fields[fieldName];
+            
+            if (field) {
+                field.setAttribute('aria-invalid', !isValid);
+                
+                if (!isValid && this.errors[fieldName]) {
+                    accessibilityManager.announceToScreenReader(this.errors[fieldName], true);
+                }
+            }
+            
+            return isValid;
+        };
+    },
+    
+    // Setup high contrast mode
+    setupHighContrastMode() {
+        // Check for user preference
+        const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+        
+        if (prefersHighContrast || localStorage.getItem('highContrast') === 'true') {
+            document.body.classList.add('high-contrast');
+        }
+        
+        // Listen for changes
+        window.matchMedia('(prefers-contrast: high)').addEventListener('change', (e) => {
+            if (e.matches) {
+                document.body.classList.add('high-contrast');
+            } else {
+                document.body.classList.remove('high-contrast');
+            }
+        });
+    },
+    
+    // Setup reduced motion
+    setupReducedMotion() {
+        // Check for user preference
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        
+        if (prefersReducedMotion) {
+            document.body.classList.add('reduce-motion');
+        }
+        
+        // Listen for changes
+        window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+            if (e.matches) {
+                document.body.classList.add('reduce-motion');
+            } else {
+                document.body.classList.remove('reduce-motion');
+            }
+        });
+    },
+    
+    // Toggle high contrast mode
+    toggleHighContrast() {
+        const isEnabled = document.body.classList.toggle('high-contrast');
+        localStorage.setItem('highContrast', isEnabled);
+        this.announceToScreenReader(`High contrast mode ${isEnabled ? 'enabled' : 'disabled'}`);
+    }
+};
+
+// Enhanced application card creation with ARIA
+const originalCreateApplicationCard = createApplicationCard;
+createApplicationCard = function(application) {
+    const card = originalCreateApplicationCard(application);
+    
+    // Add ARIA attributes
+    card.setAttribute('role', 'article');
+    card.setAttribute('aria-label', `Job application: ${application.jobTitle} at ${application.companyName}`);
+    card.setAttribute('tabindex', '0');
+    
+    // Add keyboard interaction
+    card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target === card) {
+            // Simulate click on the card
+            card.click();
+        }
+    });
+    
+    // Enhance buttons with ARIA labels
+    const editBtn = card.querySelector('.edit-btn');
+    if (editBtn) {
+        editBtn.setAttribute('aria-label', `Edit application for ${application.jobTitle} at ${application.companyName}`);
+    }
+    
+    const deleteBtn = card.querySelector('.delete-btn');
+    if (deleteBtn) {
+        deleteBtn.setAttribute('aria-label', `Delete application for ${application.jobTitle} at ${application.companyName}`);
+    }
+    
+    // Enhance status badge
+    const statusBadge = card.querySelector('.status-badge');
+    if (statusBadge) {
+        statusBadge.setAttribute('role', 'status');
+        statusBadge.setAttribute('aria-label', `Application status: ${application.status}`);
+    }
+    
+    return card;
+};
+
+// Enhanced Kanban card creation with ARIA
+const originalCreateKanbanCard = createKanbanCard;
+createKanbanCard = function(application) {
+    const card = originalCreateKanbanCard(application);
+    
+    // Add ARIA attributes
+    card.setAttribute('role', 'article');
+    card.setAttribute('aria-label', `${application.jobTitle} at ${application.companyName}`);
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-grabbed', 'false');
+    
+    // Add to draggable items
+    card.setAttribute('aria-dropeffect', 'move');
+    
+    return card;
+};
+
+// Enhanced Kanban column creation with ARIA
+const originalCreateKanbanColumn = createKanbanColumn;
+createKanbanColumn = function(column, applications) {
+    const columnDiv = originalCreateKanbanColumn(column, applications);
+    
+    // Add ARIA attributes
+    columnDiv.setAttribute('role', 'region');
+    columnDiv.setAttribute('aria-label', `${column.title} column with ${applications.length} applications`);
+    columnDiv.setAttribute('tabindex', '0');
+    
+    // Add drop zone attributes
+    const cardsContainer = columnDiv.querySelector('.kanban-cards-container');
+    if (cardsContainer) {
+        cardsContainer.setAttribute('role', 'list');
+        cardsContainer.setAttribute('aria-label', `Applications in ${column.title} status`);
+        cardsContainer.setAttribute('aria-dropeffect', 'move');
+    }
+    
+    return columnDiv;
+};
+
+// Initialize accessibility features when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        accessibilityManager.init();
+    }, 100);
+});
+
+// Add keyboard shortcut help
+function showKeyboardShortcuts() {
+    const shortcuts = `
+        <div class="keyboard-shortcuts">
+            <h3>Keyboard Shortcuts</h3>
+            <dl>
+                <dt><kbd>Alt</kbd> + <kbd>1</kbd></dt>
+                <dd>Skip to main content</dd>
+                
+                <dt><kbd>Alt</kbd> + <kbd>2</kbd></dt>
+                <dd>Skip to navigation</dd>
+                
+                <dt><kbd>Ctrl</kbd> + <kbd>K</kbd></dt>
+                <dd>Focus search (in list view)</dd>
+                
+                <dt><kbd>Esc</kbd></dt>
+                <dd>Close modal or dialog</dd>
+                
+                <dt><kbd>Tab</kbd></dt>
+                <dd>Navigate forward through interactive elements</dd>
+                
+                <dt><kbd>Shift</kbd> + <kbd>Tab</kbd></dt>
+                <dd>Navigate backward through interactive elements</dd>
+                
+                <dt><kbd>Arrow Keys</kbd></dt>
+                <dd>Navigate through cards and columns</dd>
+                
+                <dt><kbd>Space</kbd></dt>
+                <dd>Grab/drop card in Kanban view</dd>
+                
+                <dt><kbd>Enter</kbd></dt>
+                <dd>Activate buttons or expand cards</dd>
+            </dl>
+        </div>
+    `;
+    
+    showModal(shortcuts, {
+        title: 'Keyboard Shortcuts',
+        size: 'medium'
+    });
+}
+
+console.log('✅ Step 29: Accessibility features added successfully!');
+
+// ===== END OF ACCESSIBILITY ENHANCEMENTS =====
