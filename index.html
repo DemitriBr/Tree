@@ -7,6 +7,7 @@
     
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="JobTracker">
@@ -33,59 +34,63 @@
     <link rel="apple-touch-startup-image" href="/splash/launch-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="style.css?v=5801">
+    <link rel="stylesheet" href="style.css?v=5202">
 </head>
 <body>
     <!-- Main Container -->
-    <div id="app">
+    <div id="app" role="application" aria-label="Job Application Tracker">
         <!-- Header -->
-        <header id="header">
-            <h1>Job Application Tracker</h1>
-            <button id="themeToggle" aria-label="Toggle dark mode">🌙</button>
+        <header id="header" role="banner">
+            <h1 id="app-title">Job Application Tracker</h1>
+            <div class="header-controls">
+                <button id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">🌙</button>
+                <button class="btn-icon" onclick="showKeyboardShortcuts()" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">⌨️</button>
+                <button class="btn-icon" onclick="accessibilityManager.toggleHighContrast()" aria-label="Toggle high contrast mode" title="High contrast">🔲</button>
+            </div>
         </header>
 
         <!-- Navigation -->
-        <nav id="navigation">
-            <button class="nav-btn active" data-view="home">Add Application</button>
+        <nav id="navigation" role="navigation" aria-label="Main navigation">
+            <button class="nav-btn active" data-view="home" aria-current="page">Add Application</button>
             <button class="nav-btn" data-view="list">Applications List</button>
             <button class="nav-btn" data-view="dashboard">Dashboard</button>
             <button class="nav-btn" data-view="kanban">Kanban Board</button>
-            <button class="export-btn" onclick="showExportModal()">📥 Export Data</button>
-            <button class="import-btn" onclick="showImportModal()">📤 Import Data</button>
-            <button class="backup-btn" onclick="showBackupSettingsModal()">💾 Backup</button>
+            <button class="export-btn" onclick="showExportModal()" aria-label="Export application data">📥 Export Data</button>
+            <button class="import-btn" onclick="showImportModal()" aria-label="Import application data">📤 Import Data</button>
+            <button class="backup-btn" onclick="showBackupSettingsModal()" aria-label="Backup settings">💾 Backup</button>
         </nav>
 
         <!-- View Containers -->
-        <main id="viewContainer">
+        <main id="viewContainer" role="main" aria-labelledby="app-title">
             <!-- Home View (Add/Edit Application) -->
             <div id="homeView" class="view active">
-                <h2 id="formTitle">Add New Application</h2>
-                <form id="applicationForm">
+                <h2 id="formTitle" tabindex="-1">Add New Application</h2>
+                <form id="applicationForm" role="form" aria-label="Job application form">
                     <!-- Hidden ID field for edit mode -->
                     <input type="hidden" id="applicationId" name="id">
                     
                     <!-- Basic Fields -->
                     <div class="form-group">
-                        <label for="jobTitle">Job Title *</label>
-                        <input type="text" id="jobTitle" name="jobTitle" required>
-                        <span class="error-message"></span>
+                        <label for="jobTitle">Job Title <span aria-label="required">*</span></label>
+                        <input type="text" id="jobTitle" name="jobTitle" required aria-required="true" aria-describedby="jobTitle-error">
+                        <span class="error-message" id="jobTitle-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="companyName">Company Name *</label>
-                        <input type="text" id="companyName" name="companyName" required>
-                        <span class="error-message"></span>
+                        <label for="companyName">Company Name <span aria-label="required">*</span></label>
+                        <input type="text" id="companyName" name="companyName" required aria-required="true" aria-describedby="companyName-error">
+                        <span class="error-message" id="companyName-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="applicationDate">Application Date *</label>
-                        <input type="date" id="applicationDate" name="applicationDate" required>
-                        <span class="error-message"></span>
+                        <label for="applicationDate">Application Date <span aria-label="required">*</span></label>
+                        <input type="date" id="applicationDate" name="applicationDate" required aria-required="true" aria-describedby="applicationDate-error">
+                        <span class="error-message" id="applicationDate-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
-                        <label for="status">Status *</label>
-                        <select id="status" name="status" required spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off">
+                        <label for="status">Status <span aria-label="required">*</span></label>
+                        <select id="status" name="status" required aria-required="true" aria-describedby="status-error" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off">
                             <option value="">Select Status</option>
                             <option value="applied">Applied</option>
                             <option value="screening">Screening</option>
@@ -94,50 +99,50 @@
                             <option value="rejected">Rejected</option>
                             <option value="withdrawn">Withdrawn</option>
                         </select>
-                        <span class="error-message"></span>
+                        <span class="error-message" id="status-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <!-- Additional Fields -->
                     <div class="form-group">
                         <label for="deadline">Deadline</label>
-                        <input type="date" id="deadline" name="deadline">
-                        <span class="error-message"></span>
+                        <input type="date" id="deadline" name="deadline" aria-describedby="deadline-error">
+                        <span class="error-message" id="deadline-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="url">Job Posting URL</label>
-                        <input type="url" id="url" name="url" placeholder="https://...">
-                        <span class="error-message"></span>
+                        <input type="url" id="url" name="url" placeholder="https://..." aria-describedby="url-error">
+                        <span class="error-message" id="url-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="salary">Salary Range</label>
-                        <input type="text" id="salary" name="salary" placeholder="e.g., $60,000 - $80,000">
-                        <span class="error-message"></span>
+                        <input type="text" id="salary" name="salary" placeholder="e.g., $60,000 - $80,000" aria-describedby="salary-error">
+                        <span class="error-message" id="salary-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="location">Location</label>
-                        <input type="text" id="location" name="location" placeholder="e.g., Remote, New York, NY">
-                        <span class="error-message"></span>
+                        <input type="text" id="location" name="location" placeholder="e.g., Remote, New York, NY" aria-describedby="location-error">
+                        <span class="error-message" id="location-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="progressStage">Progress Stage</label>
-                        <select id="progressStage" name="progressStage" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off">
+                        <select id="progressStage" name="progressStage" aria-describedby="progressStage-error" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off">
                             <option value="to-apply">To Apply</option>
                             <option value="applied">Applied</option>
                             <option value="in-progress">In Progress</option>
                             <option value="final-stage">Final Stage</option>
                             <option value="completed">Completed</option>
                         </select>
-                        <span class="error-message"></span>
+                        <span class="error-message" id="progressStage-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <div class="form-group">
                         <label for="notes">Notes</label>
-                        <textarea id="notes" name="notes" rows="4" placeholder="Additional notes about this application..."></textarea>
-                        <span class="error-message"></span>
+                        <textarea id="notes" name="notes" rows="4" placeholder="Additional notes about this application..." aria-describedby="notes-error"></textarea>
+                        <span class="error-message" id="notes-error" role="alert" aria-live="polite"></span>
                     </div>
 
                     <!-- Form Actions -->
@@ -150,10 +155,10 @@
 
             <!-- List View -->
             <div id="listView" class="view">
-                <h2>Applications List</h2>
+                <h2 tabindex="-1">Applications List</h2>
                 
                 <!-- Search, Filter, Sort Controls -->
-                <div class="list-controls glass-card">
+                <div class="list-controls glass-card" role="search">
                     <!-- Search Bar -->
                     <div class="search-container">
                         <input 
@@ -162,15 +167,17 @@
                             class="search-input" 
                             placeholder="Search by job title, company, or notes..."
                             aria-label="Search applications"
+                            role="searchbox"
+                            aria-controls="listContainer"
                         >
-                        <span class="search-icon">🔍</span>
+                        <span class="search-icon" aria-hidden="true">🔍</span>
                     </div>
                     
                     <!-- Filter Controls -->
-                    <div class="filter-container">
+                    <div class="filter-container" role="group" aria-label="Filter options">
                         <div class="filter-group">
-                            <label for="statusFilter">Status</label>
-                            <select id="statusFilter" class="filter-select">
+                            <label for="statusFilter" id="statusFilter-label">Status</label>
+                            <select id="statusFilter" class="filter-select" aria-labelledby="statusFilter-label">
                                 <option value="">All Statuses</option>
                                 <option value="applied">Applied</option>
                                 <option value="screening">Screening</option>
@@ -182,8 +189,8 @@
                         </div>
                         
                         <div class="filter-group">
-                            <label for="dateRangeFilter">Date Range</label>
-                            <select id="dateRangeFilter" class="filter-select">
+                            <label for="dateRangeFilter" id="dateRangeFilter-label">Date Range</label>
+                            <select id="dateRangeFilter" class="filter-select" aria-labelledby="dateRangeFilter-label">
                                 <option value="">All Time</option>
                                 <option value="today">Today</option>
                                 <option value="week">This Week</option>
@@ -195,58 +202,58 @@
                     </div>
                     
                     <!-- Sort Controls -->
-                    <div class="sort-container">
+                    <div class="sort-container" role="group" aria-label="Sort options">
                         <span class="sort-label">Sort by:</span>
-                        <button class="sort-btn active" data-sort="date" data-direction="desc">
-                            Date <span class="sort-arrow">↓</span>
+                        <button class="sort-btn active" data-sort="date" data-direction="desc" aria-sort="descending" aria-label="Sort by date">
+                            Date <span class="sort-arrow" aria-hidden="true">↓</span>
                         </button>
-                        <button class="sort-btn" data-sort="company" data-direction="asc">
-                            Company <span class="sort-arrow">↑</span>
+                        <button class="sort-btn" data-sort="company" data-direction="asc" aria-sort="none" aria-label="Sort by company">
+                            Company <span class="sort-arrow" aria-hidden="true">↑</span>
                         </button>
-                        <button class="sort-btn" data-sort="status" data-direction="asc">
-                            Status <span class="sort-arrow">↑</span>
+                        <button class="sort-btn" data-sort="status" data-direction="asc" aria-sort="none" aria-label="Sort by status">
+                            Status <span class="sort-arrow" aria-hidden="true">↑</span>
                         </button>
                     </div>
                     
                     <!-- Reset Button -->
-                    <button id="resetFilters" class="btn btn-secondary">
+                    <button id="resetFilters" class="btn btn-secondary" aria-label="Reset all filters">
                         Reset Filters
                     </button>
                 </div>
                 
                 <!-- Results Summary -->
-                <div class="results-summary">
+                <div class="results-summary" role="status" aria-live="polite">
                     <span id="resultCount">Showing all applications</span>
                 </div>
                 
                 <!-- Applications List Container -->
-                <div id="listContainer">
+                <div id="listContainer" role="region" aria-label="Applications list" aria-live="polite" aria-busy="false">
                     <!-- Application cards will be rendered here -->
                 </div>
             </div>
 
             <!-- Dashboard View -->
             <div id="dashboardView" class="view">
-                <h2>Dashboard</h2>
-                <div id="statsContainer">
+                <h2 tabindex="-1">Dashboard</h2>
+                <div id="statsContainer" role="region" aria-label="Application statistics">
                     <!-- Statistics will be rendered here -->
                 </div>
-                <div id="chartsContainer">
+                <div id="chartsContainer" role="region" aria-label="Application charts">
                     <!-- Charts will be rendered here -->
                 </div>
             </div>
 
             <!-- Kanban View -->
             <div id="kanbanView" class="view">
-                <h2>Kanban Board</h2>
-                <div id="kanbanContainer">
+                <h2 tabindex="-1">Kanban Board</h2>
+                <div id="kanbanContainer" role="region" aria-label="Kanban board">
                     <!-- Kanban columns will be rendered here -->
                 </div>
             </div>
         </main>
 
         <!-- Modal Container -->
-        <div id="modalContainer" class="modal-container">
+        <div id="modalContainer" class="modal-container" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
             <div class="modal">
                 <div class="modal-content">
                     <!-- Modal content will be dynamically inserted -->
@@ -255,7 +262,7 @@
         </div>
 
         <!-- Notification Container -->
-        <div id="notificationContainer" class="notification-container">
+        <div id="notificationContainer" class="notification-container" aria-live="polite" aria-relevant="additions">
             <!-- Notifications will be dynamically inserted -->
         </div>
     </div>
