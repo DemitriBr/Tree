@@ -5425,3 +5425,103 @@ body.modal-open {
 }
 
 /* ===== END OF SERVICE WORKER STYLES ===== */
+/* ===== BACKUP BUTTON STYLES ===== */
+/* Add these styles to your style.css file */
+
+/* Backup Button in Navigation */
+.backup-btn {
+    background: linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%);
+    color: white;
+    padding: 0.75rem 2rem;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: var(--transition);
+    font-size: 1rem;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.backup-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(171, 71, 188, 0.3);
+}
+
+.backup-btn:active {
+    transform: scale(0.95);
+}
+
+/* Backup settings modal styles */
+.backup-settings-content {
+    padding: 1rem;
+}
+
+.backup-info {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius-sm);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.backup-info p {
+    margin: 0.5rem 0;
+}
+
+.backup-options h4 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.backup-warning {
+    background: linear-gradient(135deg, rgba(255, 167, 38, 0.1) 0%, rgba(251, 140, 0, 0.1) 100%);
+    border: 1px solid #ffa726;
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    margin: 1.5rem 0;
+}
+
+.backup-warning p {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.text-warning {
+    color: #f57c00;
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .backup-info {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .backup-warning {
+    background: linear-gradient(135deg, rgba(255, 167, 38, 0.2) 0%, rgba(251, 140, 0, 0.2) 100%);
+}
+
+[data-theme="dark"] .backup-options h4 {
+    color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .backup-btn {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* ===== END OF BACKUP BUTTON STYLES ===== */
