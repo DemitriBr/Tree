@@ -5618,125 +5618,63 @@ textarea:focus-visible {
     }
 }
 
-/* ===== HIGH CONTRAST MODE FIX ===== */
-/* Replace the high contrast styles in your style.css with these fixed versions */
+/* ===== COMPLETE HIGH CONTRAST MODE FIX ===== */
+/* Replace ALL high contrast styles in your style.css with this comprehensive fix */
 
-/* High contrast mode - Light version */
+/* ========== LIGHT MODE HIGH CONTRAST ========== */
 .high-contrast {
-    /* Force solid backgrounds */
+    /* Force solid colors - no gradients */
+    --primary-gradient: #000000 !important;
+    --secondary-gradient: #000000 !important;
     --glass-bg: #ffffff !important;
     --glass-bg-solid: #ffffff !important;
     --glass-border: #000000 !important;
-    
-    /* High contrast text colors */
     --text-primary: #000000 !important;
     --text-secondary: #000000 !important;
     --text-light: #000000 !important;
-    
-    /* High contrast status colors */
-    --status-applied: #000000 !important;
-    --status-screening: #000000 !important;
-    --status-interview: #000000 !important;
-    --status-offer: #006400 !important;
-    --status-rejected: #8B0000 !important;
-    --status-withdrawn: #000000 !important;
 }
 
-/* High contrast body and backgrounds */
+/* Light mode body */
 .high-contrast body {
     background: #ffffff !important;
     color: #000000 !important;
 }
 
+/* Light mode header */
 .high-contrast #header {
     background: #ffffff !important;
     border-bottom: 3px solid #000000 !important;
     box-shadow: none !important;
 }
 
-.high-contrast .glass-card,
-.high-contrast .application-card,
-.high-contrast .kanban-card,
-.high-contrast .modal,
-.high-contrast #applicationForm {
-    background: #ffffff !important;
-    border: 3px solid #000000 !important;
-    box-shadow: none !important;
+/* Light mode header title */
+.high-contrast #header h1 {
     color: #000000 !important;
-}
-
-/* High contrast text elements */
-.high-contrast h1, 
-.high-contrast h2, 
-.high-contrast h3, 
-.high-contrast h4, 
-.high-contrast h5, 
-.high-contrast h6,
-.high-contrast p,
-.high-contrast span,
-.high-contrast div,
-.high-contrast label,
-.high-contrast .job-title,
-.high-contrast .company-info,
-.high-contrast .detail-label,
-.high-contrast .detail-value,
-.high-contrast .empty-state h3,
-.high-contrast .empty-state p {
-    color: #000000 !important;
-    text-shadow: none !important;
     background: none !important;
+    background-image: none !important;
     -webkit-background-clip: unset !important;
-    -webkit-text-fill-color: unset !important;
+    -webkit-text-fill-color: #000000 !important;
+    filter: none !important;
 }
 
-/* High contrast form elements */
-.high-contrast input,
-.high-contrast select,
-.high-contrast textarea {
-    background: #ffffff !important;
-    color: #000000 !important;
-    border: 2px solid #000000 !important;
-}
-
-.high-contrast input:focus,
-.high-contrast select:focus,
-.high-contrast textarea:focus {
-    outline: 3px solid #000000 !important;
-    outline-offset: 2px !important;
-}
-
-/* High contrast buttons */
-.high-contrast .btn,
-.high-contrast button {
+/* Light mode header buttons */
+.high-contrast #header button,
+.high-contrast #header .btn-icon {
     background: #000000 !important;
     color: #ffffff !important;
     border: 2px solid #000000 !important;
-    font-weight: 700 !important;
 }
 
-.high-contrast .btn:hover,
-.high-contrast button:hover {
+.high-contrast #header button:hover {
     background: #333333 !important;
-    color: #ffffff !important;
 }
 
-.high-contrast .btn-secondary {
-    background: #ffffff !important;
-    color: #000000 !important;
-    border: 3px solid #000000 !important;
-}
-
-.high-contrast .btn-secondary:hover {
-    background: #f0f0f0 !important;
-    color: #000000 !important;
-}
-
-/* High contrast navigation */
+/* Light mode navigation */
 .high-contrast .nav-btn {
     background: #ffffff !important;
     color: #000000 !important;
     border: 2px solid #000000 !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
 }
 
 .high-contrast .nav-btn:hover,
@@ -5745,214 +5683,139 @@ textarea:focus-visible {
     color: #ffffff !important;
 }
 
-/* High contrast status badges */
-.high-contrast .status-badge {
+/* Light mode action buttons */
+.high-contrast .export-btn,
+.high-contrast .import-btn,
+.high-contrast .backup-btn {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #000000 !important;
+}
+
+.high-contrast .export-btn:hover,
+.high-contrast .import-btn:hover,
+.high-contrast .backup-btn:hover {
+    background: #333333 !important;
+}
+
+/* Light mode cards */
+.high-contrast .glass-card,
+.high-contrast .application-card,
+.high-contrast .kanban-card,
+.high-contrast .modal,
+.high-contrast #applicationForm {
+    background: #ffffff !important;
+    border: 3px solid #000000 !important;
+    box-shadow: none !important;
+}
+
+/* Light mode text */
+.high-contrast h1,
+.high-contrast h2,
+.high-contrast h3,
+.high-contrast h4,
+.high-contrast h5,
+.high-contrast h6,
+.high-contrast p,
+.high-contrast span,
+.high-contrast div,
+.high-contrast label {
+    color: #000000 !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+/* Light mode view titles */
+.high-contrast .view h2 {
+    color: #000000 !important;
+    background: none !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+.high-contrast .view h2::after {
+    display: none !important;
+}
+
+/* Light mode form elements */
+.high-contrast input,
+.high-contrast select,
+.high-contrast textarea {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #000000 !important;
+}
+
+/* Light mode buttons */
+.high-contrast .btn {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #000000 !important;
+}
+
+.high-contrast .btn:hover {
+    background: #333333 !important;
+}
+
+.high-contrast .btn-secondary {
     background: #ffffff !important;
     color: #000000 !important;
     border: 3px solid #000000 !important;
-    font-weight: 700 !important;
 }
 
-.high-contrast .status-offer {
-    background: #90EE90 !important;
-    color: #000000 !important;
-    border-color: #006400 !important;
+/* ========== DARK MODE HIGH CONTRAST ========== */
+[data-theme="dark"].high-contrast {
+    --glass-bg: #000000 !important;
+    --glass-bg-solid: #000000 !important;
+    --glass-border: #ffffff !important;
+    --text-primary: #ffffff !important;
+    --text-secondary: #ffffff !important;
+    --text-light: #ffffff !important;
 }
 
-.high-contrast .status-rejected {
-    background: #FFB6C1 !important;
-    color: #000000 !important;
-    border-color: #8B0000 !important;
+/* Dark mode body */
+[data-theme="dark"].high-contrast body {
+    background: #000000 !important;
+    color: #ffffff !important;
 }
 
-/* High contrast links */
-.high-contrast a {
-    color: #0000EE !important;
-    text-decoration: underline !important;
-    font-weight: 600 !important;
+/* Dark mode header */
+[data-theme="dark"].high-contrast #header {
+    background: #000000 !important;
+    border-bottom: 3px solid #ffffff !important;
 }
 
-.high-contrast a:visited {
-    color: #551A8B !important;
-}
-
-.high-contrast a:hover {
-    color: #000000 !important;
-    background: #FFFF00 !important;
-}
-
-/* High contrast focus states */
-.high-contrast *:focus,
-.high-contrast *:focus-visible {
-    outline: 4px solid #000000 !important;
-    outline-offset: 2px !important;
-}
-
-/* ===== DARK MODE HIGH CONTRAST TEXT FIX ===== */
-/* Add these fixes to your style.css after the existing high contrast styles */
-
-/* Fix header title in dark mode high contrast */
+/* Dark mode header title - FIXED */
 [data-theme="dark"].high-contrast #header h1 {
     color: #ffffff !important;
     background: none !important;
     background-image: none !important;
     -webkit-background-clip: unset !important;
     -webkit-text-fill-color: #ffffff !important;
-    background-clip: unset !important;
-    text-fill-color: #ffffff !important;
     filter: none !important;
 }
 
-/* Fix view titles (Dashboard, Kanban, etc.) in dark mode high contrast */
-[data-theme="dark"].high-contrast .view h2 {
-    color: #ffffff !important;
-    background: none !important;
-    background-image: none !important;
-    -webkit-background-clip: unset !important;
-    -webkit-text-fill-color: #ffffff !important;
-    background-clip: unset !important;
-    text-fill-color: #ffffff !important;
-    filter: none !important;
-}
-
-/* Remove the decorative line under h2 in high contrast */
-[data-theme="dark"].high-contrast .view h2::after,
-.high-contrast .view h2::after {
-    display: none !important;
-}
-
-/* Ensure all heading text is white in dark mode high contrast */
-[data-theme="dark"].high-contrast h1,
-[data-theme="dark"].high-contrast h2,
-[data-theme="dark"].high-contrast h3,
-[data-theme="dark"].high-contrast h4,
-[data-theme="dark"].high-contrast h5,
-[data-theme="dark"].high-contrast h6 {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    text-fill-color: #ffffff !important;
-}
-
-/* Fix any remaining gray text in dark mode */
-[data-theme="dark"].high-contrast .stat-label,
-[data-theme="dark"].high-contrast .chart-placeholder p,
-[data-theme="dark"].high-contrast .empty-state p,
-[data-theme="dark"].high-contrast .kanban-empty-state,
-[data-theme="dark"].high-contrast .results-summary,
-[data-theme="dark"].high-contrast .detail-label,
-[data-theme="dark"].high-contrast .progress-label {
-    color: #ffffff !important;
-}
-
-/* Fix stat values in dashboard */
-[data-theme="dark"].high-contrast .stat-value {
-    color: #ffffff !important;
-    background: none !important;
-    -webkit-background-clip: unset !important;
-    -webkit-text-fill-color: #ffffff !important;
-}
-
-/* Fix status breakdown text */
-[data-theme="dark"].high-contrast .status-breakdown h3,
-[data-theme="dark"].high-contrast .status-label,
-[data-theme="dark"].high-contrast .status-count {
-    color: #ffffff !important;
-}
-
-/* Fix chart container titles */
-[data-theme="dark"].high-contrast .chart-container h3 {
-    color: #ffffff !important;
-}
-
-/* Ensure kanban column titles are visible */
-[data-theme="dark"].high-contrast .kanban-column-title h3 {
-    color: #ffffff !important;
-}
-
-/* Fix any text that might be using --text-secondary */
-[data-theme="dark"].high-contrast {
-    --text-secondary: #ffffff !important;
-    --text-light: #ffffff !important;
-}
-
-/* Force all text elements to be white in dark high contrast */
-[data-theme="dark"].high-contrast * {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-}
-
-/* But keep buttons with proper contrast */
-[data-theme="dark"].high-contrast .btn,
-[data-theme="dark"].high-contrast button {
-    background: #ffffff !important;
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-}
-
-[data-theme="dark"].high-contrast .btn-secondary {
-    background: #000000 !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    border: 3px solid #ffffff !important;
-}
-
-/* Fix navigation buttons specifically */
-[data-theme="dark"].high-contrast .nav-btn.active {
-    background: #ffffff !important;
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-}
-
-/* ===== END OF DARK MODE HIGH CONTRAST TEXT FIX ===== */
-
-/* ===== END OF HIGH CONTRAST FIX ===== */
-/* ===== HEADER BUTTONS HIGH CONTRAST FIX ===== */
-/* Add these fixes to your style.css after the dark mode high contrast fixes */
-
-/* Fix header buttons in dark mode high contrast */
+/* Dark mode header buttons - FIXED */
 [data-theme="dark"].high-contrast #header button,
-[data-theme="dark"].high-contrast #header .btn-icon,
-[data-theme="dark"].high-contrast #themeToggle,
-[data-theme="dark"].high-contrast .header-controls button {
+[data-theme="dark"].high-contrast #header .btn-icon {
     background: #ffffff !important;
     color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
     border: 2px solid #ffffff !important;
 }
 
-[data-theme="dark"].high-contrast #header button:hover,
-[data-theme="dark"].high-contrast #header .btn-icon:hover,
-[data-theme="dark"].high-contrast #themeToggle:hover,
-[data-theme="dark"].high-contrast .header-controls button:hover {
+[data-theme="dark"].high-contrast #header button:hover {
     background: #cccccc !important;
     color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
 }
 
-/* Fix navigation buttons (Export, Import, Backup) in dark mode high contrast */
-[data-theme="dark"].high-contrast .export-btn,
-[data-theme="dark"].high-contrast .import-btn,
-[data-theme="dark"].high-contrast .backup-btn {
-    background: #ffffff !important;
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-    border: 2px solid #ffffff !important;
-}
-
-[data-theme="dark"].high-contrast .export-btn:hover,
-[data-theme="dark"].high-contrast .import-btn:hover,
-[data-theme="dark"].high-contrast .backup-btn:hover {
-    background: #cccccc !important;
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-}
-
-/* Ensure all nav buttons have consistent styling */
+/* Dark mode navigation - FIXED */
 [data-theme="dark"].high-contrast .nav-btn {
     background: #000000 !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     border: 2px solid #ffffff !important;
+    font-weight: 700 !important;
 }
 
 [data-theme="dark"].high-contrast .nav-btn:hover {
@@ -5967,51 +5830,139 @@ textarea:focus-visible {
     -webkit-text-fill-color: #000000 !important;
 }
 
-/* Fix any icon buttons that might be in cards */
-[data-theme="dark"].high-contrast .card-actions .btn-icon,
-[data-theme="dark"].high-contrast .interview-btn,
-[data-theme="dark"].high-contrast .contact-btn,
-[data-theme="dark"].high-contrast .document-btn,
-[data-theme="dark"].high-contrast .edit-btn,
-[data-theme="dark"].high-contrast .delete-btn {
+/* Dark mode action buttons - FIXED */
+[data-theme="dark"].high-contrast .export-btn,
+[data-theme="dark"].high-contrast .import-btn,
+[data-theme="dark"].high-contrast .backup-btn {
     background: #ffffff !important;
     color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
     border: 2px solid #ffffff !important;
 }
 
-/* Ensure modal buttons also have proper contrast */
-[data-theme="dark"].high-contrast .modal .btn,
-[data-theme="dark"].high-contrast .modal button {
+[data-theme="dark"].high-contrast .export-btn:hover,
+[data-theme="dark"].high-contrast .import-btn:hover,
+[data-theme="dark"].high-contrast .backup-btn:hover {
+    background: #cccccc !important;
+    color: #000000 !important;
+}
+
+/* Dark mode cards */
+[data-theme="dark"].high-contrast .glass-card,
+[data-theme="dark"].high-contrast .application-card,
+[data-theme="dark"].high-contrast .kanban-card,
+[data-theme="dark"].high-contrast .modal,
+[data-theme="dark"].high-contrast #applicationForm {
+    background: #000000 !important;
+    border: 3px solid #ffffff !important;
+    color: #ffffff !important;
+}
+
+/* Dark mode all text - FIXED */
+[data-theme="dark"].high-contrast h1,
+[data-theme="dark"].high-contrast h2,
+[data-theme="dark"].high-contrast h3,
+[data-theme="dark"].high-contrast h4,
+[data-theme="dark"].high-contrast h5,
+[data-theme="dark"].high-contrast h6,
+[data-theme="dark"].high-contrast p,
+[data-theme="dark"].high-contrast span,
+[data-theme="dark"].high-contrast div,
+[data-theme="dark"].high-contrast label,
+[data-theme="dark"].high-contrast .job-title,
+[data-theme="dark"].high-contrast .company-info,
+[data-theme="dark"].high-contrast .detail-label,
+[data-theme="dark"].high-contrast .detail-value,
+[data-theme="dark"].high-contrast .stat-label,
+[data-theme="dark"].high-contrast .stat-value {
+    color: #ffffff !important;
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Dark mode view titles */
+[data-theme="dark"].high-contrast .view h2 {
+    color: #ffffff !important;
+    background: none !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* Dark mode form elements */
+[data-theme="dark"].high-contrast input,
+[data-theme="dark"].high-contrast select,
+[data-theme="dark"].high-contrast textarea {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+}
+
+/* Dark mode buttons */
+[data-theme="dark"].high-contrast .btn {
     background: #ffffff !important;
     color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
     border: 2px solid #ffffff !important;
 }
 
-[data-theme="dark"].high-contrast .modal .btn-secondary {
+[data-theme="dark"].high-contrast .btn:hover {
+    background: #cccccc !important;
+    color: #000000 !important;
+}
+
+[data-theme="dark"].high-contrast .btn-secondary {
     background: #000000 !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     border: 3px solid #ffffff !important;
 }
 
-/* Fix form buttons */
-[data-theme="dark"].high-contrast .form-actions .btn {
-    background: #ffffff !important;
-    color: #000000 !important;
-    -webkit-text-fill-color: #000000 !important;
-    border: 2px solid #ffffff !important;
+/* ========== SHARED HIGH CONTRAST STYLES ========== */
+
+/* Remove all gradients */
+.high-contrast *[class*="gradient"],
+[data-theme="dark"].high-contrast *[class*="gradient"] {
+    background-image: none !important;
 }
 
-[data-theme="dark"].high-contrast .form-actions .btn-secondary {
-    background: #000000 !important;
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    border: 3px solid #ffffff !important;
+/* Strong focus indicators */
+.high-contrast *:focus,
+.high-contrast *:focus-visible,
+[data-theme="dark"].high-contrast *:focus,
+[data-theme="dark"].high-contrast *:focus-visible {
+    outline: 4px solid #000000 !important;
+    outline-offset: 2px !important;
 }
 
-/* ===== END OF HEADER BUTTONS HIGH CONTRAST FIX ===== */
+[data-theme="dark"].high-contrast *:focus,
+[data-theme="dark"].high-contrast *:focus-visible {
+    outline-color: #ffffff !important;
+}
+
+/* Links */
+.high-contrast a {
+    color: #0000EE !important;
+    text-decoration: underline !important;
+}
+
+[data-theme="dark"].high-contrast a {
+    color: #00FFFF !important;
+}
+
+/* Status badges */
+.high-contrast .status-badge,
+[data-theme="dark"].high-contrast .status-badge {
+    font-weight: 700 !important;
+    border-width: 3px !important;
+}
+
+/* Ensure no background images or gradients */
+.high-contrast *,
+[data-theme="dark"].high-contrast * {
+    background-image: none !important;
+}
+
+/* ===== END OF COMPLETE HIGH CONTRAST FIX ===== */
 /* Reduced motion preferences */
 .reduce-motion * {
     animation-duration: 0.01ms !important;
