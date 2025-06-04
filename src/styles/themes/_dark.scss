@@ -1,5 +1,5 @@
 // Dark Theme
-[data-theme=\dark\] {
-  background: \-dark;
-  color: rgba(\-light, 0.9);
+[data-theme="dark"] {
+  background: $color-dark;
+  color: rgba($color-light, 0.9);
 }
