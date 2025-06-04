@@ -1,8 +1,8 @@
 {
-  "name": "tree-1",
+  "name": "job-application-tracker",
   "version": "1.0.0",
-  "description": "Job Application Tracker - Development Documentation 📋 Project Overview A comprehensive Progressive Web App (PWA) for tracking job applications, built with vanilla JavaScript, CSS, and IndexedDB for offline-first functionality. This application helps job seekers organize their job search with features including application tracking, interview scheduling, contact management, and a Kanban board view. 🌟 Key Features",
-  "main": "script.js",
+  "description": "Job Application Tracker - A comprehensive Progressive Web App (PWA) for tracking job applications",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,11 +13,22 @@
     "type": "git",
     "url": "git+https://github.com/DemitriBr/Tree.git"
   },
-  "keywords": [],
+  "keywords": [
+    "job-tracker",
+    "pwa",
+    "progressive-web-app",
+    "job-search",
+    "application-tracker"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/DemitriBr/Tree/issues"
   },
-  "homepage": "https://github.com/DemitriBr/Tree#readme"
+  "homepage": "https://github.com/DemitriBr/Tree#readme",
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "sass": "^1.69.0"
+  },
+  "dependencies": {}
 }
