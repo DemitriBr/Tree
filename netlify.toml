@@ -27,8 +27,9 @@
 
 # Redirect HTTP to HTTPS
 [[redirects]]
-  from = "http://:domain/*"
-  to = "https://:domain/:splat"
+  from = "http://*.netlify.app/*"
+  to = "https://:splat"
+  scheme = "https"
   status = 301
   force = true
 
