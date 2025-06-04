@@ -33,8 +33,11 @@
     <link rel="apple-touch-startup-image" href="/splash/launch-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
     <link rel="apple-touch-startup-image" href="/splash/launch-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
     
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none';">
+    
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="style.css?v=6007">
+    <link rel="stylesheet" href="/src/styles/main.scss">
 </head>
 <body>
     <!-- Main Container -->
@@ -44,8 +47,8 @@
             <h1 id="app-title">Job Application Tracker</h1>
             <div class="header-controls">
                 <button id="themeToggle" aria-label="Toggle dark mode" aria-pressed="false">🌙</button>
-                <button class="btn-icon" onclick="showKeyboardShortcuts()" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">⌨️</button>
-                <button class="btn-icon" onclick="accessibilityManager.toggleHighContrast()" aria-label="Toggle high contrast mode" title="High contrast">🔲</button>
+                <button id="keyboard-shortcuts-btn" class="btn-icon" aria-label="Show keyboard shortcuts" title="Keyboard shortcuts (?)">⌨️</button>
+                <button id="high-contrast-btn" class="btn-icon" aria-label="Toggle high contrast mode" title="High contrast">🔲</button>
             </div>
         </header>
 
@@ -55,9 +58,9 @@
             <button class="nav-btn" data-view="list">Applications List</button>
             <button class="nav-btn" data-view="dashboard">Dashboard</button>
             <button class="nav-btn" data-view="kanban">Kanban Board</button>
-            <button class="export-btn" onclick="showExportModal()" aria-label="Export application data">📥 Export Data</button>
-            <button class="import-btn" onclick="showImportModal()" aria-label="Import application data">📤 Import Data</button>
-            <button class="backup-btn" onclick="showBackupSettingsModal()" aria-label="Backup settings">💾 Backup</button>
+            <button id="export-btn" class="export-btn" aria-label="Export application data">📥 Export Data</button>
+            <button id="import-btn" class="import-btn" aria-label="Import application data">📤 Import Data</button>
+            <button id="backup-btn" class="backup-btn" aria-label="Backup settings">💾 Backup</button>
         </nav>
 
         <!-- View Containers -->
@@ -267,6 +270,6 @@
         </div>
     </div>
 
-    <script src="script.js?v=73"></script>
+    <script type="module" src="/src/main.js"></script>
 </body>
 </html>

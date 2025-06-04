@@ -1124,6 +1124,56 @@ function updateThemeToggleButton(theme) {
     }
 }
 
+// Setup event listeners for buttons that had inline handlers
+function setupEventListeners() {
+    // Keyboard shortcuts button
+    const keyboardShortcutsBtn = document.getElementById('keyboard-shortcuts-btn');
+    if (keyboardShortcutsBtn) {
+        keyboardShortcutsBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            showKeyboardShortcuts();
+        });
+    }
+    
+    // High contrast toggle button  
+    const highContrastBtn = document.getElementById('high-contrast-btn');
+    if (highContrastBtn) {
+        highContrastBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (typeof accessibilityManager !== 'undefined' && accessibilityManager.toggleHighContrast) {
+                accessibilityManager.toggleHighContrast();
+            }
+        });
+    }
+    
+    // Export data button
+    const exportBtn = document.getElementById('export-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            showExportModal();
+        });
+    }
+    
+    // Import data button
+    const importBtn = document.getElementById('import-btn');
+    if (importBtn) {
+        importBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            showImportModal();
+        });
+    }
+    
+    // Backup settings button
+    const backupBtn = document.getElementById('backup-btn');
+    if (backupBtn) {
+        backupBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            showBackupSettingsModal();
+        });
+    }
+}
+
 // 1. REPLACE your entire init() function with this:
 async function init() {
     try {
@@ -1144,6 +1194,9 @@ async function init() {
         
         // STEP 27 ADDITION: Initialize enhanced validation
         initializeFormValidation();
+        
+        // Set up event listeners for inline handlers replacement
+        setupEventListeners();
         
         console.log('Application initialized successfully');
     } catch (error) {
@@ -3488,8 +3541,8 @@ function showContactModal(applicationId, existingContact = null) {
                 // Sanitize data
                 data.name = dataSanitizer.sanitizeString(data.name, 100);
                 data.title = dataSanitizer.sanitizeString(data.title || '', 100);
-                data.email = dataSanitizer.sanitizeString(data.email || '', 100);
-                data.phone = dataSanitizer.sanitizeString(data.phone || '', 50);
+                data.email = dataSanitizer.sanitizeEmail(data.email || '');
+                data.phone = dataSanitizer.sanitizePhone(data.phone || '');
                 data.linkedin = dataSanitizer.sanitizeUrl(data.linkedin || '');
                 data.notes = dataSanitizer.sanitizeString(data.notes || '', 500);
                 
@@ -5566,33 +5619,64 @@ class FormValidator {
     }
 }
 
-// Data sanitization functions
+// Enhanced data sanitization functions
 const dataSanitizer = {
+    // Enhanced HTML entity encoding
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    },
+    
+    // Enhanced string sanitization with proper escaping
     sanitizeString(value, maxLength = 100) {
         if (typeof value !== 'string') return '';
         
-        return value
+        // First normalize and trim
+        let sanitized = value
             .trim()
             .substring(0, maxLength)
-            .replace(/[<>]/g, '') // Remove potential HTML tags
-            .replace(/\s+/g, ' '); // Normalize whitespace
+            .replace(/\s+/g, ' ');
+        
+        // Remove potential script injections
+        sanitized = sanitized
+            .replace(/javascript:/gi, '')
+            .replace(/vbscript:/gi, '')
+            .replace(/data:/gi, '')
+            .replace(/on\w+\s*=/gi, ''); // Remove event handlers
+        
+        // HTML escape for safe insertion
+        return this.escapeHtml(sanitized);
     },
     
+    // Enhanced URL sanitization
     sanitizeUrl(url) {
         if (!url) return '';
         
         try {
-            const urlObj = new URL(url);
-            // Only allow http and https protocols
+            // Remove javascript: and other dangerous protocols
+            const cleanUrl = url.replace(/javascript:/gi, '').replace(/data:/gi, '');
+            
+            const urlObj = new URL(cleanUrl);
+            
+            // Only allow safe protocols
             if (!['http:', 'https:'].includes(urlObj.protocol)) {
                 return '';
             }
+            
+            // Check URL length (prevent extremely long URLs)
+            if (urlObj.href.length > 2048) {
+                return '';
+            }
+            
             return urlObj.href;
         } catch {
             return '';
         }
     },
     
+    // Date sanitization (unchanged - already good)
     sanitizeDate(date) {
         if (!date) return null;
         
@@ -5604,6 +5688,35 @@ const dataSanitizer = {
         return dateObj.toISOString().split('T')[0];
     },
     
+    // Enhanced email sanitization
+    sanitizeEmail(email) {
+        if (!email) return '';
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const trimmed = email.trim().toLowerCase();
+        
+        if (!emailRegex.test(trimmed) || trimmed.length > 254) {
+            return '';
+        }
+        
+        return this.escapeHtml(trimmed);
+    },
+    
+    // Phone number sanitization
+    sanitizePhone(phone) {
+        if (!phone) return '';
+        
+        // Remove all non-digit characters except +, -, (, ), and spaces
+        const cleaned = phone.replace(/[^\d\+\-\(\)\s]/g, '');
+        
+        if (cleaned.length > 20) {
+            return '';
+        }
+        
+        return this.escapeHtml(cleaned);
+    },
+    
+    // Application data sanitization
     sanitizeApplicationData(data) {
         return {
             ...data,

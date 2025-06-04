@@ -1,0 +1,35 @@
+// Main SCSS entry point
+// Import Google Fonts
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+// Base styles
+@import 'base/variables';
+@import 'utils/mixins';
+
+// Base elements
+@import 'base/reset';
+@import 'base/typography';
+@import 'base/layout';
+
+// Components
+@import 'components/buttons';
+@import 'components/forms';
+@import 'components/cards';
+@import 'components/modals';
+@import 'components/notifications';
+
+// Views
+@import 'views/header';
+@import 'views/navigation';
+@import 'views/home';
+@import 'views/list';
+@import 'views/dashboard';
+@import 'views/kanban';
+
+// Themes
+@import 'themes/dark';
+@import 'themes/high-contrast';
+
+// Utilities
+@import 'utils/animations';
+@import 'utils/utilities';

@@ -1,0 +1,368 @@
+// Button Components
+
+// Base button styles
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: $btn-padding-y $btn-padding-x;
+  margin: 0;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  line-height: $line-height-normal;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: $border-radius-md;
+  transition: all $transition-fast;
+  
+  &:focus {
+    @include focus-ring;
+  }
+  
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+  
+  // Remove tap highlight on mobile
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Button variants
+.btn-primary {
+  @include button-variant($primary-color);
+  background: $primary-gradient;
+  border: none;
+  box-shadow: $shadow-md;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+.btn-secondary {
+  @include button-outline-variant($text-secondary);
+  
+  &:hover {
+    background-color: $bg-secondary;
+  }
+}
+
+.btn-success {
+  @include button-variant($success-color);
+  background: $success-gradient;
+  border: none;
+}
+
+.btn-warning {
+  @include button-variant($warning-color);
+  background: $warning-gradient;
+  border: none;
+}
+
+.btn-error {
+  @include button-variant($error-color);
+  background: $error-gradient;
+  border: none;
+}
+
+.btn-info {
+  @include button-variant($info-color);
+}
+
+// Button sizes
+.btn-sm {
+  padding: $btn-padding-y-sm $btn-padding-x-sm;
+  font-size: $font-size-sm;
+  border-radius: $border-radius-sm;
+}
+
+.btn-lg {
+  padding: $btn-padding-y-lg $btn-padding-x-lg;
+  font-size: $font-size-lg;
+  border-radius: $border-radius-lg;
+}
+
+// Icon buttons
+.btn-icon {
+  @include button-reset;
+  @include flex-center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  font-size: $font-size-lg;
+  border-radius: $border-radius-full;
+  background: rgba(white, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(white, 0.2);
+  color: $text-primary;
+  transition: all $transition-fast;
+  
+  &:hover {
+    background: rgba(white, 0.2);
+    transform: scale(1.05);
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+  
+  @include dark-theme {
+    color: $text-light;
+    background: rgba(white, 0.1);
+    border-color: rgba(white, 0.2);
+    
+    &:hover {
+      background: rgba(white, 0.2);
+    }
+  }
+  
+  @include high-contrast {
+    background: $hc-fg;
+    color: $hc-bg;
+    border: 2px solid $hc-fg;
+    
+    &:hover, &:focus {
+      background: $hc-primary;
+      border-color: $hc-primary;
+    }
+  }
+}
+
+// Navigation buttons
+.nav-btn {
+  @include button-reset;
+  padding: $spacing-md $spacing-lg;
+  font-weight: $font-weight-medium;
+  color: $text-secondary;
+  border-radius: $border-radius-lg;
+  transition: all $transition-fast;
+  position: relative;
+  
+  &:hover {
+    color: $primary-color;
+    background: rgba($primary-color, 0.1);
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+  
+  &.active {
+    color: $primary-color;
+    background: rgba($primary-color, 0.1);
+    font-weight: $font-weight-semibold;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      height: 2px;
+      background: $primary-gradient;
+      border-radius: $border-radius-full;
+    }
+  }
+  
+  @include dark-theme {
+    color: rgba($text-light, 0.7);
+    
+    &:hover {
+      color: $text-light;
+      background: rgba($primary-color, 0.2);
+    }
+    
+    &.active {
+      color: $text-light;
+    }
+  }
+  
+  @include high-contrast {
+    color: $hc-fg;
+    border: 2px solid transparent;
+    
+    &:hover, &:focus {
+      border-color: $hc-primary;
+      background: rgba($hc-primary, 0.2);
+    }
+    
+    &.active {
+      background: $hc-primary;
+      color: $hc-bg;
+      border-color: $hc-primary;
+      
+      &::after {
+        display: none;
+      }
+    }
+  }
+}
+
+// Button groups
+.btn-group {
+  display: inline-flex;
+  vertical-align: middle;
+  
+  .btn {
+    position: relative;
+    
+    &:not(:first-child) {
+      margin-left: -1px;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+    
+    &:not(:last-child) {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    
+    &:hover {
+      z-index: 1;
+    }
+    
+    &:focus {
+      z-index: 2;
+    }
+  }
+}
+
+// Floating action button
+.fab {
+  @include flex-center;
+  position: fixed;
+  bottom: $spacing-xl;
+  right: $spacing-xl;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: $primary-gradient;
+  color: white;
+  border: none;
+  border-radius: $border-radius-full;
+  box-shadow: $shadow-xl;
+  font-size: $font-size-xl;
+  cursor: pointer;
+  transition: all $transition-fast;
+  z-index: $z-fixed;
+  
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 28px rgba($primary-color, 0.4);
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+  
+  @include high-contrast {
+    background: $hc-primary;
+    color: $hc-bg;
+    border: 2px solid $hc-primary;
+  }
+}
+
+// Export/Import buttons
+.export-btn,
+.import-btn,
+.backup-btn {
+  @include button-reset;
+  @include flex-center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $text-secondary;
+  border: 1px solid $input-border-color;
+  border-radius: $border-radius-md;
+  background: $bg-primary;
+  transition: all $transition-fast;
+  
+  &:hover {
+    color: $primary-color;
+    border-color: $primary-color;
+    background: rgba($primary-color, 0.05);
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+  
+  @include dark-theme {
+    background: $bg-dark-secondary;
+    color: rgba($text-light, 0.8);
+    border-color: rgba($text-light, 0.2);
+    
+    &:hover {
+      color: $text-light;
+      border-color: $primary-color;
+    }
+  }
+  
+  @include high-contrast {
+    background: $hc-fg;
+    color: $hc-bg;
+    border: 2px solid $hc-fg;
+    
+    &:hover, &:focus {
+      background: $hc-primary;
+      border-color: $hc-primary;
+    }
+  }
+}
+
+// Button loading state
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: $border-radius-full;
+    animation: spin 1s linear infinite;
+  }
+  
+  .btn-text {
+    opacity: 0;
+  }
+}
+
+// Keyframes for loading animation
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+// Dark theme adjustments
+@include dark-theme {
+  .btn-secondary {
+    color: rgba($text-light, 0.8);
+    border-color: rgba($text-light, 0.3);
+    
+    &:hover {
+      color: $text-light;
+      background-color: rgba($text-light, 0.1);
+      border-color: rgba($text-light, 0.5);
+    }
+  }
+}
+
+// Reduced motion support
+@include respect-motion-preference;

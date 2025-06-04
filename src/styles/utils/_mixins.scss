@@ -1,0 +1,272 @@
+// Utility Mixins
+
+// Glass morphism effect
+@mixin glass-effect($background: $glass-bg, $border: $glass-border) {
+  background: $background;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid $border;
+}
+
+// Button reset
+@mixin button-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+}
+
+// Visually hidden (screen reader only)
+@mixin sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Focus ring
+@mixin focus-ring($color: $input-focus-ring-color) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px $color;
+}
+
+// Responsive breakpoints
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == sm {
+    @media (min-width: $breakpoint-sm) { @content; }
+  }
+  @if $breakpoint == md {
+    @media (min-width: $breakpoint-md) { @content; }
+  }
+  @if $breakpoint == lg {
+    @media (min-width: $breakpoint-lg) { @content; }
+  }
+  @if $breakpoint == xl {
+    @media (min-width: $breakpoint-xl) { @content; }
+  }
+  @if $breakpoint == 2xl {
+    @media (min-width: $breakpoint-2xl) { @content; }
+  }
+}
+
+// Flexbox utilities
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Text truncation
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin line-clamp($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Aspect ratio
+@mixin aspect-ratio($width, $height) {
+  position: relative;
+  
+  &::before {
+    content: '';
+    display: block;
+    padding-top: percentage($height / $width);
+  }
+  
+  > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// Absolute positioning shortcuts
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin absolute-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+// Smooth scrolling
+@mixin smooth-scroll {
+  scroll-behavior: smooth;
+  
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
+  }
+}
+
+// Animation utilities
+@mixin fade-in($duration: $animation-duration-normal) {
+  animation: fadeIn $duration $animation-easing;
+}
+
+@mixin slide-up($duration: $animation-duration-normal) {
+  animation: slideUp $duration $animation-easing;
+}
+
+// Status color mixin
+@mixin status-color($status) {
+  @if $status == applied {
+    background-color: $status-applied;
+    color: white;
+  } @else if $status == screening {
+    background-color: $status-screening;
+    color: white;
+  } @else if $status == interview {
+    background-color: $status-interview;
+    color: white;
+  } @else if $status == offer {
+    background-color: $status-offer;
+    color: white;
+  } @else if $status == rejected {
+    background-color: $status-rejected;
+    color: white;
+  } @else if $status == withdrawn {
+    background-color: $status-withdrawn;
+    color: white;
+  }
+}
+
+// Form control styling
+@mixin form-control {
+  display: block;
+  width: 100%;
+  height: $input-height;
+  padding: $input-padding-y $input-padding-x;
+  font-size: $font-size-base;
+  font-weight: $font-weight-normal;
+  line-height: $line-height-normal;
+  color: $text-primary;
+  background-color: $bg-primary;
+  background-image: none;
+  border: $input-border-width solid $input-border-color;
+  border-radius: $input-border-radius;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+  
+  &:focus {
+    border-color: $input-focus-border-color;
+    outline: 0;
+    @include focus-ring;
+  }
+  
+  &::placeholder {
+    color: $text-muted;
+    opacity: 1;
+  }
+  
+  &:disabled {
+    background-color: #f5f5f5;
+    opacity: 1;
+    cursor: not-allowed;
+  }
+}
+
+// Button variants
+@mixin button-variant($background, $border: $background, $hover-background: darken($background, 7.5%), $hover-border: darken($border, 10%)) {
+  color: white;
+  background-color: $background;
+  border-color: $border;
+  
+  &:hover {
+    color: white;
+    background-color: $hover-background;
+    border-color: $hover-border;
+  }
+  
+  &:focus {
+    @include focus-ring;
+  }
+  
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+// Button outline variant
+@mixin button-outline-variant($color) {
+  color: $color;
+  background-color: transparent;
+  border-color: $color;
+  
+  &:hover {
+    color: white;
+    background-color: $color;
+    border-color: $color;
+  }
+  
+  &:focus {
+    @include focus-ring(rgba($color, 0.25));
+  }
+}
+
+// Reduced motion support
+@mixin respect-motion-preference {
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// High contrast mode support
+@mixin high-contrast {
+  .high-contrast & {
+    @content;
+  }
+}
+
+// Dark theme support
+@mixin dark-theme {
+  [data-theme="dark"] & {
+    @content;
+  }
+}
+
+// Gradient text
+@mixin gradient-text($gradient) {
+  background: $gradient;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

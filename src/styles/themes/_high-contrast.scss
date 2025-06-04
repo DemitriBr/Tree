@@ -1,0 +1,321 @@
+// High Contrast Theme
+// Clean, unified high-contrast implementation
+
+.high-contrast {
+  // Base colors
+  background: $hc-bg;
+  color: $hc-fg;
+  
+  // Text colors
+  h1, h2, h3, h4, h5, h6,
+  p, span, div, label {
+    color: $hc-fg;
+  }
+  
+  // Links
+  a {
+    color: $hc-primary;
+    text-decoration: underline;
+    
+    &:hover, &:focus {
+      color: $hc-secondary;
+      background-color: $hc-fg;
+    }
+  }
+  
+  // Buttons
+  button, .btn {
+    background: $hc-fg;
+    color: $hc-bg;
+    border: 2px solid $hc-fg;
+    
+    &:hover, &:focus {
+      background: $hc-primary;
+      color: $hc-bg;
+      border-color: $hc-primary;
+    }
+    
+    &.btn-primary {
+      background: $hc-primary;
+      color: $hc-bg;
+      border-color: $hc-primary;
+      
+      &:hover, &:focus {
+        background: $hc-secondary;
+        border-color: $hc-secondary;
+      }
+    }
+    
+    &.btn-secondary {
+      background: transparent;
+      color: $hc-fg;
+      border-color: $hc-fg;
+      
+      &:hover, &:focus {
+        background: $hc-fg;
+        color: $hc-bg;
+      }
+    }
+    
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+  
+  // Form elements
+  input, select, textarea {
+    background: $hc-bg;
+    color: $hc-fg;
+    border: 2px solid $hc-fg;
+    
+    &:focus {
+      border-color: $hc-primary;
+      box-shadow: 0 0 0 3px rgba(255, 255, 0, 0.3);
+    }
+    
+    &::placeholder {
+      color: rgba($hc-fg, 0.7);
+    }
+  }
+  
+  // Cards and containers
+  .card, .modal-content, .notification {
+    background: $hc-bg;
+    color: $hc-fg;
+    border: 2px solid $hc-fg;
+  }
+  
+  // Status badges
+  .status-badge {
+    border: 2px solid $hc-fg;
+    
+    &.status-applied { background: $hc-secondary; color: $hc-bg; }
+    &.status-screening { background: $hc-warning; color: $hc-bg; }
+    &.status-interview { background: $hc-primary; color: $hc-bg; }
+    &.status-offer { background: $hc-success; color: $hc-bg; }
+    &.status-rejected { background: $hc-error; color: $hc-bg; }
+    &.status-withdrawn { background: $hc-fg; color: $hc-bg; }
+  }
+  
+  // Navigation
+  .nav-btn {
+    color: $hc-fg;
+    border: 2px solid transparent;
+    
+    &:hover, &:focus {
+      border-color: $hc-primary;
+      background: rgba($hc-primary, 0.2);
+    }
+    
+    &.active {
+      background: $hc-primary;
+      color: $hc-bg;
+      border-color: $hc-primary;
+    }
+  }
+  
+  // Header
+  #header {
+    background: $hc-bg;
+    border-bottom: 2px solid $hc-fg;
+    
+    h1 {
+      color: $hc-primary;
+    }
+  }
+  
+  // Modal overlay
+  .modal-overlay {
+    background: rgba($hc-bg, 0.8);
+  }
+  
+  // Notifications
+  .notification {
+    &.notification-success {
+      background: $hc-success;
+      color: $hc-bg;
+      border-color: $hc-success;
+    }
+    
+    &.notification-error {
+      background: $hc-error;
+      color: $hc-bg;
+      border-color: $hc-error;
+    }
+    
+    &.notification-warning {
+      background: $hc-warning;
+      color: $hc-bg;
+      border-color: $hc-warning;
+    }
+    
+    &.notification-info {
+      background: $hc-secondary;
+      color: $hc-bg;
+      border-color: $hc-secondary;
+    }
+  }
+  
+  // Tables
+  table {
+    border: 2px solid $hc-fg;
+    
+    th, td {
+      border: 1px solid $hc-fg;
+      color: $hc-fg;
+    }
+    
+    th {
+      background: $hc-fg;
+      color: $hc-bg;
+    }
+  }
+  
+  // Focus indicators
+  *:focus {
+    outline: 3px solid $hc-primary;
+    outline-offset: 2px;
+  }
+  
+  // Disable glassmorphism and shadows
+  * {
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  
+  // Charts and graphs (if any)
+  canvas, svg {
+    filter: contrast(1000%) brightness(150%);
+  }
+  
+  // Remove gradients
+  * {
+    background-image: none !important;
+  }
+  
+  // Loading indicators
+  .loading, .spinner {
+    border-color: $hc-fg;
+    border-top-color: $hc-primary;
+  }
+  
+  // Kanban board
+  .kanban-column {
+    background: $hc-bg;
+    border: 2px solid $hc-fg;
+    
+    .kanban-column-header {
+      background: $hc-fg;
+      color: $hc-bg;
+    }
+  }
+  
+  .kanban-card {
+    background: $hc-bg;
+    border: 2px solid $hc-fg;
+    
+    &:hover, &:focus {
+      border-color: $hc-primary;
+    }
+  }
+  
+  // Dashboard elements
+  .dashboard-card {
+    background: $hc-bg;
+    border: 2px solid $hc-fg;
+  }
+  
+  .stat-value {
+    color: $hc-primary;
+  }
+  
+  // Form validation
+  .error {
+    border-color: $hc-error !important;
+  }
+  
+  .error-message {
+    color: $hc-error;
+  }
+  
+  .success {
+    border-color: $hc-success !important;
+  }
+  
+  // Dropdown menus
+  .dropdown-menu {
+    background: $hc-bg;
+    border: 2px solid $hc-fg;
+    
+    .dropdown-item {
+      color: $hc-fg;
+      
+      &:hover, &:focus {
+        background: $hc-primary;
+        color: $hc-bg;
+      }
+    }
+  }
+  
+  // Tooltips
+  .tooltip {
+    background: $hc-fg;
+    color: $hc-bg;
+    border: 2px solid $hc-fg;
+  }
+  
+  // Progress bars
+  .progress {
+    background: $hc-bg;
+    border: 2px solid $hc-fg;
+    
+    .progress-bar {
+      background: $hc-primary;
+    }
+  }
+  
+  // Badges
+  .badge {
+    background: $hc-primary;
+    color: $hc-bg;
+    border: 2px solid $hc-primary;
+  }
+  
+  // Alerts
+  .alert {
+    border: 2px solid $hc-fg;
+    
+    &.alert-success {
+      background: $hc-success;
+      color: $hc-bg;
+      border-color: $hc-success;
+    }
+    
+    &.alert-error {
+      background: $hc-error;
+      color: $hc-bg;
+      border-color: $hc-error;
+    }
+    
+    &.alert-warning {
+      background: $hc-warning;
+      color: $hc-bg;
+      border-color: $hc-warning;
+    }
+    
+    &.alert-info {
+      background: $hc-secondary;
+      color: $hc-bg;
+      border-color: $hc-secondary;
+    }
+  }
+}
+
+// Dark theme high contrast adjustments
+[data-theme="dark"].high-contrast {
+  // Use same colors but ensure proper contrast
+  background: $hc-bg;
+  color: $hc-fg;
+}

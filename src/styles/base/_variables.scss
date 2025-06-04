@@ -1,0 +1,173 @@
+// Base Variables
+// Colors
+$primary-color: #667eea;
+$primary-dark: #764ba2;
+$secondary-color: #f093fb;
+$secondary-dark: #f5576c;
+
+$success-color: #66bb6a;
+$success-dark: #43a047;
+$warning-color: #ffa726;
+$warning-dark: #f57c00;
+$error-color: #ef5350;
+$error-dark: #c62828;
+$info-color: #42a5f5;
+$info-dark: #1976d2;
+
+// Text colors
+$text-primary: #2d3561;
+$text-secondary: #6c757d;
+$text-muted: #8e9aaf;
+$text-light: #ffffff;
+
+// Background colors
+$bg-primary: #ffffff;
+$bg-secondary: #f8f9fc;
+$bg-accent: #eef1ff;
+$bg-dark: #1a1a2e;
+$bg-dark-secondary: #16213e;
+$bg-dark-accent: #0f3460;
+
+// Glass morphism
+$glass-bg: rgba(255, 255, 255, 0.25);
+$glass-bg-dark: rgba(255, 255, 255, 0.1);
+$glass-border: rgba(255, 255, 255, 0.3);
+$glass-border-dark: rgba(255, 255, 255, 0.2);
+
+// Shadows
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+$shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.2);
+
+$shadow-color: rgba(102, 126, 234, 0.3);
+$shadow-color-dark: rgba(0, 0, 0, 0.5);
+
+// Gradients
+$primary-gradient: linear-gradient(135deg, #{$primary-color} 0%, #{$primary-dark} 100%);
+$secondary-gradient: linear-gradient(135deg, #{$secondary-color} 0%, #{$secondary-dark} 100%);
+$success-gradient: linear-gradient(135deg, #{$success-color} 0%, #{$success-dark} 100%);
+$warning-gradient: linear-gradient(135deg, #{$warning-color} 0%, #{$warning-dark} 100%);
+$error-gradient: linear-gradient(135deg, #{$error-color} 0%, #{$error-dark} 100%);
+
+// Typography
+$font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-size-xs: 0.75rem;
+$font-size-sm: 0.875rem;
+$font-size-base: 1rem;
+$font-size-lg: 1.125rem;
+$font-size-xl: 1.25rem;
+$font-size-2xl: 1.5rem;
+$font-size-3xl: 1.875rem;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+$font-weight-extrabold: 800;
+
+$line-height-tight: 1.25;
+$line-height-normal: 1.5;
+$line-height-relaxed: 1.75;
+
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
+$spacing-2xl: 3rem;
+$spacing-3xl: 4rem;
+
+// Border radius
+$border-radius-sm: 0.25rem;
+$border-radius-md: 0.5rem;
+$border-radius-lg: 0.75rem;
+$border-radius-xl: 1rem;
+$border-radius-full: 9999px;
+
+// Transitions
+$transition-fast: 0.15s ease-in-out;
+$transition-normal: 0.3s ease-in-out;
+$transition-slow: 0.5s ease-in-out;
+
+// Z-index scale
+$z-dropdown: 1000;
+$z-sticky: 1020;
+$z-fixed: 1030;
+$z-modal-backdrop: 1040;
+$z-modal: 1050;
+$z-popover: 1060;
+$z-tooltip: 1070;
+$z-notification: 1080;
+
+// Breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-2xl: 1400px;
+
+// Container max widths
+$container-sm: 540px;
+$container-md: 720px;
+$container-lg: 960px;
+$container-xl: 1140px;
+$container-2xl: 1320px;
+
+// Status colors
+$status-applied: #42a5f5;
+$status-screening: #ffa726;
+$status-interview: #ab47bc;
+$status-offer: #66bb6a;
+$status-rejected: #ef5350;
+$status-withdrawn: #78909c;
+
+// High contrast colors
+$hc-bg: #000000;
+$hc-fg: #ffffff;
+$hc-primary: #ffff00;
+$hc-secondary: #00ffff;
+$hc-success: #00ff00;
+$hc-warning: #ffaa00;
+$hc-error: #ff0000;
+$hc-border: #ffffff;
+
+// Animation settings
+$animation-duration-fast: 0.15s;
+$animation-duration-normal: 0.3s;
+$animation-duration-slow: 0.5s;
+$animation-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+// Form elements
+$input-height: 2.5rem;
+$input-padding-x: 0.75rem;
+$input-padding-y: 0.5rem;
+$input-border-width: 1px;
+$input-border-color: #d1d5db;
+$input-border-radius: $border-radius-md;
+$input-focus-border-color: $primary-color;
+$input-focus-ring-color: rgba(102, 126, 234, 0.3);
+
+// Button sizes
+$btn-padding-y-sm: 0.25rem;
+$btn-padding-x-sm: 0.5rem;
+$btn-padding-y: 0.5rem;
+$btn-padding-x: 1rem;
+$btn-padding-y-lg: 0.75rem;
+$btn-padding-x-lg: 1.5rem;
+
+// Card elements
+$card-border-radius: $border-radius-lg;
+$card-padding: $spacing-lg;
+$card-shadow: $shadow-lg;
+
+// Modal elements
+$modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+$modal-border-radius: $border-radius-xl;
+$modal-padding: $spacing-xl;
+
+// Notification elements
+$notification-border-radius: $border-radius-md;
+$notification-padding: $spacing-md;
+$notification-shadow: $shadow-lg;
