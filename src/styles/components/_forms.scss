@@ -1,1 +1,317 @@
-// Placeholder - Forms styles
+// Glassmorphism Forms
+.form-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: $text-primary;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid $glass-border;
+  border-radius: 0.75rem;
+  background: $glass-bg;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: $text-primary;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &::placeholder {
+    color: $text-muted;
+    opacity: 0.7;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:invalid {
+    border-color: $error-color;
+    box-shadow: 0 0 0 3px rgba($error-color, 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  cursor: pointer;
+
+  &:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23667eea' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  }
+}
+
+// Floating label inputs
+.form-floating {
+  position: relative;
+
+  .form-input {
+    padding: 1rem 1rem 0.5rem;
+
+    &::placeholder {
+      opacity: 0;
+    }
+
+    &:focus,
+    &:not(:placeholder-shown) {
+      ~ .form-label {
+        transform: translateY(-0.5rem) scale(0.85);
+        color: $primary-color;
+      }
+    }
+  }
+
+  .form-label {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    margin: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    transform-origin: left center;
+    background: linear-gradient(180deg, transparent 50%, $glass-bg 50%);
+    padding: 0 0.25rem;
+  }
+}
+
+// Input groups
+.input-group {
+  display: flex;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: $glass-bg;
+  backdrop-filter: blur(10px);
+  border: 1px solid $glass-border;
+
+  .form-input {
+    border: none;
+    background: transparent;
+    border-radius: 0;
+
+    &:focus {
+      box-shadow: none;
+      background: transparent;
+      transform: none;
+    }
+  }
+
+  .input-group-text {
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    color: $text-secondary;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+  }
+
+  &:focus-within {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+  }
+}
+
+// Checkbox and radio buttons
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.form-check-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid $glass-border;
+  border-radius: 0.25rem;
+  background: $glass-bg;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:checked {
+    background: $primary-color;
+    border-color: $primary-color;
+    box-shadow: 0 0 10px rgba($primary-color, 0.3);
+
+    &::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+  }
+
+  &[type="radio"] {
+    border-radius: 50%;
+
+    &:checked::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+.form-check-label {
+  color: $text-primary;
+  cursor: pointer;
+  font-size: 0.875rem;
+  user-select: none;
+}
+
+// Form validation
+.form-error {
+  color: $error-color;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  &::before {
+    content: '⚠';
+    font-size: 0.875rem;
+  }
+}
+
+.form-success {
+  color: $success-color;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  &::before {
+    content: '✓';
+    font-size: 0.875rem;
+  }
+}
+
+// Form layouts
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: flex-end;
+
+  &.form-actions-full {
+    justify-content: stretch;
+
+    .btn {
+      flex: 1;
+    }
+  }
+}
+
+// Search form
+.search-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .form-input {
+    padding-right: 3rem;
+  }
+
+  .search-icon {
+    position: absolute;
+    right: 1rem;
+    color: $text-muted;
+    pointer-events: none;
+  }
+
+  .search-clear {
+    position: absolute;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: $text-muted;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $text-primary;
+    }
+  }
+}
+
+// Dark theme adjustments
+@include dark-theme {
+  .form-input,
+  .form-select,
+  .form-textarea {
+    background: $glass-bg-dark;
+    border-color: $glass-border-dark;
+    color: $text-light;
+
+    &::placeholder {
+      color: rgba($text-light, 0.5);
+    }
+  }
+
+  .input-group {
+    background: $glass-bg-dark;
+    border-color: $glass-border-dark;
+  }
+
+  .form-check-input {
+    background: $glass-bg-dark;
+    border-color: $glass-border-dark;
+  }
+}
