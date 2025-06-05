@@ -1,5 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { fileURLToPath, URL } from 'node:url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   root: '.',
@@ -19,7 +22,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@import "/src/styles/base/variables.scss"; @import "/src/styles/utils/mixins.scss";`
+        additionalData: `@import "./src/styles/base/variables"; @import "./src/styles/utils/mixins";`
       }
     }
   }
