@@ -365,4 +365,6 @@
 }
 
 // Reduced motion support
-@include respect-motion-preference;
+.btn, .btn-icon, .nav-btn, .tab-btn, .toggle-btn, .pagination-btn {
+  @include respect-motion-preference;
+}
