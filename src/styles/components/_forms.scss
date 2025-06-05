@@ -7,8 +7,8 @@
 .form-label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: $text-primary;
+  font-weight: 600;
+  color: $text-primary !important;
   font-size: 0.875rem;
   letter-spacing: 0.025em;
 }
@@ -23,7 +23,7 @@
   background: $glass-bg;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: $text-primary;
+  color: $text-primary !important;
   font-size: 1rem;
   transition: all 0.3s ease;
   position: relative;

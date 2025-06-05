@@ -2,4 +2,59 @@
 [data-theme="dark"] {
   background: $bg-dark;
   color: rgba($text-light, 0.9);
+
+  // Ensure text visibility in dark mode
+  h1, h2, h3, h4, h5, h6 {
+    color: $text-light !important;
+  }
+
+  p, span, div, label {
+    color: rgba($text-light, 0.9) !important;
+  }
+
+  // Card text visibility
+  .card-title {
+    color: $text-light !important;
+    -webkit-text-fill-color: $text-light !important;
+  }
+
+  .card-content {
+    color: rgba($text-light, 0.9) !important;
+  }
+
+  // Navigation text
+  .nav-link {
+    color: rgba($text-light, 0.9) !important;
+    
+    &:hover {
+      color: $text-light !important;
+    }
+  }
+
+  // Form text
+  .form-label {
+    color: rgba($text-light, 0.9) !important;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    color: $text-light !important;
+  }
+
+  // Button text contrast
+  .btn {
+    color: $text-light !important;
+  }
+
+  // General text elements
+  .text-primary {
+    color: $text-light !important;
+  }
+
+  .text-secondary {
+    color: rgba($text-light, 0.7) !important;
+  }
+
+  .text-muted {
+    color: rgba($text-light, 0.6) !important;
+  }
 }
