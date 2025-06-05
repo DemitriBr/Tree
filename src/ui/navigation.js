@@ -133,7 +133,7 @@ function initializeViewContent(viewName) {
             
         case VIEW_NAMES.KANBAN:
             // Import and render kanban board if not already done
-            import('../views/kanbanView.js').then(module => {
+            import('../views/kanbanview.js').then(module => {
                 if (module.renderKanbanBoard) {
                     module.renderKanbanBoard();
                 }

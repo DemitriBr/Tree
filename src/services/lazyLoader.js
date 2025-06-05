@@ -68,7 +68,7 @@ class LazyLoader {
         const viewModules = {
             list: '../views/listView.js',
             dashboard: '../views/dashboardView.js',
-            kanban: '../views/kanbanView.js'
+            kanban: '../views/kanbanview.js'
         };
         
         const modulePath = viewModules[viewName];

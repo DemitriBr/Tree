@@ -440,7 +440,7 @@ function refreshApplicationViews() {
     
     // Refresh kanban view if active
     if (appState.ui.currentView === 'kanban') {
-        import('../views/kanbanView.js').then(module => {
+        import('../views/kanbanview.js').then(module => {
             if (module.renderKanbanBoard) {
                 module.renderKanbanBoard();
             }
