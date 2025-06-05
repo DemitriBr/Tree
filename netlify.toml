@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_FLAGS = "--force"
 
 # Disable the Lighthouse plugin for now as it might be causing issues
 # [[plugins]]
