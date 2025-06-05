@@ -258,7 +258,7 @@
 
 // Dark theme support
 @mixin dark-theme {
-  [data-theme="dark"] & {
+  @at-root [data-theme="dark"] {
     @content;
   }
 }
